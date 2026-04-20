@@ -1,21 +1,37 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing } from '../constants/theme';
+import { RootStackParamList } from '../navigation/AppNavigator';
+
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function TopNavBar() {
+  const navigation = useNavigation<NavProp>();
+
   return (
     <View style={styles.topBar}>
       <View style={styles.topBarLeft}>
-        <Ionicons name="menu" size={26} color={Colors.primary} />
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Settings')}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="menu" size={26} color={Colors.primary} />
+        </TouchableOpacity>
         <Text style={styles.logoText}>ARTEMIS</Text>
       </View>
-      <View style={styles.avatarRing}>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Settings')}
+        activeOpacity={0.7}
+        style={styles.avatarRing}
+      >
         <Image
           source={require('../assets/avatar.png')}
           style={styles.avatar}
         />
-      </View>
+      </TouchableOpacity>
     </View>
   );
 }

@@ -173,7 +173,7 @@ export default function FunctionsScreen() {
               <View style={styles.modalContent}>
                 <View style={styles.modalHandle} />
                 <Text style={styles.modalTitle}>{selectedFunction}</Text>
-                <Text style={styles.modalSubtitle}>Manage your automation</Text>
+                <Text style={styles.modalSubtitle}>Manage your function</Text>
                 
                 <TouchableOpacity style={styles.modalActionRow}>
                   <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(116, 177, 255, 0.15)' }]}>
@@ -192,10 +192,10 @@ export default function FunctionsScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.modalActionRow}>
-                  <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(255, 113, 108, 0.15)' }]}>
-                    <Ionicons name="pause-circle-outline" size={20} color={Colors.error} />
+                  <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(0, 227, 253, 0.15)' }]}>
+                    <Ionicons name="play-circle-outline" size={20} color={Colors.onTertiaryFixed} />
                   </View>
-                  <Text style={[styles.modalActionText, { color: Colors.error }]}>Pause Automation</Text>
+                  <Text style={[styles.modalActionText, { color: Colors.onTertiaryFixed }]}>Execute Function</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={[styles.actionButton, { marginTop: Spacing.xl }]} onPress={handleCloseActionModal}>

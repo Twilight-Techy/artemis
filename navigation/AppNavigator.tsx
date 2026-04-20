@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { Colors, Typography } from '../constants/theme';
@@ -9,8 +10,17 @@ import HomeScreen from '../screens/HomeScreen';
 import DevicesScreen from '../screens/DevicesScreen';
 import FunctionsScreen from '../screens/FunctionsScreen';
 import AutomationsScreen from '../screens/AutomationsScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import HistoryScreen from '../screens/HistoryScreen';
+
+export type RootStackParamList = {
+  MainTabs: undefined;
+  Settings: undefined;
+  History: undefined;
+};
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 type TabIconMap = {
   [key: string]: {
@@ -26,7 +36,7 @@ const TAB_ICONS: TabIconMap = {
   Automations: { active: 'sparkles', inactive: 'sparkles-outline' },
 };
 
-export default function AppNavigator() {
+function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -53,7 +63,7 @@ export default function AppNavigator() {
           </Text>
         ),
         tabBarStyle: styles.tabBar,
-        tabBarBackground: () => (
+        tabBarBackground: () =>
           Platform.OS === 'ios' ? (
             <BlurView
               intensity={80}
@@ -62,8 +72,7 @@ export default function AppNavigator() {
             />
           ) : (
             <View style={[StyleSheet.absoluteFill, styles.tabBarAndroidBg]} />
-          )
-        ),
+          ),
         tabBarItemStyle: styles.tabBarItem,
       })}
     >
@@ -72,6 +81,22 @@ export default function AppNavigator() {
       <Tab.Screen name="Functions" component={FunctionsScreen} />
       <Tab.Screen name="Automations" component={AutomationsScreen} />
     </Tab.Navigator>
+  );
+}
+
+export default function AppNavigator() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+        contentStyle: { backgroundColor: Colors.background },
+      }}
+    >
+      <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="History" component={HistoryScreen} />
+    </Stack.Navigator>
   );
 }
 
