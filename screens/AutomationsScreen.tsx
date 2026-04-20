@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, TextInput } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Switch, Dimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,145 +9,154 @@ import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import TopNavBar from '../components/TopNavBar';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
+const { width } = Dimensions.get('window');
+
 export default function AutomationsScreen() {
   const insets = useSafeAreaInsets();
-  const [aalInput, setAalInput] = useState('');
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  // Local state for our mock toggles
+  const [activeAmbiance, setActiveAmbiance] = useState(true);
+  const [activeGuard, setActiveGuard] = useState(true);
+  const [activeEco, setActiveEco] = useState(false);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <TopNavBar />
       
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* ═══ Header Section ═══ */}
+        {/* Header Section */}
         <View style={styles.headerSection}>
           <Text style={styles.headline}>Automations</Text>
           <Text style={styles.subtitle}>
-            Define autonomous behavioral flows using AAL (Artemis Automation Language).
+            Orchestrate your environment with sentient logic and reactive triggers.
           </Text>
         </View>
 
-        {/* ═══ AAL Input ═══ */}
-        <View style={styles.inputContainer}>
-          <Text style={styles.inputLabel}>CREATE AUTOMATION</Text>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.textInput}
-              placeholder="e.g. WHEN temperature > 28°C IF someone is in the room THEN turn on the fan..."
-              placeholderTextColor="rgba(255, 255, 255, 0.3)"
-              value={aalInput}
-              onChangeText={setAalInput}
-              multiline
-              textAlignVertical="top"
-            />
-            {aalInput.length > 0 && (
-              <TouchableOpacity style={styles.submitButton}>
-                <Ionicons name="sparkles" size={16} color={Colors.background} />
-                <Text style={styles.submitButtonText}>Generate</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+        {/* Create New Automation CTA */}
+        <View style={styles.ctaContainer}>
+          <TouchableOpacity 
+            activeOpacity={0.8} 
+            onPress={() => navigation.navigate('AALEditor')}
+            style={styles.ctaCard}
+          >
+            <View style={styles.ctaContentRow}>
+              <View style={styles.ctaIconBox}>
+                <MaterialIcons name="add-circle" size={32} color={Colors.primary} />
+              </View>
+              <View style={styles.ctaTextContainer}>
+                <Text style={styles.ctaTitle}>Create New Automation</Text>
+                <Text style={styles.ctaDesc}>Define custom triggers and intelligent responses.</Text>
+              </View>
+            </View>
+            <View style={styles.ctaArrowRow}>
+              <Text style={styles.ctaArrowText}>BEGIN WORKFLOW</Text>
+              <MaterialIcons name="arrow-forward" size={16} color={Colors.primary} />
+            </View>
+          </TouchableOpacity>
         </View>
 
-        {/* ═══ Active Rules ═══ */}
-        <View style={styles.rulesSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Active Protocols</Text>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => navigation.navigate('AALEditor')}
-            >
-              <LinearGradient
-                colors={[Colors.primary, Colors.primaryContainer]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.codeLabButton}
-              >
-                <Ionicons name="terminal-outline" size={14} color={Colors.onPrimary} />
-                <Text style={styles.codeLabText}>Code Lab</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
+        {/* Active Automations Matrix */}
+        <View style={styles.listContainer}>
 
-          {/* Rule 1 */}
+          {/* Automation Card 1: Evening Ambiance */}
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <View style={[styles.tag, { backgroundColor: 'rgba(129, 236, 255, 0.15)', borderColor: 'rgba(129, 236, 255, 0.3)' }]}>
-                <View style={[styles.tagDot, { backgroundColor: Colors.tertiary }]} />
-                <Text style={[styles.tagText, { color: Colors.tertiary }]}>Climate Control</Text>
+              <View style={styles.tagContainer}>
+                <View style={[styles.iconWrapper, { backgroundColor: 'rgba(129, 236, 255, 0.1)' }]}>
+                  <MaterialIcons name="wb-twilight" size={16} color={Colors.tertiary} />
+                </View>
+                <Text style={[styles.tagText, { color: Colors.tertiary }]}>ENVIRONMENTAL</Text>
               </View>
-              <TouchableOpacity>
-                <MaterialCommunityIcons name="dots-vertical" size={24} color={Colors.onSurfaceVariant} />
-              </TouchableOpacity>
+              <Switch
+                trackColor={{ false: Colors.surfaceContainerHighest, true: Colors.tertiary }}
+                thumbColor={Colors.onSurface}
+                ios_backgroundColor={Colors.surfaceContainerHighest}
+                onValueChange={setActiveAmbiance}
+                value={activeAmbiance}
+                style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+              />
             </View>
-            <View style={styles.aalBlock}>
-              <Text style={styles.aalText}>
-                <Text style={styles.aalKeyword}>WHEN </Text>temperature {'>'} 28°C{'\n'}
-                <Text style={styles.aalKeyword}>IF </Text>someone is in the living room{'\n'}
-                <Text style={styles.aalKeyword}>THEN </Text>turn on the AC to 22°C
-              </Text>
-            </View>
-            <View style={styles.cardFooter}>
-              <Text style={styles.footerText}>Triggered 2h ago</Text>
-              <View style={styles.activeStatus}>
-                <Text style={styles.activeText}>Active</Text>
-                <View style={styles.activeDot} />
+            <Text style={styles.cardTitle}>Evening Ambiance</Text>
+            
+            <View style={styles.ruleContainer}>
+              <View style={styles.ruleRow}>
+                <MaterialIcons name="schedule" size={16} color={Colors.onSurfaceVariant} />
+                <Text style={styles.ruleText}>IF <Text style={styles.ruleHighlight}>Sunset</Text></Text>
+              </View>
+              <View style={styles.ruleRow}>
+                <Ionicons name="bulb-outline" size={16} color={Colors.onSurfaceVariant} />
+                <Text style={styles.ruleText}>THEN <Text style={styles.ruleHighlight}>Dim lights to 20% & Play Lo-Fi</Text></Text>
               </View>
             </View>
           </View>
 
-          {/* Rule 2 */}
+          {/* Automation Card 2: Night Guard */}
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <View style={[styles.tag, { backgroundColor: 'rgba(255, 113, 108, 0.15)', borderColor: 'rgba(255, 113, 108, 0.3)' }]}>
-                <View style={[styles.tagDot, { backgroundColor: Colors.error }]} />
-                <Text style={[styles.tagText, { color: Colors.error }]}>Security Routine</Text>
+              <View style={styles.tagContainer}>
+                <View style={[styles.iconWrapper, { backgroundColor: 'rgba(184, 132, 255, 0.1)' }]}>
+                  <MaterialIcons name="security" size={16} color={Colors.secondary} />
+                </View>
+                <Text style={[styles.tagText, { color: Colors.secondary }]}>SECURITY</Text>
               </View>
-              <TouchableOpacity>
-                <MaterialCommunityIcons name="dots-vertical" size={24} color={Colors.onSurfaceVariant} />
-              </TouchableOpacity>
+              <Switch
+                trackColor={{ false: Colors.surfaceContainerHighest, true: Colors.secondary }}
+                thumbColor={Colors.onSurface}
+                ios_backgroundColor={Colors.surfaceContainerHighest}
+                onValueChange={setActiveGuard}
+                value={activeGuard}
+                style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+              />
             </View>
-            <View style={styles.aalBlock}>
-              <Text style={styles.aalText}>
-                <Text style={styles.aalKeyword}>WHEN </Text>time == 23:00{'\n'}
-                <Text style={styles.aalKeyword}>IF </Text>no motion detected for 30m{'\n'}
-                <Text style={styles.aalKeyword}>THEN </Text>lock all doors and arm system
-              </Text>
-            </View>
-            <View style={styles.cardFooter}>
-              <Text style={styles.footerText}>Runs daily</Text>
-              <View style={styles.activeStatus}>
-                <Text style={styles.activeText}>Active</Text>
-                <View style={[styles.activeDot, { backgroundColor: Colors.error }]} />
+            <Text style={styles.cardTitle}>Night Guard</Text>
+            
+            <View style={styles.ruleContainer}>
+              <View style={styles.ruleRow}>
+                <MaterialCommunityIcons name="door-open" size={16} color={Colors.onSurfaceVariant} />
+                <Text style={styles.ruleText}>IF <Text style={styles.ruleHighlight}>External Motion</Text> (22:00-06:00)</Text>
+              </View>
+              <View style={styles.ruleRow}>
+                <MaterialIcons name="notifications-active" size={16} color={Colors.onSurfaceVariant} />
+                <Text style={styles.ruleText}>THEN <Text style={styles.ruleHighlight}>Activate Perimeter & Notify Admin</Text></Text>
               </View>
             </View>
           </View>
 
-          {/* Rule 3 */}
-          <View style={styles.card}>
+          {/* Automation Card 3: Smart Thermal Optima */}
+          <View style={[styles.card, activeEco ? {} : { opacity: 0.7 }]}>
             <View style={styles.cardHeader}>
-              <View style={[styles.tag, { backgroundColor: 'rgba(184, 132, 255, 0.15)', borderColor: 'rgba(184, 132, 255, 0.3)' }]}>
-                <View style={[styles.tagDot, { backgroundColor: Colors.secondary }]} />
-                <Text style={[styles.tagText, { color: Colors.secondary }]}>Lighting</Text>
+              <View style={styles.tagContainer}>
+                <View style={[styles.iconWrapper, { backgroundColor: 'rgba(116, 177, 255, 0.1)' }]}>
+                  <MaterialIcons name="eco" size={16} color={Colors.primary} />
+                </View>
+                <Text style={[styles.tagText, { color: Colors.primary }]}>EFFICIENCY</Text>
               </View>
-              <TouchableOpacity>
-                <MaterialCommunityIcons name="dots-vertical" size={24} color={Colors.onSurfaceVariant} />
-              </TouchableOpacity>
+              <Switch
+                trackColor={{ false: Colors.surfaceContainerHighest, true: Colors.primary }}
+                thumbColor={Colors.onSurface}
+                ios_backgroundColor={Colors.surfaceContainerHighest}
+                onValueChange={setActiveEco}
+                value={activeEco}
+                style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+              />
             </View>
-            <View style={styles.aalBlock}>
-              <Text style={styles.aalText}>
-                <Text style={styles.aalKeyword}>WHEN </Text>movie mode activates{'\n'}
-                <Text style={styles.aalKeyword}>IF </Text>time {'>'} sunset{'\n'}
-                <Text style={styles.aalKeyword}>THEN </Text>dim lights to 10% and set warm glow
-              </Text>
-            </View>
-            <View style={styles.cardFooter}>
-              <Text style={styles.footerText}>Triggered yesterday</Text>
-              <View style={styles.activeStatus}>
-                <Text style={[styles.activeText, { color: Colors.onSurfaceVariant }]}>Paused</Text>
-                <View style={[styles.activeDot, { backgroundColor: Colors.onSurfaceVariant }]} />
+            <Text style={styles.cardTitle}>Smart Thermal Optima</Text>
+            
+            <View style={styles.ruleContainer}>
+              <View style={styles.ruleRow}>
+                <MaterialIcons name="person" size={16} color={Colors.onSurfaceVariant} />
+                <Text style={styles.ruleText}>IF <Text style={styles.ruleHighlight}>Room Unoccupied</Text> ({'>'}30m)</Text>
+              </View>
+              <View style={styles.ruleRow}>
+                <MaterialCommunityIcons name="thermostat" size={16} color={Colors.onSurfaceVariant} />
+                <Text style={styles.ruleText}>THEN <Text style={styles.ruleHighlight}>Eco-Mode HVAC (-4°)</Text></Text>
               </View>
             </View>
+            
+            {!activeEco && (
+              <Text style={styles.deactivatedText}>DEACTIVATED 2 DAYS AGO</Text>
+            )}
           </View>
 
         </View>
@@ -162,12 +171,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  orbBottomLeft: {
+    bottom: '-10%',
+    left: '-50%',
+  },
   scrollContent: {
-    paddingBottom: Spacing['4xl'],
+    paddingBottom: Spacing['5xl'] * 2,
   },
   headerSection: {
     paddingHorizontal: Spacing['2xl'],
     marginBottom: Spacing.xl,
+    marginTop: Spacing.sm,
   },
   headline: {
     fontFamily: Typography.families.headline,
@@ -175,167 +189,130 @@ const styles = StyleSheet.create({
     fontWeight: Typography.weights.bold,
     color: Colors.onSurface,
     letterSpacing: -1,
+    marginBottom: Spacing.xs,
   },
   subtitle: {
     fontFamily: Typography.families.body,
-    fontSize: Typography.sizes.bodyLg,
+    fontSize: Typography.sizes.titleMd,
     color: Colors.onSurfaceVariant,
-    marginTop: Spacing.xs,
     lineHeight: 24,
   },
-  inputContainer: {
+  ctaContainer: {
     paddingHorizontal: Spacing['2xl'],
-    marginBottom: Spacing['2xl'],
+    marginBottom: Spacing['3xl'],
   },
-  inputLabel: {
+  ctaCard: {
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: 32,
+    padding: Spacing['2xl'],
+    borderWidth: 1,
+    borderColor: 'rgba(116, 177, 255, 0.3)',
+  },
+  ctaContentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.lg,
+    marginBottom: Spacing.xl,
+  },
+  ctaIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: 'rgba(116, 177, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaTextContainer: {
+    flex: 1,
+  },
+  ctaTitle: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.headlineSm,
+    fontWeight: Typography.weights.semibold,
+    color: Colors.onSurface,
+    marginBottom: Spacing.xs,
+  },
+  ctaDesc: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.bodyLg,
+    color: Colors.onSurfaceVariant,
+  },
+  ctaArrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  ctaArrowText: {
     fontFamily: Typography.families.label,
     fontSize: Typography.sizes.labelSm,
     fontWeight: Typography.weights.bold,
-    color: Colors.tertiary,
-    letterSpacing: 1.5,
-    marginBottom: Spacing.md,
+    color: Colors.primary,
+    letterSpacing: 1,
   },
-  inputWrapper: {
-    backgroundColor: Colors.surfaceContainerHighest,
-    borderRadius: Radii.xl,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(72, 71, 74, 0.15)',
-    minHeight: 120,
-  },
-  textInput: {
-    fontFamily: Typography.families.body,
-    fontSize: Typography.sizes.bodyLg,
-    color: Colors.onSurface,
-    minHeight: 80,
-  },
-  submitButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-end',
-    backgroundColor: Colors.tertiary,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radii.full,
-    gap: Spacing.xs,
-  },
-  submitButtonText: {
-    fontFamily: Typography.families.label,
-    fontSize: Typography.sizes.labelMd,
-    fontWeight: Typography.weights.bold,
-    color: Colors.background,
-  },
-  rulesSection: {
+  listContainer: {
     paddingHorizontal: Spacing['2xl'],
     gap: Spacing.lg,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.xs,
-  },
-  sectionTitle: {
-    fontFamily: Typography.families.headline,
-    fontSize: Typography.sizes.headlineSm,
-    fontWeight: Typography.weights.bold,
-    color: Colors.onSurface,
-  },
-  codeLabButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radii.full,
-  },
-  codeLabText: {
-    fontFamily: Typography.families.headline,
-    fontSize: Typography.sizes.labelSm,
-    fontWeight: Typography.weights.bold,
-    color: Colors.onPrimary,
-    letterSpacing: 1,
-  },
   card: {
-    backgroundColor: Colors.surfaceContainerLow,
-    borderRadius: Radii.xl,
-    padding: Spacing['xl'],
+    backgroundColor: 'rgba(38, 37, 41, 0.2)', // mirrors glass-panel with 20% opacity
+    borderRadius: 32,
+    padding: Spacing['2xl'],
     borderWidth: 1,
-    borderColor: 'rgba(72, 71, 74, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    minHeight: 220,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.xl,
   },
-  tag: {
+  tagContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 4,
-    borderRadius: Radii.full,
-    borderWidth: 1,
-    gap: Spacing.xs,
+    gap: Spacing.sm,
   },
-  tagDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  iconWrapper: {
+    padding: 6,
+    borderRadius: Radii.md,
   },
   tagText: {
     fontFamily: Typography.families.label,
-    fontSize: Typography.sizes.labelSm,
-    fontWeight: Typography.weights.bold,
-    textTransform: 'uppercase',
+    fontSize: 10,
+    fontWeight: Typography.weights.black,
+    letterSpacing: 2,
   },
-  aalBlock: {
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    padding: Spacing.md,
-    borderRadius: Radii.lg,
+  cardTitle: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.titleLg,
+    fontWeight: Typography.weights.medium,
+    color: Colors.onSurface,
     marginBottom: Spacing.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
-  aalText: {
+  ruleContainer: {
+    gap: Spacing.md,
+  },
+  ruleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  ruleText: {
     fontFamily: Typography.families.body,
     fontSize: Typography.sizes.bodyMd,
     color: Colors.onSurfaceVariant,
-    lineHeight: 24,
   },
-  aalKeyword: {
-    fontFamily: Typography.families.headline,
-    fontWeight: Typography.weights.bold,
-    color: Colors.primary,
+  ruleHighlight: {
+    color: Colors.onSurface,
+    fontWeight: Typography.weights.semibold,
   },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  footerText: {
+  deactivatedText: {
     fontFamily: Typography.families.label,
-    fontSize: Typography.sizes.labelSm,
-    fontWeight: Typography.weights.medium,
-    color: Colors.onSurfaceVariant,
-  },
-  activeStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  activeText: {
-    fontFamily: Typography.families.label,
-    fontSize: Typography.sizes.labelSm,
+    fontSize: Typography.sizes.labelXs,
     fontWeight: Typography.weights.bold,
-    color: Colors.tertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  activeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.tertiary,
+    color: 'rgba(255, 255, 255, 0.3)',
+    letterSpacing: 2,
+    fontStyle: 'italic',
+    marginTop: Spacing.xl,
   },
 });

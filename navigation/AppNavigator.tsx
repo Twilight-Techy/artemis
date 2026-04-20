@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography } from '../constants/theme';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -41,6 +42,8 @@ const TAB_ICONS: TabIconMap = {
 };
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -67,7 +70,13 @@ function MainTabs() {
             {route.name.toUpperCase()}
           </Text>
         ),
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            height: 64 + insets.bottom,
+            paddingBottom: insets.bottom > 0 ? insets.bottom - 8 : 8,
+          },
+        ],
         tabBarBackground: () =>
           Platform.OS === 'ios' ? (
             <BlurView
@@ -113,7 +122,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: Platform.OS === 'ios' ? 88 : 72,
     backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(14, 14, 16, 0.92)',
     borderTopWidth: 0,
     borderTopLeftRadius: 28,
@@ -133,7 +141,6 @@ const styles = StyleSheet.create({
   },
   tabBarItem: {
     paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 0 : 8,
   },
   tabLabel: {
     fontFamily: Typography.families.label,
