@@ -25,13 +25,14 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
+      {/* ═══ Top App Bar ═══ */}
+      <TopNavBar />
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ═══ Top App Bar ═══ */}
-        <TopNavBar />
         {/* ═══ Central Orb Section ═══ */}
         <View style={styles.orbSection}>
           {/* Atmospheric background glow */}
