@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '../constants/theme';
+import { Colors, Typography, Spacing } from '../constants/theme';
+import TopNavBar from '../components/TopNavBar';
 import { Device, DeviceType } from '../components/devices/types';
 import { DeviceFilterBar, FilterCategory } from '../components/devices/DeviceFilterBar';
 import { RoomSection } from '../components/devices/RoomSection';
@@ -86,6 +87,19 @@ export default function DevicesScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
+      <TopNavBar />
+      
+      {/* ═══ Greeting Section ═══ */}
+      <View style={styles.greetingSection}>
+        <View style={styles.headlineRow}>
+          <Text style={styles.headline}>Connected </Text>
+          <Text style={styles.headlineGradient}>Devices</Text>
+        </View>
+        <Text style={styles.subText}>
+          {filteredDevices.length} {filteredDevices.length === 1 ? 'device' : 'devices'} across {Object.keys(rooms).length} {Object.keys(rooms).length === 1 ? 'room' : 'rooms'}
+        </Text>
+      </View>
+
       <View style={styles.header}>
         <DeviceFilterBar activeFilter={activeFilter} onSelect={setActiveFilter} />
       </View>
@@ -121,6 +135,34 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  greetingSection: {
+    paddingHorizontal: Spacing['2xl'],
+    marginBottom: Spacing.md,
+  },
+  headlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headline: {
+    fontFamily: Typography.families.headline,
+    fontSize: 32,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onSurface,
+    letterSpacing: -0.5,
+  },
+  headlineGradient: {
+    fontFamily: Typography.families.headline,
+    fontSize: 32,
+    fontWeight: Typography.weights.bold,
+    color: Colors.primary,
+    letterSpacing: -0.5,
+  },
+  subText: {
+    fontFamily: Typography.families.body,
+    fontSize: 14,
+    color: Colors.onSurfaceVariant,
+    marginTop: Spacing.xs,
   },
   header: {
     paddingVertical: 16,
