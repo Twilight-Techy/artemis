@@ -3,10 +3,10 @@ import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../constants/theme';
 
-const ORB_SIZE = 240;
-const INNER_RING = 200;
-const CORE_SIZE = 170;
-const GLOW_SIZE = 380;
+const ORB_SIZE = 180;
+const INNER_RING = 150;
+const CORE_SIZE = 125;
+const GLOW_SIZE = 285;
 
 export default function OrbEntity() {
   const pulse = useRef(new Animated.Value(0)).current;

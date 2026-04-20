@@ -43,26 +43,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* ═══ Greeting Section ═══ */}
-        <View style={styles.greetingSection}>
-          <Text style={styles.statusLabel}>SYSTEM ONLINE</Text>
-          <View style={styles.headlineRow}>
-            <Text style={styles.headline}>Good Evening,{'\n'}</Text>
-            <LinearGradient
-              colors={[Colors.primary, Colors.tertiary]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.gradientTextBg}
-            >
-              <Text style={styles.headlineGradient}>Alex</Text>
-            </LinearGradient>
-          </View>
-          <Text style={styles.subtext}>
-            All systems are stable. Your home environment is optimized for evening
-            relaxation.
-          </Text>
-        </View>
-
         {/* ═══ Central Orb Section ═══ */}
         <View style={styles.orbSection}>
           {/* Atmospheric background glow */}
@@ -89,25 +69,33 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* ═══ Greeting Section ═══ */}
+        <View style={styles.greetingSection}>
+          <View style={styles.headlineRow}>
+            <Text style={styles.headline}>Good Evening, </Text>
+            <Text style={styles.headlineGradient}>Alex</Text>
+          </View>
+        </View>
+
         {/* ═══ Quick Action Cards ═══ */}
         <View style={styles.cardsSection}>
           <QuickActionCard
-            icon="bulb"
+            icon="bulb-outline"
             iconColor={Colors.primary}
             title="Lights"
-            subtitle="12 fixtures active"
+            onPress={() => console.log('Lights tapped')}
           />
           <QuickActionCard
-            icon="shield-checkmark"
-            iconColor={Colors.error}
-            title="Security"
-            subtitle="All perimeter sensors armed"
-          />
-          <QuickActionCard
-            icon="water-outline"
-            iconColor={Colors.tertiary}
+            icon="thermometer-outline"
+            iconColor={Colors.secondary}
             title="Climate"
-            subtitle="Purifier running at 20%"
+            onPress={() => console.log('Climate tapped')}
+          />
+          <QuickActionCard
+            icon="lock-closed-outline"
+            iconColor={Colors.tertiary}
+            title="Security"
+            onPress={() => console.log('Security tapped')}
           />
         </View>
 
@@ -175,46 +163,27 @@ const styles = StyleSheet.create({
   // ── Greeting ──
   greetingSection: {
     marginBottom: Spacing['3xl'],
-  },
-  statusLabel: {
-    fontFamily: Typography.families.headline,
-    fontSize: Typography.sizes.labelXs,
-    fontWeight: Typography.weights.bold,
-    color: Colors.primary,
-    letterSpacing: 4,
-    textTransform: 'uppercase',
-    opacity: 0.8,
-    marginBottom: Spacing.sm,
+    alignItems: 'center',
   },
   headlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: Spacing.lg,
   },
   headline: {
     fontFamily: Typography.families.headline,
-    fontSize: 40,
+    fontSize: 32,
     fontWeight: Typography.weights.bold,
     color: Colors.onSurface,
     letterSpacing: -0.5,
-    lineHeight: 48,
-  },
-  gradientTextBg: {
-    alignSelf: 'flex-start',
-    borderRadius: 4,
   },
   headlineGradient: {
     fontFamily: Typography.families.headline,
-    fontSize: 40,
+    fontSize: 32,
     fontWeight: Typography.weights.bold,
     color: Colors.primary,
     letterSpacing: -0.5,
-    lineHeight: 48,
-  },
-  subtext: {
-    fontFamily: Typography.families.body,
-    fontSize: Typography.sizes.bodyLg,
-    color: Colors.onSurfaceVariant,
-    lineHeight: 26,
-    maxWidth: SCREEN_WIDTH * 0.85,
   },
 
   // ── Orb Section ──
@@ -247,8 +216,11 @@ const styles = StyleSheet.create({
 
   // ── Cards ──
   cardsSection: {
-    gap: Spacing.lg,
+    flexDirection: 'row',
+    gap: Spacing.sm,
     marginBottom: Spacing['3xl'],
+    alignItems: 'stretch',
+    justifyContent: 'space-between',
   },
 
   // ── Command ──
