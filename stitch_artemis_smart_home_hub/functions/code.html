@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-container": "#002345",
+                    "surface-container-highest": "#262529",
+                    "tertiary-container": "#00e3fd",
+                    "secondary-dim": "#9547f7",
+                    "on-tertiary-fixed-variant": "#005762",
+                    "primary": "#74b1ff",
+                    "tertiary-dim": "#00d4ec",
+                    "on-tertiary-fixed": "#003840",
+                    "primary-fixed": "#54a3ff",
+                    "surface-tint": "#74b1ff",
+                    "primary-dim": "#4da0ff",
+                    "secondary-fixed": "#e1c7ff",
+                    "secondary": "#b884ff",
+                    "surface-variant": "#262529",
+                    "on-error-container": "#ffa8a3",
+                    "on-error": "#490006",
+                    "surface-container-low": "#131316",
+                    "surface-bright": "#2c2c2f",
+                    "outline": "#767578",
+                    "tertiary-fixed-dim": "#00d4ec",
+                    "primary-container": "#54a3ff",
+                    "secondary-fixed-dim": "#d6b6ff",
+                    "inverse-surface": "#fcf8fb",
+                    "on-primary-fixed": "#000000",
+                    "surface-container-high": "#1f1f22",
+                    "error": "#ff716c",
+                    "error-container": "#9f0519",
+                    "surface": "#0e0e10",
+                    "inverse-on-surface": "#565457",
+                    "error-dim": "#d7383b",
+                    "on-secondary-container": "#ebd8ff",
+                    "tertiary": "#81ecff",
+                    "surface-container": "#19191c",
+                    "surface-container-lowest": "#000000",
+                    "on-background": "#fffbfe",
+                    "on-secondary-fixed-variant": "#6f08d0",
+                    "on-secondary": "#2f0060",
+                    "on-primary": "#002f59",
+                    "inverse-primary": "#0060ac",
+                    "on-tertiary-container": "#004d57",
+                    "on-secondary-fixed": "#4a0090",
+                    "on-surface": "#fffbfe",
+                    "tertiary-fixed": "#00e3fd",
+                    "background": "#0e0e10",
+                    "outline-variant": "#48474a",
+                    "surface-dim": "#0e0e10",
+                    "secondary-container": "#6e06d0",
+                    "on-surface-variant": "#adaaad",
+                    "on-primary-fixed-variant": "#002d55",
+                    "primary-fixed-dim": "#2695ff",
+                    "on-tertiary": "#005762"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "1rem",
+                    "xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Space Grotesk"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(38, 37, 41, 0.2);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .orb-glow {
+            filter: blur(60px);
+            opacity: 0.15;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- TopAppBar -->
+<header class="bg-[#0e0e10]/60 backdrop-blur-2xl fixed top-0 w-full z-50 flex justify-between items-center px-6 h-20 w-full">
+<div class="flex items-center gap-4">
+<button class="text-white/60 hover:text-[#81ecff] transition-all duration-300">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="text-xl font-black tracking-tighter text-white drop-shadow-[0_0_12px_rgba(116,177,255,0.6)] font-['Space_Grotesk'] uppercase">Artemis</h1>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-8 font-['Space_Grotesk'] tracking-widest font-bold uppercase text-sm">
+<a class="text-white/60 hover:text-[#81ecff] transition-all" href="#">Home</a>
+<a class="text-white/60 hover:text-[#81ecff] transition-all" href="#">Devices</a>
+<a class="text-[#74b1ff]" href="#">Functions</a>
+<a class="text-white/60 hover:text-[#81ecff] transition-all" href="#">Automations</a>
+</nav>
+<div class="w-10 h-10 rounded-full border border-outline-variant/30 overflow-hidden">
+<img alt="User Profile Avatar" data-alt="close-up portrait of a tech professional with soft blue ambient lighting on their face in a dark modern studio" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlbHQwyWKsUpYtgiKIwF1OXEnOFwA7oi1yR71SllqyT_x_FZbdAMNz5yrQL_yl0n7XnBF-d8Qn5260-6yD1mu8iBycBsXz9oL0m41bk0xpvoCV_IoMge6afyWyJwaNquhp9CfaBU1YVPmpWJqvS_EtGFYLTPYnbj3Uf5MWzPoU046tOKwCsxVH_qt2o7rvSgqgGy1jcj2EGxAVmS9zy7LCpAxWt2IkPBZao4MRbs_yUdEG01Hv3HwxHyshMX8mKuDTmioVmBtuW8NB"/>
+</div>
+</div>
+</header>
+<main class="relative pt-32 pb-40 px-6 max-w-7xl mx-auto min-h-screen overflow-hidden">
+<!-- Ambient Entity Glow -->
+<div class="fixed top-1/4 -right-20 w-96 h-96 rounded-full bg-primary orb-glow pointer-events-none"></div>
+<div class="fixed bottom-1/4 -left-20 w-80 h-80 rounded-full bg-secondary orb-glow pointer-events-none"></div>
+<!-- Section Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+<div class="space-y-2">
+<h2 class="text-4xl md:text-6xl font-headline font-bold tracking-tight">Functions</h2>
+<p class="text-on-surface-variant max-w-md">Orchestrate your environment with reactive intelligence macros.</p>
+</div>
+<button class="group relative flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-primary to-primary-container rounded-full text-on-primary-fixed font-headline font-bold uppercase tracking-wider text-sm transition-transform active:scale-95 shadow-[0_0_20px_rgba(116,177,255,0.4)]">
+<span class="material-symbols-outlined text-xl" data-icon="add" style="font-variation-settings: 'wght' 700;">add</span>
+                Add Custom Function
+            </button>
+</div>
+<!-- Filter Chips -->
+<div class="flex flex-wrap gap-3 mb-10">
+<button class="px-6 py-2 rounded-full border border-primary/40 bg-primary/10 text-primary font-label text-xs font-bold uppercase tracking-widest">All Actions</button>
+<button class="px-6 py-2 rounded-full border border-outline-variant/20 hover:border-tertiary/40 glass-card text-on-surface-variant hover:text-tertiary transition-all font-label text-xs font-bold uppercase tracking-widest">Daily Routine</button>
+<button class="px-6 py-2 rounded-full border border-outline-variant/20 hover:border-tertiary/40 glass-card text-on-surface-variant hover:text-tertiary transition-all font-label text-xs font-bold uppercase tracking-widest">Security</button>
+<button class="px-6 py-2 rounded-full border border-outline-variant/20 hover:border-tertiary/40 glass-card text-on-surface-variant hover:text-tertiary transition-all font-label text-xs font-bold uppercase tracking-widest">Energy Saving</button>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Morning Sequence (Large Card) -->
+<div class="md:col-span-8 group relative overflow-hidden rounded-xl glass-card border border-outline-variant/10 p-8 hover:border-primary/30 transition-all duration-500">
+<div class="absolute top-0 right-0 p-6">
+<span class="material-symbols-outlined text-primary-dim text-4xl opacity-50 group-hover:opacity-100 transition-opacity" data-icon="light_mode">light_mode</span>
+</div>
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-4">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+<span class="text-tertiary font-label text-[10px] font-bold tracking-[0.2em] uppercase">Daily Routine</span>
+</div>
+<h3 class="text-3xl font-headline font-bold mb-4">Solar Awakening</h3>
+<p class="text-on-surface-variant max-w-sm mb-8 text-lg">Gradual light increase, temperature adjustment, and coffee initiation starting 30 mins before alarm.</p>
+<div class="flex items-center gap-6">
+<div class="flex -space-x-3">
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-sm" data-icon="wb_sunny">wb_sunny</span>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-sm" data-icon="thermostat">thermostat</span>
+</div>
+<div class="w-10 h-10 rounded-full border-2 border-surface bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-sm" data-icon="coffee">coffee</span>
+</div>
+</div>
+<span class="text-on-surface-variant font-label text-xs">3 Connected Devices</span>
+</div>
+</div>
+<div class="absolute bottom-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -mr-32 -mb-32"></div>
+</div>
+<!-- Deep Shield (Medium Card) -->
+<div class="md:col-span-4 group relative overflow-hidden rounded-xl glass-card border border-outline-variant/10 p-8 hover:border-error/30 transition-all duration-500">
+<div class="relative z-10 h-full flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-4">
+<span class="text-error font-label text-[10px] font-bold tracking-[0.2em] uppercase">Security</span>
+</div>
+<h3 class="text-2xl font-headline font-bold mb-2">Deep Shield</h3>
+<p class="text-on-surface-variant text-sm">Lock all entry points, activate perimeter sensors, and enable night-vision logs.</p>
+</div>
+<div class="mt-8 flex items-center justify-between">
+<span class="text-error text-2xl font-headline font-medium">Active</span>
+<div class="w-12 h-12 rounded-full border border-error/20 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" data-icon="shield_lock" style="font-variation-settings: 'FILL' 1;">shield_lock</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Eco Flow (Medium Card) -->
+<div class="md:col-span-4 group relative overflow-hidden rounded-xl glass-card border border-outline-variant/10 p-8 hover:border-secondary/30 transition-all duration-500">
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-4">
+<span class="text-secondary font-label text-[10px] font-bold tracking-[0.2em] uppercase">Energy Saving</span>
+</div>
+<h3 class="text-2xl font-headline font-bold mb-2">Eco Flow</h3>
+<p class="text-on-surface-variant text-sm mb-6">Optimizes HVAC and disables standby power on inactive appliances.</p>
+<div class="p-4 rounded-lg bg-surface-container-high/50 flex items-center justify-between">
+<span class="text-on-surface-variant text-xs uppercase tracking-widest font-bold">Today's Saving</span>
+<span class="text-secondary font-headline font-bold">4.2 kWh</span>
+</div>
+</div>
+</div>
+<!-- Neural Sync (Large Card) -->
+<div class="md:col-span-8 group relative overflow-hidden rounded-xl bg-surface-container-low border border-outline-variant/10 p-8 hover:border-tertiary/30 transition-all duration-500">
+<div class="grid md:grid-cols-2 gap-8 items-center h-full">
+<div class="relative z-10">
+<div class="flex items-center gap-2 mb-4">
+<span class="text-tertiary font-label text-[10px] font-bold tracking-[0.2em] uppercase">Beta Function</span>
+</div>
+<h3 class="text-3xl font-headline font-bold mb-4">Neural Presence Sync</h3>
+<p class="text-on-surface-variant text-base mb-8">Adapts lighting temperature and acoustic profile based on your biological circadian rhythm and heart rate data.</p>
+<button class="px-6 py-3 rounded-lg border border-tertiary/30 text-tertiary font-label text-xs font-bold uppercase tracking-widest hover:bg-tertiary hover:text-on-tertiary transition-colors">Configure Biometrics</button>
+</div>
+<div class="relative aspect-square w-full">
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="w-32 h-32 rounded-full bg-tertiary/20 animate-ping absolute"></div>
+<div class="w-48 h-48 rounded-full border border-tertiary/10 absolute"></div>
+<div class="w-64 h-64 rounded-full border border-tertiary/5 absolute"></div>
+<span class="material-symbols-outlined text-tertiary text-6xl" data-icon="neurology">neurology</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 rounded-t-[2rem] bg-[#0e0e10]/80 backdrop-blur-3xl shadow-[0_-8px_32px_rgba(0,0,0,0.8)] md:hidden">
+<div class="flex justify-around items-center px-8 pb-8 pt-4">
+<a class="flex flex-col items-center justify-center text-white/30 hover:text-white/80 transition-colors" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-white/30 hover:text-white/80 transition-colors" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="settings_remote">settings_remote</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Devices</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#74b1ff] drop-shadow-[0_0_8px_rgba(116,177,255,0.8)] scale-110 duration-500 ease-out" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="api">api</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Functions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-white/30 hover:text-white/80 transition-colors" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Automations</span>
+</a>
+</div>
+</nav>
+<!-- Background Decoration -->
+<div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,_rgba(116,177,255,0.03)_0%,_rgba(14,14,16,1)_100%)]"></div>
+<div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/5 blur-[120px] rounded-full"></div>
+</div>
+</body></html>

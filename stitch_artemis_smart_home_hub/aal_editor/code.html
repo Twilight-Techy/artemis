@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ARTEMIS_OS | AAL Editor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed": "#000000",
+                    "on-tertiary-fixed": "#003840",
+                    "primary-fixed-dim": "#2695ff",
+                    "inverse-on-surface": "#565457",
+                    "secondary": "#b884ff",
+                    "surface-container-lowest": "#000000",
+                    "secondary-container": "#6e06d0",
+                    "on-tertiary": "#005762",
+                    "tertiary-dim": "#00d4ec",
+                    "on-secondary-container": "#ebd8ff",
+                    "on-background": "#fffbfe",
+                    "on-primary-container": "#002345",
+                    "secondary-fixed": "#e1c7ff",
+                    "background": "#0e0e10",
+                    "surface-container-low": "#131316",
+                    "on-error-container": "#ffa8a3",
+                    "on-secondary-fixed": "#4a0090",
+                    "surface-tint": "#74b1ff",
+                    "on-primary-fixed-variant": "#002d55",
+                    "on-tertiary-fixed-variant": "#005762",
+                    "surface-variant": "#262529",
+                    "surface-bright": "#2c2c2f",
+                    "primary-container": "#54a3ff",
+                    "on-surface": "#fffbfe",
+                    "surface-container-high": "#1f1f22",
+                    "on-primary": "#002f59",
+                    "error-container": "#9f0519",
+                    "tertiary-container": "#00e3fd",
+                    "inverse-surface": "#fcf8fb",
+                    "secondary-fixed-dim": "#d6b6ff",
+                    "tertiary-fixed": "#00e3fd",
+                    "on-secondary": "#2f0060",
+                    "tertiary": "#81ecff",
+                    "surface": "#0e0e10",
+                    "surface-container-highest": "#262529",
+                    "primary-dim": "#4da0ff",
+                    "on-error": "#490006",
+                    "surface-container": "#19191c",
+                    "outline-variant": "#48474a",
+                    "error-dim": "#d7383b",
+                    "surface-dim": "#0e0e10",
+                    "primary": "#74b1ff",
+                    "inverse-primary": "#0060ac",
+                    "on-surface-variant": "#adaaad",
+                    "tertiary-fixed-dim": "#00d4ec",
+                    "on-tertiary-container": "#004d57",
+                    "primary-fixed": "#54a3ff",
+                    "outline": "#767578",
+                    "error": "#ff716c",
+                    "on-secondary-fixed-variant": "#6f08d0",
+                    "secondary-dim": "#9547f7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Space Grotesk"],
+                    "body": ["Manrope"],
+                    "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #0e0e10;
+            color: #fffbfe;
+        }
+        .font-headline { font-family: 'Space Grotesk', sans-serif; }
+        .glass-panel {
+            background: rgba(38, 37, 41, 0.2);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .code-editor-gradient {
+            background: linear-gradient(180deg, rgba(14, 14, 16, 1) 0%, rgba(19, 19, 22, 1) 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen overflow-hidden flex">
+<!-- NavigationDrawer (Shared Component) -->
+<aside class="hidden md:flex flex-col h-full w-72 border-r border-white/5 bg-[#0e0e10] fixed left-0 top-0 h-screen z-40 transition-transform duration-300 ease-in-out font-headline">
+<div class="px-6 py-8">
+<div class="flex items-center gap-3 mb-10">
+<div class="w-10 h-10 rounded-full bg-gradient-to-tr from-secondary to-tertiary flex items-center justify-center shadow-[0_0_20px_rgba(184,132,255,0.4)]">
+<span class="material-symbols-outlined text-on-primary-fixed" style="font-variation-settings: 'FILL' 1;">psychology</span>
+</div>
+<div>
+<h1 class="text-2xl font-black text-white leading-none">ARTEMIS v2.4</h1>
+<p class="text-[10px] uppercase tracking-[0.2em] text-tertiary mt-1">Status: Thinking</p>
+</div>
+</div>
+<nav class="space-y-2">
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/5 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="monitor_heart">monitor_heart</span>
+<span class="text-sm font-medium">Diagnostic HUD</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/5 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span class="text-sm font-medium">Neural MCP</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg bg-[#b884ff]/10 text-[#b884ff] border-r-2 border-[#b884ff]" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="text-sm font-medium">Code Lab</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-lg text-white/40 hover:text-white/80 hover:bg-white/5 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+<span class="text-sm font-medium">System Logs</span>
+</a>
+</nav>
+</div>
+<div class="mt-auto p-6 bg-surface-container-low">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-variant">
+<img alt="Artemis Core" data-alt="Microscopic view of an iridescent silicon neural chip with glowing violet circuitry connections and deep obsidian background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcwqLRzlcDHuXOL0k8cgnurggnkOXybxbF4vGDVvh859Jj7yTWROv0jyaI2WYPmSW9L9cEsOX04QCQR5NcZuMmT-UBuHBhsqaE7qYUB8-1RgI3W3GRlsqG33_heHW-9up4L1WJQrrGVWy5Rde4ci6P_370yv6wcr1ikfSpzqHDDl1R-cVfK27XQpL2zW7Hk3YAYCnKxPcctg-lqOSWErHqNZLsXiZ0C_ZnNNlXqcQBOxiETiUAGW25obQpnezd71j92efAoAROoGun"/>
+</div>
+<div>
+<p class="text-xs font-bold text-white uppercase tracking-wider">LLM-7b-Quantum</p>
+<p class="text-[10px] text-white/40">Uptime: 99.9%</p>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col md:ml-72 relative">
+<!-- TopAppBar (Shared Component) -->
+<header class="fixed top-0 w-full md:w-[calc(100%-18rem)] z-50 bg-[#0e0e10]/80 backdrop-blur-xl border-b border-white/10 flex justify-between items-center px-6 h-16">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#74b1ff]" data-icon="terminal">terminal</span>
+<span class="text-xl font-bold text-[#74b1ff] drop-shadow-[0_0_8px_rgba(116,177,255,0.5)] font-headline tracking-widest uppercase">ARTEMIS_OS</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden sm:flex items-center gap-4 text-sm font-headline tracking-widest text-white/60">
+<span class="text-[#81ecff]">AAL EDITOR</span>
+<span class="hover:text-[#74b1ff] transition-colors cursor-pointer">DOCUMENTATION</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="active:scale-95 duration-200 text-white/60 hover:text-[#74b1ff] transition-colors">
+<span class="material-symbols-outlined" data-icon="settings_input_component">settings_input_component</span>
+</button>
+<div class="w-8 h-8 rounded-full border border-primary/30 p-0.5">
+<img alt="AI Core Orb" class="rounded-full w-full h-full object-cover" data-alt="A spherical glowing energy core pulsating with electric blue and deep violet light trapped in a glass shell" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCp_PlNzhhc03nwivjJnxFhWz95l8_WVAdRxYk8-Ae3nIoAm2qJ_N84u2nVdlamrGc_5tnFggRK0rbeFYcJN3Y1xvMTOzS89L1WvfkEqAxEqgtk-XByMmuR7ubKW8-FWb8cTFki1o_Jry-wzjmLH9maa6ShSg7NBRVpFm_JX9EJX2h5S7sarNxNXdMgpGqTrGeA5d3i6f2_m88tdjUgKMj6Am5HpBQ8ICyyhKZGDSvCow9vpEFIwOQxFmJmYvMjbWhd3AnpALiBetKF"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Editor Content Canvas -->
+<div class="mt-16 flex-1 flex flex-col p-6 overflow-hidden">
+<!-- Editor Title & Action Bar -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+<div>
+<div class="flex items-center gap-2 text-[10px] font-headline text-tertiary tracking-[0.3em] uppercase mb-1">
+<span>Project</span>
+<span class="opacity-30">/</span>
+<span>Automations</span>
+<span class="opacity-30">/</span>
+<span class="text-white">night_protocol_01</span>
+</div>
+<h2 class="text-3xl font-headline font-bold text-white flex items-center gap-3">
+                        Edit AAL Module
+                        <span class="w-2 h-2 rounded-full bg-on-tertiary-fixed animate-pulse"></span>
+</h2>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-6 py-2.5 rounded-full glass-panel text-white font-headline text-sm tracking-wider hover:bg-white/5 active:scale-95 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">play_circle</span>
+                        Test Logic
+                    </button>
+<button class="px-8 py-2.5 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold text-sm tracking-wider shadow-[0_0_20px_rgba(116,177,255,0.3)] hover:shadow-[0_0_30px_rgba(116,177,255,0.5)] active:scale-95 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">save</span>
+                        Save Automation
+                    </button>
+</div>
+</div>
+<!-- Code Editor Area -->
+<div class="flex-1 min-h-0 flex flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl relative border border-white/5">
+<div class="flex items-center justify-between px-4 py-2 bg-surface-container-low border-b border-white/5">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-error/20 border border-error/30"></div>
+<div class="w-3 h-3 rounded-full bg-tertiary/20 border border-tertiary/30"></div>
+<div class="w-3 h-3 rounded-full bg-primary/20 border border-primary/30"></div>
+</div>
+<span class="text-[10px] font-headline tracking-widest text-white/30 uppercase">aal_core_engine_v1.aal</span>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-white/20 text-sm">content_copy</span>
+<span class="material-symbols-outlined text-white/20 text-sm">history</span>
+</div>
+</div>
+<div class="flex-1 flex overflow-hidden">
+<!-- Line Numbers -->
+<div class="w-12 bg-black/20 flex flex-col items-center py-6 text-[10px] font-headline text-white/20 leading-[2.5rem] select-none">
+<span>01</span><span>02</span><span>03</span><span>04</span><span>05</span><span>06</span><span>07</span><span>08</span><span>09</span><span>10</span><span>11</span><span>12</span>
+</div>
+<!-- Editor Space -->
+<div class="flex-1 p-6 font-mono text-sm md:text-base leading-[2.5rem] overflow-y-auto code-editor-gradient">
+<div class="flex items-center gap-3">
+<span class="text-primary font-bold font-headline tracking-widest uppercase">WHEN</span>
+<span class="text-on-surface">system.time</span>
+<span class="text-tertiary">IS</span>
+<span class="px-2 py-0.5 rounded bg-surface-variant text-secondary border border-white/5 text-xs">22:00_PST</span>
+</div>
+<div class="flex items-center gap-3 pl-8">
+<span class="text-primary font-bold font-headline tracking-widest uppercase">AND</span>
+<span class="text-on-surface">environment.security_level</span>
+<span class="text-tertiary">GREATER_THAN</span>
+<span class="px-2 py-0.5 rounded bg-surface-variant text-secondary border border-white/5 text-xs">LEVEL_04</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-primary font-bold font-headline tracking-widest uppercase">IF</span>
+<span class="text-on-surface">user.location</span>
+<span class="text-tertiary">IN</span>
+<span class="px-2 py-0.5 rounded bg-surface-variant text-secondary border border-white/5 text-xs">"PRIMARY_CHAMBER"</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-primary font-bold font-headline tracking-widest uppercase">THEN</span>
+<span class="text-on-surface">core.initiate_sequence</span>
+<span class="px-2 py-0.5 rounded bg-surface-variant text-secondary border border-white/5 text-xs">"DIM_ALL_LIGHTS"</span>
+</div>
+<div class="flex items-center gap-3 pl-8">
+<span class="text-primary font-bold font-headline tracking-widest uppercase">SET</span>
+<span class="text-on-surface">ambient.noise_cancellation</span>
+<span class="text-tertiary">TO</span>
+<span class="text-on-tertiary-fixed font-bold">MAXIMUM</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-primary font-bold font-headline tracking-widest uppercase">ELSE</span>
+<span class="text-on-surface">system.notify</span>
+<span class="px-2 py-0.5 rounded bg-surface-variant text-secondary border border-white/5 text-xs">"REST_PENDING"</span>
+</div>
+<div class="w-full h-1 bg-primary/20 animate-pulse mt-2"></div>
+</div>
+</div>
+<!-- Proactive Feedback Panel -->
+<div class="p-6 bg-surface-container border-t border-white/10">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 shrink-0 rounded-xl bg-[#b884ff]/10 flex items-center justify-center border border-[#b884ff]/20">
+<span class="material-symbols-outlined text-[#b884ff]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div class="space-y-1">
+<h4 class="text-xs font-headline font-bold text-tertiary tracking-widest uppercase">Artemis Interpretation</h4>
+<p class="text-sm text-white/70 leading-relaxed max-w-2xl italic">
+                                "I understand. Every night at 10:00 PM, if security protocols are active and you are in the primary chamber, I will create a focused atmosphere by dimming lights and enabling full noise suppression. If you are elsewhere, I'll just send a reminder that rest mode is pending. Shall I run a simulation?"
+                            </p>
+</div>
+<div class="ml-auto flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-white/5 text-white/40"><span class="material-symbols-outlined text-sm">thumb_up</span></button>
+<button class="p-2 rounded-full hover:bg-white/5 text-white/40"><span class="material-symbols-outlined text-sm">thumb_down</span></button>
+</div>
+</div>
+</div>
+</div>
+<!-- Contextual Stats Bento -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6 mb-20 md:mb-6">
+<div class="glass-panel p-4 rounded-xl flex flex-col justify-center">
+<p class="text-[10px] text-white/30 uppercase font-headline tracking-widest">Logic Complexity</p>
+<div class="flex items-center justify-between mt-1">
+<span class="text-xl font-bold font-headline">O(n) Stable</span>
+<span class="material-symbols-outlined text-tertiary text-lg">schema</span>
+</div>
+</div>
+<div class="glass-panel p-4 rounded-xl flex flex-col justify-center">
+<p class="text-[10px] text-white/30 uppercase font-headline tracking-widest">Execution Latency</p>
+<div class="flex items-center justify-between mt-1">
+<span class="text-xl font-bold font-headline">~14ms</span>
+<span class="material-symbols-outlined text-secondary text-lg">bolt</span>
+</div>
+</div>
+<div class="glass-panel p-4 rounded-xl flex flex-col justify-center">
+<p class="text-[10px] text-white/30 uppercase font-headline tracking-widest">Conflict Risk</p>
+<div class="flex items-center justify-between mt-1">
+<span class="text-xl font-bold font-headline">Zero Det.</span>
+<span class="material-symbols-outlined text-on-tertiary-fixed text-lg">verified_user</span>
+</div>
+</div>
+<div class="glass-panel p-4 rounded-xl flex flex-col justify-center border-l-2 border-primary">
+<p class="text-[10px] text-white/30 uppercase font-headline tracking-widest">AAL Syntax</p>
+<div class="flex items-center justify-between mt-1">
+<span class="text-xl font-bold font-headline">Valid v2.4</span>
+<span class="material-symbols-outlined text-primary text-lg">check_circle</span>
+</div>
+</div>
+</div>
+</div>
+<!-- BottomNavBar (Shared Component - Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 bg-[#0e0e10]/90 backdrop-blur-2xl rounded-t-3xl border-t border-white/10 pb-safe">
+<button class="flex flex-col items-center justify-center text-[#81ecff] drop-shadow-[0_0_10px_rgba(129,236,255,0.8)] active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="dashboard_customize">dashboard_customize</span>
+</button>
+<button class="flex flex-col items-center justify-center text-white/30 hover:bg-[#74b1ff]/5 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+</button>
+<button class="flex flex-col items-center justify-center text-white/30 hover:bg-[#74b1ff]/5 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="code_blocks">code_blocks</span>
+</button>
+<button class="flex flex-col items-center justify-center text-white/30 hover:bg-[#74b1ff]/5 active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+</button>
+</nav>
+</main>
+<!-- Floating UI Decoration (Luminous Void Anchor) -->
+<div class="fixed top-1/2 -right-24 w-96 h-96 bg-primary/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+<div class="fixed -bottom-48 -left-24 w-[32rem] h-[32rem] bg-secondary/5 blur-[150px] rounded-full pointer-events-none -z-10"></div>
+</body></html>

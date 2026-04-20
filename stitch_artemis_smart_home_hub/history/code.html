@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#002345",
+                        "surface-container-highest": "#262529",
+                        "tertiary-container": "#00e3fd",
+                        "secondary-dim": "#9547f7",
+                        "on-tertiary-fixed-variant": "#005762",
+                        "primary": "#74b1ff",
+                        "tertiary-dim": "#00d4ec",
+                        "on-tertiary-fixed": "#003840",
+                        "primary-fixed": "#54a3ff",
+                        "surface-tint": "#74b1ff",
+                        "primary-dim": "#4da0ff",
+                        "secondary-fixed": "#e1c7ff",
+                        "secondary": "#b884ff",
+                        "surface-variant": "#262529",
+                        "on-error-container": "#ffa8a3",
+                        "on-error": "#490006",
+                        "surface-container-low": "#131316",
+                        "surface-bright": "#2c2c2f",
+                        "outline": "#767578",
+                        "tertiary-fixed-dim": "#00d4ec",
+                        "primary-container": "#54a3ff",
+                        "secondary-fixed-dim": "#d6b6ff",
+                        "inverse-surface": "#fcf8fb",
+                        "on-primary-fixed": "#000000",
+                        "surface-container-high": "#1f1f22",
+                        "error": "#ff716c",
+                        "error-container": "#9f0519",
+                        "surface": "#0e0e10",
+                        "inverse-on-surface": "#565457",
+                        "error-dim": "#d7383b",
+                        "on-secondary-container": "#ebd8ff",
+                        "tertiary": "#81ecff",
+                        "surface-container": "#19191c",
+                        "surface-container-lowest": "#000000",
+                        "on-background": "#fffbfe",
+                        "on-secondary-fixed-variant": "#6f08d0",
+                        "on-secondary": "#2f0060",
+                        "on-primary": "#002f59",
+                        "inverse-primary": "#0060ac",
+                        "on-tertiary-container": "#004d57",
+                        "on-secondary-fixed": "#4a0090",
+                        "on-surface": "#fffbfe",
+                        "tertiary-fixed": "#00e3fd",
+                        "background": "#0e0e10",
+                        "outline-variant": "#48474a",
+                        "surface-dim": "#0e0e10",
+                        "secondary-container": "#6e06d0",
+                        "on-surface-variant": "#adaaad",
+                        "on-primary-fixed-variant": "#002d55",
+                        "primary-fixed-dim": "#2695ff",
+                        "on-tertiary": "#005762"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(38, 37, 41, 0.2);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .orb-glow {
+            background: radial-gradient(circle at center, #74b1ff 0%, transparent 70%);
+            filter: blur(40px);
+            opacity: 0.15;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary/30 selection:text-primary min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="bg-[#0e0e10]/60 backdrop-blur-2xl fixed top-0 w-full z-50 shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex justify-between items-center px-6 h-20 w-full">
+<div class="flex items-center gap-4">
+<button class="text-white/60 hover:text-[#81ecff] transition-all duration-300">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="text-xl font-black tracking-tighter text-white drop-shadow-[0_0_12px_rgba(116,177,255,0.6)] font-['Space_Grotesk'] tracking-widest font-bold uppercase">Artemis</h1>
+</div>
+<div class="w-10 h-10 rounded-full border border-outline-variant/30 overflow-hidden">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="Close up portrait of a stylish person with soft atmospheric lighting and blurred tech background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAopJbKkJoOQo_7Xcn_iJTn8keDg-55qKeh_gCkONNg-rmArX-9NlZPtU0-UUPRopIkC9lh9H19Bugb-_LOfv4Z8AjibZ9HAi6wox_c1VmU0_iu-aOuX7c6NcYT_6z3ngpL668w9lj0vRM0HeS-1h9ta0XCg8-Id66g4ZuLRrRbmcJach8AHKsTW0anLIkhWWPA8kmTqV96XxHY393BvYtkmOkeMLewp5Zi2az7huE658cCIy9kWahPXgogXgMx642WHZSKhBhJBomX"/>
+</div>
+</header>
+<main class="pt-28 px-6 max-w-4xl mx-auto">
+<!-- Section Header -->
+<div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<span class="font-label text-[10px] font-bold uppercase tracking-[0.3em] text-primary mb-2 block">System Logs</span>
+<h2 class="font-headline text-4xl font-bold tracking-tight text-white">Action History</h2>
+</div>
+<!-- Filter Chips -->
+<div class="flex flex-wrap gap-3">
+<button class="px-5 py-2 rounded-full bg-primary-container text-on-primary-container text-xs font-bold uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(116,177,255,0.4)]">
+                    All
+                </button>
+<button class="px-5 py-2 rounded-full glass-panel border border-outline-variant/15 text-white/60 text-xs font-bold uppercase tracking-wider transition-all hover:text-white hover:border-white/20">
+                    Command
+                </button>
+<button class="px-5 py-2 rounded-full glass-panel border border-outline-variant/15 text-white/60 text-xs font-bold uppercase tracking-wider transition-all hover:text-white hover:border-white/20">
+                    Suggestion
+                </button>
+<button class="px-5 py-2 rounded-full glass-panel border border-outline-variant/15 text-white/60 text-xs font-bold uppercase tracking-wider transition-all hover:text-white hover:border-white/20">
+                    Automation
+                </button>
+</div>
+</div>
+<!-- Timeline -->
+<div class="relative space-y-8 before:content-[''] before:absolute before:left-3 before:top-4 before:bottom-0 before:w-[1px] before:bg-gradient-to-b before:from-primary/40 before:to-transparent">
+<!-- Entry 1 (Expanded State Simulation) -->
+<div class="relative pl-10 group">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-surface border-2 border-primary shadow-[0_0_10px_rgba(116,177,255,0.5)] z-10 flex items-center justify-center">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+</div>
+<div class="glass-panel border border-outline-variant/10 rounded-2xl p-6 transition-all duration-500 hover:border-primary/30 group-hover:bg-[#19191c]/40">
+<div class="flex flex-wrap justify-between items-start gap-2 mb-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-sm">bolt</span>
+<h3 class="font-headline text-lg font-semibold text-white">Security Perimeter Active</h3>
+</div>
+<p class="text-white/40 text-xs font-label uppercase tracking-widest">14:22 • AUTOMATION</p>
+</div>
+<span class="material-symbols-outlined text-white/20 group-hover:text-primary transition-colors">expand_less</span>
+</div>
+<div class="mt-4 pt-4 border-t border-outline-variant/10">
+<p class="text-white/60 text-sm leading-relaxed mb-4">Triggered by: <span class="text-tertiary">Geofence exit detected</span>. All ground-floor smart locks engaged and surveillance cameras switched to 'Away' mode.</p>
+<div class="bg-surface-container-lowest/50 rounded-xl p-4 border-l-2 border-primary/50">
+<span class="text-[10px] font-bold text-primary uppercase tracking-tighter mb-2 block">System Context</span>
+<div class="flex gap-3">
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-xs">smart_toy</span>
+</div>
+<p class="text-white/50 text-xs italic">"User has departed primary residence radius. Executing 'Lockdown' protocol as per routine 4. Atmospheric light transition initiated."</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Entry 2 -->
+<div class="relative pl-10 group">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-surface border-2 border-secondary/40 z-10 flex items-center justify-center">
+<div class="w-2 h-2 rounded-full bg-secondary/40"></div>
+</div>
+<div class="glass-panel border border-outline-variant/10 rounded-2xl p-6 transition-all duration-300 hover:border-secondary/30">
+<div class="flex flex-wrap justify-between items-start gap-2">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-secondary text-sm">lightbulb</span>
+<h3 class="font-headline text-lg font-semibold text-white">Scene Change: Deep Focus</h3>
+</div>
+<p class="text-white/40 text-xs font-label uppercase tracking-widest">12:05 • COMMAND</p>
+</div>
+<span class="material-symbols-outlined text-white/20 group-hover:text-secondary transition-colors">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Entry 3 -->
+<div class="relative pl-10 group">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-surface border-2 border-tertiary/40 z-10 flex items-center justify-center">
+<div class="w-2 h-2 rounded-full bg-tertiary/40"></div>
+</div>
+<div class="glass-panel border border-outline-variant/10 rounded-2xl p-6 transition-all duration-300 hover:border-tertiary/30">
+<div class="flex flex-wrap justify-between items-start gap-2">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-tertiary text-sm">chat_bubble</span>
+<h3 class="font-headline text-lg font-semibold text-white">Grocery List Synced</h3>
+</div>
+<p class="text-white/40 text-xs font-label uppercase tracking-widest">09:15 • SUGGESTION</p>
+</div>
+<span class="material-symbols-outlined text-white/20 group-hover:text-tertiary transition-colors">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Entry 4 -->
+<div class="relative pl-10 group">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-surface border-2 border-primary/40 z-10 flex items-center justify-center">
+<div class="w-2 h-2 rounded-full bg-primary/40"></div>
+</div>
+<div class="glass-panel border border-outline-variant/10 rounded-2xl p-6 transition-all duration-300 hover:border-primary/30">
+<div class="flex flex-wrap justify-between items-start gap-2">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-sm">thermostat</span>
+<h3 class="font-headline text-lg font-semibold text-white">Climate Adjusted</h3>
+</div>
+<p class="text-white/40 text-xs font-label uppercase tracking-widest">07:30 • AUTOMATION</p>
+</div>
+<span class="material-symbols-outlined text-white/20 group-hover:text-primary transition-colors">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+<!-- End of logs -->
+<div class="mt-12 text-center pb-12">
+<p class="text-white/20 text-[10px] font-bold uppercase tracking-[0.5em]">End of Transmission</p>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-[#0e0e10]/80 backdrop-blur-3xl fixed bottom-0 left-0 w-full z-50 rounded-t-[2rem] shadow-[0_-8px_32px_rgba(0,0,0,0.8)] fixed bottom-0 w-full flex justify-around items-center px-8 pb-8 pt-4">
+<button class="flex flex-col items-center justify-center text-white/30 hover:text-white/80 transition-colors">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-white/30 hover:text-white/80 transition-colors">
+<span class="material-symbols-outlined mb-1">settings_remote</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Devices</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#74b1ff] drop-shadow-[0_0_8px_rgba(116,177,255,0.8)] scale-110 duration-500 ease-out">
+<span class="material-symbols-outlined mb-1">api</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Functions</span>
+</button>
+<button class="flex flex-col items-center justify-center text-white/30 hover:text-white/80 transition-colors">
+<span class="material-symbols-outlined mb-1">auto_awesome</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Automations</span>
+</button>
+</nav>
+<!-- Decorative Glow Elements -->
+<div class="fixed top-0 right-0 w-[500px] h-[500px] orb-glow pointer-events-none -z-10 translate-x-1/2 -translate-y-1/2"></div>
+<div class="fixed bottom-0 left-0 w-[400px] h-[400px] orb-glow pointer-events-none -z-10 -translate-x-1/3 translate-y-1/3 opacity-10" style="background: radial-gradient(circle at center, #b884ff 0%, transparent 70%);"></div>
+</body></html>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#002345",
+                        "surface-container-highest": "#262529",
+                        "tertiary-container": "#00e3fd",
+                        "secondary-dim": "#9547f7",
+                        "on-tertiary-fixed-variant": "#005762",
+                        "primary": "#74b1ff",
+                        "tertiary-dim": "#00d4ec",
+                        "on-tertiary-fixed": "#003840",
+                        "primary-fixed": "#54a3ff",
+                        "surface-tint": "#74b1ff",
+                        "primary-dim": "#4da0ff",
+                        "secondary-fixed": "#e1c7ff",
+                        "secondary": "#b884ff",
+                        "surface-variant": "#262529",
+                        "on-error-container": "#ffa8a3",
+                        "on-error": "#490006",
+                        "surface-container-low": "#131316",
+                        "surface-bright": "#2c2c2f",
+                        "outline": "#767578",
+                        "tertiary-fixed-dim": "#00d4ec",
+                        "primary-container": "#54a3ff",
+                        "secondary-fixed-dim": "#d6b6ff",
+                        "inverse-surface": "#fcf8fb",
+                        "on-primary-fixed": "#000000",
+                        "surface-container-high": "#1f1f22",
+                        "error": "#ff716c",
+                        "error-container": "#9f0519",
+                        "surface": "#0e0e10",
+                        "inverse-on-surface": "#565457",
+                        "error-dim": "#d7383b",
+                        "on-secondary-container": "#ebd8ff",
+                        "tertiary": "#81ecff",
+                        "surface-container": "#19191c",
+                        "surface-container-lowest": "#000000",
+                        "on-background": "#fffbfe",
+                        "on-secondary-fixed-variant": "#6f08d0",
+                        "on-secondary": "#2f0060",
+                        "on-primary": "#002f59",
+                        "inverse-primary": "#0060ac",
+                        "on-tertiary-container": "#004d57",
+                        "on-secondary-fixed": "#4a0090",
+                        "on-surface": "#fffbfe",
+                        "tertiary-fixed": "#00e3fd",
+                        "background": "#0e0e10",
+                        "outline-variant": "#48474a",
+                        "surface-dim": "#0e0e10",
+                        "secondary-container": "#6e06d0",
+                        "on-surface-variant": "#adaaad",
+                        "on-primary-fixed-variant": "#002d55",
+                        "primary-fixed-dim": "#2695ff",
+                        "on-tertiary": "#005762"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(38, 37, 41, 0.2);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .orb-glow {
+            filter: blur(40px);
+            background: radial-gradient(circle, #74b1ff 0%, transparent 70%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/30 min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0e0e10]/60 backdrop-blur-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex justify-between items-center px-6 h-20 w-full">
+<div class="flex items-center gap-4">
+<button class="text-white/60 hover:text-[#81ecff] transition-all duration-300">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="text-xl font-black tracking-tighter text-white drop-shadow-[0_0_12px_rgba(116,177,255,0.6)] font-['Space_Grotesk'] uppercase tracking-widest">
+                Artemis
+            </h1>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-8 text-white/60 font-label text-xs uppercase tracking-widest font-bold">
+<a class="hover:text-[#81ecff] transition-all" href="#">Home</a>
+<a class="hover:text-[#81ecff] transition-all" href="#">Devices</a>
+<a class="hover:text-[#81ecff] transition-all" href="#">Functions</a>
+<a class="text-[#74b1ff]" href="#">Automations</a>
+</nav>
+<div class="w-10 h-10 rounded-full border border-outline-variant overflow-hidden">
+<img alt="User Profile Avatar" data-alt="portrait of a professional man with clean-cut style against a neutral dark background, soft cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkZ620XcNS5nrpfENX4sh_f2UnQWlDCwAPgJNrnTa8JpL0OI-Ks2UHG8qUMhPmhs_B6R0J2eNKcRrV2rpPdXE-NJ8BC3za0ufnOUltMEV1fuWYBDznTZ5tpF1RiAC_7sa0YsOjafeCp5oSsY4WuA1oVt5xwLPBRIt6CBhqFa38PtqOo__Ub1iHVA4XHm_bXc1yO-ZLyXTQshZd3ubhoYzpaDpmnncjLroRt-gL-Nz1nWCPIw25g4QmsHk9jnaxzp98o14tTmsrPh30"/>
+</div>
+</div>
+</header>
+<main class="relative pt-32 px-6 max-w-5xl mx-auto">
+<!-- Background Ambient Orb -->
+<div class="fixed top-1/4 -right-20 w-96 h-96 orb-glow opacity-20 pointer-events-none"></div>
+<div class="fixed bottom-1/4 -left-20 w-80 h-80 orb-glow opacity-10 pointer-events-none" style="background: radial-gradient(circle, #b884ff 0%, transparent 70%);"></div>
+<!-- Header Section -->
+<div class="mb-12 relative">
+<h2 class="font-headline text-5xl font-bold tracking-tight text-white mb-2">Automations</h2>
+<p class="text-on-surface-variant font-light max-w-md">Orchestrate your environment with sentient logic and reactive triggers.</p>
+</div>
+<!-- Create New Automation Card (CTA) -->
+<div class="mb-16">
+<button class="w-full group relative overflow-hidden p-[1px] rounded-[2rem] transition-transform duration-300 active:scale-[0.98]">
+<div class="absolute inset-0 bg-gradient-to-r from-primary via-tertiary to-secondary opacity-50 group-hover:opacity-100 transition-opacity"></div>
+<div class="relative bg-surface-container-low rounded-[2rem] p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 backdrop-blur-xl">
+<div class="flex items-start gap-6">
+<div class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500">
+<span class="material-symbols-outlined text-4xl" data-icon="add_circle">add_circle</span>
+</div>
+<div>
+<h3 class="text-2xl font-headline font-semibold text-white">Create New Automation</h3>
+<p class="text-on-surface-variant">Define custom triggers and intelligent responses.</p>
+</div>
+</div>
+<div class="flex items-center gap-2 text-primary font-bold uppercase tracking-tighter group-hover:gap-4 transition-all">
+<span>Begin Workflow</span>
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+</button>
+</div>
+<!-- Active Automations List (Bento-style Grid) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Automation Card 1 -->
+<div class="glass-panel p-8 rounded-[2rem] flex flex-col justify-between min-h-[240px]">
+<div class="flex justify-between items-start mb-8">
+<div class="flex items-center gap-3">
+<div class="p-2 rounded-lg bg-tertiary/10 text-tertiary">
+<span class="material-symbols-outlined" data-icon="wb_twilight">wb_twilight</span>
+</div>
+<span class="font-label uppercase tracking-widest text-[10px] text-tertiary font-black">Environmental</span>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-12 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</div>
+<div>
+<h4 class="text-xl font-headline font-medium text-white mb-4">Evening Ambiance</h4>
+<div class="space-y-4">
+<div class="flex items-center gap-3 text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span>IF <b class="text-white">Sunset</b></span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm" data-icon="lightbulb">lightbulb</span>
+<span>THEN <b class="text-white">Dim lights to 20% &amp; Play Lo-Fi</b></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Automation Card 2 -->
+<div class="glass-panel p-8 rounded-[2rem] flex flex-col justify-between min-h-[240px]">
+<div class="flex justify-between items-start mb-8">
+<div class="flex items-center gap-3">
+<div class="p-2 rounded-lg bg-secondary/10 text-secondary">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+</div>
+<span class="font-label uppercase tracking-widest text-[10px] text-secondary font-black">Security</span>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-12 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</div>
+</div>
+<div>
+<h4 class="text-xl font-headline font-medium text-white mb-4">Night Guard</h4>
+<div class="space-y-4">
+<div class="flex items-center gap-3 text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm" data-icon="door_sensor">door_sensor</span>
+<span>IF <b class="text-white">External Motion</b> (22:00-06:00)</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm" data-icon="notifications_active">notifications_active</span>
+<span>THEN <b class="text-white">Activate Perimeter &amp; Notify Admin</b></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Automation Card 3 -->
+<div class="glass-panel p-8 rounded-[2rem] flex flex-col justify-between min-h-[240px] md:col-span-2">
+<div class="flex justify-between items-start mb-8">
+<div class="flex items-center gap-3">
+<div class="p-2 rounded-lg bg-primary/10 text-primary">
+<span class="material-symbols-outlined" data-icon="energy_savings_leaf">energy_savings_leaf</span>
+</div>
+<span class="font-label uppercase tracking-widest text-[10px] text-primary font-black">Efficiency</span>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-12 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</div>
+</div>
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h4 class="text-xl font-headline font-medium text-white mb-4">Smart Thermal Optima</h4>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="flex items-center gap-3 text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm" data-icon="sensor_occupied">sensor_occupied</span>
+<span>IF <b class="text-white">Room Unoccupied</b> (&gt;30m)</span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm" data-icon="thermostat">thermostat</span>
+<span>THEN <b class="text-white">Eco-Mode HVAC (-4°)</b></span>
+</div>
+</div>
+</div>
+<div class="text-xs font-label uppercase tracking-[0.2em] text-white/30 italic">
+                        Deactivated 2 days ago
+                    </div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 rounded-t-[2rem] bg-[#0e0e10]/80 backdrop-blur-3xl shadow-[0_-8px_32px_rgba(0,0,0,0.8)] flex justify-around items-center px-8 pb-8 pt-4">
+<a class="flex flex-col items-center justify-center text-white/30 hover:text-white/80 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-white/30 hover:text-white/80 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings_remote">settings_remote</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Devices</span>
+</a>
+<a class="flex flex-col items-center justify-center text-white/30 hover:text-white/80 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="api">api</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Functions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#74b1ff] drop-shadow-[0_0_8px_rgba(116,177,255,0.8)] scale-110 duration-500 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Automations</span>
+</a>
+</nav>
+</body></html>

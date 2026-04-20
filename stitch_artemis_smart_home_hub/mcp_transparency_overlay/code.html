@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ARTEMIS_OS | Neural MCP Overlay</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .mono-tech { font-family: 'JetBrains Mono', monospace; }
+        .glass-panel {
+            background: rgba(14, 14, 16, 0.8);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .luminous-glow-primary {
+            box-shadow: 0 0 20px rgba(116, 177, 255, 0.15);
+        }
+        .luminous-glow-secondary {
+            box-shadow: 0 0 20px rgba(184, 132, 255, 0.15);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed": "#000000",
+                        "on-tertiary-fixed": "#003840",
+                        "primary-fixed-dim": "#2695ff",
+                        "inverse-on-surface": "#565457",
+                        "secondary": "#b884ff",
+                        "surface-container-lowest": "#000000",
+                        "secondary-container": "#6e06d0",
+                        "on-tertiary": "#005762",
+                        "tertiary-dim": "#00d4ec",
+                        "on-secondary-container": "#ebd8ff",
+                        "on-background": "#fffbfe",
+                        "on-primary-container": "#002345",
+                        "secondary-fixed": "#e1c7ff",
+                        "background": "#0e0e10",
+                        "surface-container-low": "#131316",
+                        "on-error-container": "#ffa8a3",
+                        "on-secondary-fixed": "#4a0090",
+                        "surface-tint": "#74b1ff",
+                        "on-primary-fixed-variant": "#002d55",
+                        "on-tertiary-fixed-variant": "#005762",
+                        "surface-variant": "#262529",
+                        "surface-bright": "#2c2c2f",
+                        "primary-container": "#54a3ff",
+                        "on-surface": "#fffbfe",
+                        "surface-container-high": "#1f1f22",
+                        "on-primary": "#002f59",
+                        "error-container": "#9f0519",
+                        "tertiary-container": "#00e3fd",
+                        "inverse-surface": "#fcf8fb",
+                        "secondary-fixed-dim": "#d6b6ff",
+                        "tertiary-fixed": "#00e3fd",
+                        "on-secondary": "#2f0060",
+                        "tertiary": "#81ecff",
+                        "surface": "#0e0e10",
+                        "surface-container-highest": "#262529",
+                        "primary-dim": "#4da0ff",
+                        "on-error": "#490006",
+                        "surface-container": "#19191c",
+                        "outline-variant": "#48474a",
+                        "error-dim": "#d7383b",
+                        "surface-dim": "#0e0e10",
+                        "primary": "#74b1ff",
+                        "inverse-primary": "#0060ac",
+                        "on-surface-variant": "#adaaad",
+                        "tertiary-fixed-dim": "#00d4ec",
+                        "on-tertiary-container": "#004d57",
+                        "primary-fixed": "#54a3ff",
+                        "outline": "#767578",
+                        "error": "#ff716c",
+                        "on-secondary-fixed-variant": "#6f08d0",
+                        "secondary-dim": "#9547f7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body overflow-hidden">
+<!-- Top Navigation Shell -->
+<header class="bg-[#0e0e10]/80 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-white/10 flex justify-between items-center px-6 h-16">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-secondary animate-pulse shadow-[0_0_15px_rgba(116,177,255,0.5)]"></div>
+<span class="font-headline tracking-widest uppercase text-xl font-bold text-[#74b1ff] drop-shadow-[0_0_8px_rgba(116,177,255,0.5)]">ARTEMIS_OS</span>
+</div>
+<div class="flex items-center gap-6">
+<span class="material-symbols-outlined text-white/60 hover:text-[#74b1ff] transition-colors cursor-pointer" data-icon="settings_input_component">settings_input_component</span>
+</div>
+</header>
+<!-- Main Content Canvas (Blurred Background) -->
+<main class="h-screen pt-16 pb-20 px-6 grid grid-cols-12 gap-6 opacity-30">
+<div class="col-span-12 md:col-span-8 lg:col-span-9 space-y-8 py-8">
+<h1 class="font-headline text-5xl font-black text-white">System Diagnostics</h1>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+<div class="h-48 rounded-xl bg-surface-container-high border border-white/5"></div>
+<div class="h-48 rounded-xl bg-surface-container-high border border-white/5"></div>
+<div class="h-48 rounded-xl bg-surface-container-high border border-white/5"></div>
+</div>
+</div>
+</main>
+<!-- MCP TRANSPARENCY OVERLAY (The Core Task) -->
+<section class="fixed inset-x-0 bottom-0 z-[60] h-[751px] glass-panel rounded-t-[3rem] border-t border-white/10 shadow-[0_-20px_60px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col">
+<!-- Drag Handle / Header -->
+<div class="w-full flex flex-col items-center py-4">
+<div class="w-12 h-1 bg-white/20 rounded-full mb-6"></div>
+<div class="flex items-center gap-3 px-8 w-full">
+<div class="flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/10 border border-secondary/20">
+<span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+<span class="text-secondary text-[10px] font-headline tracking-widest uppercase">Thinking</span>
+</div>
+<div class="h-[1px] flex-grow bg-gradient-to-r from-secondary/20 via-transparent to-transparent"></div>
+<div class="mono-tech text-[10px] text-white/40">NODE_ID: LLM-7B-QUANTUM-04</div>
+</div>
+</div>
+<div class="flex-grow grid grid-cols-1 md:grid-cols-12 overflow-y-auto px-8 pb-12 gap-8">
+<!-- Left Column: Intent & Reasoning -->
+<div class="col-span-1 md:col-span-7 space-y-8">
+<!-- Intent Detection Card -->
+<div class="relative p-6 rounded-2xl bg-surface-container-low border border-white/5 luminous-glow-primary overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-5">
+<span class="material-symbols-outlined text-6xl" data-icon="psychology">psychology</span>
+</div>
+<label class="text-primary text-xs font-headline tracking-[0.2em] uppercase mb-4 block">Intent Detected</label>
+<div class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary text-4xl" data-icon="target">target</span>
+<div>
+<h2 class="font-headline text-2xl text-white font-medium">"Turn on the studio fan"</h2>
+<p class="text-white/60 text-sm mt-1">Confidence Score: <span class="text-tertiary mono-tech">0.9984</span></p>
+</div>
+</div>
+</div>
+<!-- Logic Flow (Bento Grid Style) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Context Card -->
+<div class="p-5 rounded-2xl bg-surface-container-highest/40 border border-white/5">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-tertiary text-sm" data-icon="thermometer">thermometer</span>
+<span class="text-white/40 text-[10px] font-headline uppercase tracking-wider">Context Evaluated</span>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<span class="text-white/60 text-xs">Ambient Temp</span>
+<span class="mono-tech text-tertiary text-sm">29.4°C</span>
+</div>
+<div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+<div class="w-3/4 h-full bg-gradient-to-r from-tertiary/20 to-tertiary"></div>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-white/60 text-xs">Studio Occupancy</span>
+<span class="mono-tech text-tertiary text-sm">DETECTED</span>
+</div>
+</div>
+</div>
+<!-- Tool Selection Card -->
+<div class="p-5 rounded-2xl bg-surface-container-highest/40 border border-white/5">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="construction">construction</span>
+<span class="text-white/40 text-[10px] font-headline uppercase tracking-wider">Tool Selection</span>
+</div>
+<div class="space-y-3">
+<div class="p-2 rounded-lg bg-secondary/10 border border-secondary/20 flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-lg" data-icon="developer_board">developer_board</span>
+<span class="mono-tech text-[11px] text-secondary">Arduino_Executor.v2</span>
+</div>
+<div class="text-[10px] text-white/30 italic">
+                                Executing endpoint: /api/v1/relays/studio_fan/state/ON
+                            </div>
+</div>
+</div>
+</div>
+<!-- Logic Reasoning Area -->
+<div class="p-6 rounded-2xl bg-surface-container-low border border-white/5">
+<label class="text-white/40 text-[10px] font-headline tracking-[0.2em] uppercase mb-4 block">Neural Logic Reasoning</label>
+<div class="mono-tech text-sm text-white/80 space-y-2 leading-relaxed">
+<div class="flex gap-2">
+<span class="text-primary opacity-50">&gt;</span>
+<p>Analyzing environment telemetry...</p>
+</div>
+<div class="flex gap-2">
+<span class="text-primary opacity-50">&gt;</span>
+<p>Threshold (24.0°C) exceeded by <span class="text-error">5.4°C</span>.</p>
+</div>
+<div class="flex gap-2">
+<span class="text-primary opacity-50">&gt;</span>
+<p>Cross-referencing power budget: <span class="text-tertiary">OPTIMAL</span>.</p>
+</div>
+<div class="flex gap-2">
+<span class="text-primary opacity-50">&gt;</span>
+<p>Synthesizing Arduino control signal... <span class="animate-pulse">_</span></p>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Visual Data & Stats -->
+<div class="col-span-1 md:col-span-5 space-y-6">
+<!-- Abstract Neural Visualization -->
+<div class="aspect-square relative rounded-3xl overflow-hidden bg-surface-container-lowest border border-white/5 flex items-center justify-center">
+<div class="absolute inset-0 opacity-20">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary/30 rounded-full blur-[80px]"></div>
+<div class="absolute top-1/3 left-1/4 w-40 h-40 bg-secondary/30 rounded-full blur-[60px]"></div>
+</div>
+<!-- SVG Data Viz -->
+<svg class="w-4/5 h-4/5 text-white/10" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="45" stroke="currentColor" stroke-dasharray="2 2" stroke-width="0.5"></circle>
+<circle cx="50" cy="50" fill="none" r="35" stroke="currentColor" stroke-width="0.5"></circle>
+<!-- Neural Connectors -->
+<path d="M50 15 L50 35 M85 50 L65 50 M50 85 L50 65 M15 50 L35 50" stroke="currentColor" stroke-width="1"></path>
+<!-- Active Node -->
+<circle class="animate-pulse" cx="50" cy="50" fill="url(#grad1)" r="8"></circle>
+<defs>
+<lineargradient id="grad1" x1="0%" x2="100%" y1="0%" y2="100%">
+<stop offset="0%" style="stop-color:#74b1ff;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#b884ff;stop-opacity:1"></stop>
+</lineargradient>
+</defs>
+</svg>
+<!-- Real-time Stats Overlay -->
+<div class="absolute bottom-6 left-6 right-6 flex justify-between gap-2">
+<div class="text-center">
+<div class="mono-tech text-xs text-white">42ms</div>
+<div class="text-[9px] uppercase tracking-tighter text-white/40">Latency</div>
+</div>
+<div class="text-center">
+<div class="mono-tech text-xs text-white">0.024</div>
+<div class="text-[9px] uppercase tracking-tighter text-white/40">Loss</div>
+</div>
+<div class="text-center">
+<div class="mono-tech text-xs text-white">124k</div>
+<div class="text-[9px] uppercase tracking-tighter text-white/40">Tokens</div>
+</div>
+</div>
+</div>
+<!-- System Logs (Shared Component Style) -->
+<div class="bg-surface-container-high/60 rounded-2xl p-6 border border-white/5 space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-white/40 text-[10px] font-headline uppercase tracking-wider">System Logs</span>
+<span class="material-symbols-outlined text-white/20 text-sm" data-icon="database">database</span>
+</div>
+<div class="space-y-3">
+<div class="flex items-center gap-3">
+<div class="w-1.5 h-1.5 rounded-full bg-tertiary"></div>
+<span class="mono-tech text-[11px] text-white/60">T+0.04s: Request intercepted</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-1.5 h-1.5 rounded-full bg-tertiary"></div>
+<span class="mono-tech text-[11px] text-white/60">T+0.12s: Logic sequence primed</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-1.5 h-1.5 rounded-full bg-secondary"></div>
+<span class="mono-tech text-[11px] text-secondary">T+0.45s: Output generated</span>
+</div>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full py-4 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary-container font-headline font-bold uppercase tracking-widest text-sm shadow-[0_8px_30px_rgba(116,177,255,0.3)] active:scale-95 transition-all">
+                    Execute Logic Process
+                </button>
+</div>
+</div>
+</section>
+<!-- Bottom Navigation Shell (Always Rendered for Top Level) -->
+<nav class="bg-[#0e0e10]/90 backdrop-blur-2xl fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe rounded-t-3xl border-t border-white/10">
+<a class="flex flex-col items-center justify-center text-white/30 hover:bg-[#74b1ff]/5 p-2 rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="dashboard_customize">dashboard_customize</span>
+<span class="font-headline text-[10px] uppercase tracking-tighter mt-1">Dashboard</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#81ecff] drop-shadow-[0_0_10px_rgba(129,236,255,0.8)] p-2 rounded-xl" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="memory">memory</span>
+<span class="font-headline text-[10px] uppercase tracking-tighter mt-1">Neural MCP</span>
+</a>
+<a class="flex flex-col items-center justify-center text-white/30 hover:bg-[#74b1ff]/5 p-2 rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="code_blocks">code_blocks</span>
+<span class="font-headline text-[10px] uppercase tracking-tighter mt-1">Code Lab</span>
+</a>
+<a class="flex flex-col items-center justify-center text-white/30 hover:bg-[#74b1ff]/5 p-2 rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="security">security</span>
+<span class="font-headline text-[10px] uppercase tracking-tighter mt-1">Security</span>
+</a>
+</nav>
+<!-- Navigation Drawer (Desktop Anchor) -->
+<aside class="hidden lg:flex fixed left-0 top-0 h-screen z-40 bg-[#0e0e10] h-full w-72 border-r border-white/5 flex-col p-6">
+<div class="mb-10">
+<h2 class="text-2xl font-black text-white font-headline">ARTEMIS v2.4</h2>
+<p class="text-white/40 text-xs mono-tech mt-1">Status: Thinking</p>
+</div>
+<nav class="space-y-2 flex-grow">
+<div class="flex items-center gap-4 p-4 rounded-xl text-white/40 hover:bg-white/5 transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="monitor_heart">monitor_heart</span>
+<span class="font-headline text-sm">Diagnostic HUD</span>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-xl bg-[#b884ff]/10 text-[#b884ff] border-r-2 border-[#b884ff] cursor-pointer">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span class="font-headline text-sm font-bold">Neural MCP</span>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-xl text-white/40 hover:bg-white/5 transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="font-headline text-sm">Code Lab</span>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-xl text-white/40 hover:bg-white/5 transition-all cursor-pointer">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+<span class="font-headline text-sm">System Logs</span>
+</div>
+</nav>
+<div class="pt-6 border-t border-white/5">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="smart_toy">smart_toy</span>
+</div>
+<div>
+<p class="text-xs font-bold text-white uppercase tracking-wider">Artemis Core</p>
+<p class="text-[10px] text-white/30 mono-tech">LLM-7b-Quantum</p>
+</div>
+</div>
+</div>
+</aside>
+</body></html>

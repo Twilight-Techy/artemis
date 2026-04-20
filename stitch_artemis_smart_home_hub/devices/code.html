@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "on-primary-container": "#002345",
+                  "surface-container-highest": "#262529",
+                  "tertiary-container": "#00e3fd",
+                  "secondary-dim": "#9547f7",
+                  "on-tertiary-fixed-variant": "#005762",
+                  "primary": "#74b1ff",
+                  "tertiary-dim": "#00d4ec",
+                  "on-tertiary-fixed": "#003840",
+                  "primary-fixed": "#54a3ff",
+                  "surface-tint": "#74b1ff",
+                  "primary-dim": "#4da0ff",
+                  "secondary-fixed": "#e1c7ff",
+                  "secondary": "#b884ff",
+                  "surface-variant": "#262529",
+                  "on-error-container": "#ffa8a3",
+                  "on-error": "#490006",
+                  "surface-container-low": "#131316",
+                  "surface-bright": "#2c2c2f",
+                  "outline": "#767578",
+                  "tertiary-fixed-dim": "#00d4ec",
+                  "primary-container": "#54a3ff",
+                  "secondary-fixed-dim": "#d6b6ff",
+                  "inverse-surface": "#fcf8fb",
+                  "on-primary-fixed": "#000000",
+                  "surface-container-high": "#1f1f22",
+                  "error": "#ff716c",
+                  "error-container": "#9f0519",
+                  "surface": "#0e0e10",
+                  "inverse-on-surface": "#565457",
+                  "error-dim": "#d7383b",
+                  "on-secondary-container": "#ebd8ff",
+                  "tertiary": "#81ecff",
+                  "surface-container": "#19191c",
+                  "surface-container-lowest": "#000000",
+                  "on-background": "#fffbfe",
+                  "on-secondary-fixed-variant": "#6f08d0",
+                  "on-secondary": "#2f0060",
+                  "on-primary": "#002f59",
+                  "inverse-primary": "#0060ac",
+                  "on-tertiary-container": "#004d57",
+                  "on-secondary-fixed": "#4a0090",
+                  "on-surface": "#fffbfe",
+                  "tertiary-fixed": "#00e3fd",
+                  "background": "#0e0e10",
+                  "outline-variant": "#48474a",
+                  "surface-dim": "#0e0e10",
+                  "secondary-container": "#6e06d0",
+                  "on-surface-variant": "#adaaad",
+                  "on-primary-fixed-variant": "#002d55",
+                  "primary-fixed-dim": "#2695ff",
+                  "on-tertiary": "#005762"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "1rem",
+                  "xl": "1.5rem",
+                  "full": "9999px"
+          },
+          "fontFamily": {
+                  "headline": ["Space Grotesk"],
+                  "body": ["Manrope"],
+                  "label": ["Manrope"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    }
+    .glass-card {
+      background: rgba(38, 37, 41, 0.4);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+    }
+    .orb-glow {
+      filter: blur(80px);
+      opacity: 0.15;
+    }
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0e0e10;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #262529;
+      border-radius: 10px;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="bg-[#0e0e10]/60 backdrop-blur-2xl fixed top-0 w-full z-50 shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex justify-between items-center px-6 h-20">
+<div class="flex items-center gap-4">
+<button class="text-[#74b1ff] active:scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="text-xl font-black tracking-tighter text-white drop-shadow-[0_0_12px_rgba(116,177,255,0.6)] font-['Space_Grotesk'] uppercase tracking-widest">Artemis</h1>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex items-center gap-8 font-['Space_Grotesk'] tracking-widest font-bold uppercase text-[12px]">
+<a class="text-white/60 hover:text-[#81ecff] transition-all duration-300" href="#">Home</a>
+<a class="text-[#74b1ff]" href="#">Devices</a>
+<a class="text-white/60 hover:text-[#81ecff] transition-all duration-300" href="#">Functions</a>
+<a class="text-white/60 hover:text-[#81ecff] transition-all duration-300" href="#">Automations</a>
+</nav>
+<div class="w-10 h-10 rounded-full border border-outline-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="close-up portrait of a person with calm expression, soft studio lighting on dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlS9MJuiCiqd9i1uIHs3F-e1QgInh_PTQwVz4-cB6SC82npKV241B2q3r8XwH4bWMiqvBQQY2Ow_pVaw3mDhb4JBAQTl_rcunY2R5_-nuPeogzq9i0BWfObVJ_lxaV5_p-ASVMUviAJdCCv8MCYvvlSWbaPis78RZgScAtcrornVsBCSVGHXDVrrL7JQM5IsQFKht31R0thc53DTcTqV1S7rGMoLCxzf1v0m9wdCnXxho0bOnTyaQwgRb-J18ex-O-ocJYuPr3rqBo"/>
+</div>
+</div>
+</header>
+<!-- Atmospheric Background Orbs -->
+<div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+<div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary orb-glow"></div>
+<div class="absolute bottom-[20%] right-[-5%] w-[400px] h-[400px] rounded-full bg-secondary orb-glow"></div>
+</div>
+<main class="relative z-10 pt-28 px-6 max-w-7xl mx-auto">
+<!-- Header Section -->
+<div class="mb-12">
+<h2 class="font-headline text-4xl md:text-5xl font-bold tracking-tight mb-2">Connected <span class="text-primary">Devices</span></h2>
+<p class="text-on-surface-variant font-light tracking-wide">Managing 12 active modules across 4 zones</p>
+</div>
+<!-- Filter Bar -->
+<div class="flex gap-3 mb-12 overflow-x-auto pb-4 scrollbar-hide">
+<button class="px-6 py-2 rounded-full bg-primary text-on-primary text-sm font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(116,177,255,0.4)]">All</button>
+<button class="px-6 py-2 rounded-full glass-card border border-outline-variant/30 text-on-surface-variant text-sm font-bold uppercase tracking-widest hover:text-on-surface transition-all">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">lightbulb</span> Lights</span>
+</button>
+<button class="px-6 py-2 rounded-full glass-card border border-outline-variant/30 text-on-surface-variant text-sm font-bold uppercase tracking-widest hover:text-on-surface transition-all">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">thermostat</span> Climate</span>
+</button>
+<button class="px-6 py-2 rounded-full glass-card border border-outline-variant/30 text-on-surface-variant text-sm font-bold uppercase tracking-widest hover:text-on-surface transition-all">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">sensors</span> Sensors</span>
+</button>
+<button class="px-6 py-2 rounded-full glass-card border border-outline-variant/30 text-on-surface-variant text-sm font-bold uppercase tracking-widest hover:text-on-surface transition-all">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">security</span> Security</span>
+</button>
+</div>
+<!-- Room Groups -->
+<div class="space-y-16">
+<!-- Living Room Section -->
+<section>
+<div class="flex items-baseline justify-between mb-8">
+<h3 class="font-headline text-2xl font-semibold tracking-wide">Living Room</h3>
+<span class="text-[10px] uppercase tracking-[0.2em] text-primary font-bold">4 Devices Active</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Device Card: Ceiling Light -->
+<div class="glass-card rounded-xl p-6 border border-outline-variant/10 group hover:border-primary/30 transition-all duration-500">
+<div class="flex justify-between items-start mb-8">
+<div class="p-3 rounded-lg bg-primary/10 text-primary group-hover:shadow-[0_0_20px_rgba(116,177,255,0.3)] transition-all">
+<span class="material-symbols-outlined" data-icon="lightbulb">lightbulb</span>
+</div>
+<div class="w-12 h-6 rounded-full bg-primary/20 border border-primary/40 flex items-center px-1">
+<div class="w-4 h-4 rounded-full bg-primary shadow-[0_0_10px_rgba(116,177,255,0.8)] translate-x-6"></div>
+</div>
+</div>
+<h4 class="font-headline text-lg font-bold mb-1">Ceiling Luminaire</h4>
+<p class="text-xs text-on-surface-variant font-medium uppercase tracking-widest mb-6">Intensity: 80%</p>
+<div class="relative h-1 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="absolute left-0 top-0 h-full w-[80%] bg-primary shadow-[0_0_10px_rgba(116,177,255,0.5)]"></div>
+</div>
+</div>
+<!-- Device Card: Climate -->
+<div class="glass-card rounded-xl p-6 border border-outline-variant/10 group hover:border-tertiary/30 transition-all duration-500">
+<div class="flex justify-between items-start mb-8">
+<div class="p-3 rounded-lg bg-tertiary/10 text-tertiary group-hover:shadow-[0_0_20px_rgba(129,236,255,0.3)] transition-all">
+<span class="material-symbols-outlined" data-icon="ac_unit">ac_unit</span>
+</div>
+<span class="text-xs font-bold text-tertiary uppercase tracking-tighter bg-tertiary/10 px-2 py-1 rounded">Cooling</span>
+</div>
+<h4 class="font-headline text-lg font-bold mb-1">Main AC Unit</h4>
+<p class="text-xs text-on-surface-variant font-medium uppercase tracking-widest mb-6">Target: 21°C</p>
+<div class="flex justify-between items-center gap-4">
+<button class="flex-1 py-2 rounded-lg bg-surface-container-highest border border-outline-variant/20 hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-sm">remove</span></button>
+<span class="text-2xl font-headline font-bold">21°</span>
+<button class="flex-1 py-2 rounded-lg bg-surface-container-highest border border-outline-variant/20 hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-sm">add</span></button>
+</div>
+</div>
+<!-- Device Card: Sound System -->
+<div class="glass-card rounded-xl p-6 border border-outline-variant/10 group hover:border-secondary/30 transition-all duration-500">
+<div class="flex justify-between items-start mb-8">
+<div class="p-3 rounded-lg bg-secondary/10 text-secondary group-hover:shadow-[0_0_20px_rgba(184,132,255,0.3)] transition-all">
+<span class="material-symbols-outlined" data-icon="speaker">speaker</span>
+</div>
+<div class="w-12 h-6 rounded-full bg-surface-container-highest border border-outline-variant/40 flex items-center px-1">
+<div class="w-4 h-4 rounded-full bg-on-surface-variant/40"></div>
+</div>
+</div>
+<h4 class="font-headline text-lg font-bold mb-1">Atmospheric Audio</h4>
+<p class="text-xs text-on-surface-variant font-medium uppercase tracking-widest mb-6">Status: Standby</p>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-white/20">volume_down</span>
+<div class="h-1 flex-1 bg-surface-container rounded-full"></div>
+<span class="material-symbols-outlined text-white/20">volume_up</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Kitchen Section -->
+<section>
+<div class="flex items-baseline justify-between mb-8">
+<h3 class="font-headline text-2xl font-semibold tracking-wide">Kitchen</h3>
+<span class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold">2 Devices Active</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Device Card: Smart Fridge -->
+<div class="glass-card rounded-xl p-6 border border-outline-variant/10 group hover:border-primary/30 transition-all duration-500 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+<div class="flex justify-between items-start mb-8">
+<div class="p-3 rounded-lg bg-primary/10 text-primary">
+<span class="material-symbols-outlined" data-icon="kitchen">kitchen</span>
+</div>
+<span class="text-[10px] font-bold text-primary-dim uppercase tracking-widest">Normal</span>
+</div>
+<h4 class="font-headline text-lg font-bold mb-1">Smart Core Fridge</h4>
+<p class="text-xs text-on-surface-variant font-medium uppercase tracking-widest mb-6">Temp: 3°C / -18°C</p>
+<div class="grid grid-cols-2 gap-2">
+<div class="bg-surface-container-low p-2 rounded-lg text-center">
+<p class="text-[8px] text-on-surface-variant uppercase">Storage</p>
+<p class="text-sm font-bold">84%</p>
+</div>
+<div class="bg-surface-container-low p-2 rounded-lg text-center">
+<p class="text-[8px] text-on-surface-variant uppercase">Filter</p>
+<p class="text-sm font-bold">OK</p>
+</div>
+</div>
+</div>
+<!-- Device Card: Kitchen Underlight -->
+<div class="glass-card rounded-xl p-6 border border-outline-variant/10 group hover:border-tertiary/30 transition-all duration-500">
+<div class="flex justify-between items-start mb-8">
+<div class="p-3 rounded-lg bg-tertiary/10 text-tertiary">
+<span class="material-symbols-outlined" data-icon="highlight">highlight</span>
+</div>
+<div class="w-12 h-6 rounded-full bg-tertiary/20 border border-tertiary/40 flex items-center px-1">
+<div class="w-4 h-4 rounded-full bg-tertiary shadow-[0_0_10px_rgba(129,236,255,0.8)] translate-x-6"></div>
+</div>
+</div>
+<h4 class="font-headline text-lg font-bold mb-1">Counter Strips</h4>
+<p class="text-xs text-on-surface-variant font-medium uppercase tracking-widest mb-6">Color: Electric Cyan</p>
+<div class="flex gap-2">
+<div class="w-6 h-6 rounded-full bg-primary cursor-pointer border-2 border-white/20"></div>
+<div class="w-6 h-6 rounded-full bg-secondary cursor-pointer hover:scale-110 transition-transform"></div>
+<div class="w-6 h-6 rounded-full bg-tertiary cursor-pointer hover:scale-110 transition-transform"></div>
+<div class="w-6 h-6 rounded-full bg-error cursor-pointer hover:scale-110 transition-transform"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Bedroom Section -->
+<section>
+<div class="flex items-baseline justify-between mb-8">
+<h3 class="font-headline text-2xl font-semibold tracking-wide">Master Bedroom</h3>
+<span class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant font-bold">1 Device Active</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Device Card: Curtains -->
+<div class="glass-card rounded-xl p-6 border border-outline-variant/10 group hover:border-secondary/30 transition-all duration-500">
+<div class="flex justify-between items-start mb-8">
+<div class="p-3 rounded-lg bg-secondary/10 text-secondary">
+<span class="material-symbols-outlined" data-icon="curtains">curtains</span>
+</div>
+<button class="text-secondary text-xs font-bold uppercase tracking-widest underline decoration-2 underline-offset-4">Schedule</button>
+</div>
+<h4 class="font-headline text-lg font-bold mb-1">Smart Blinds</h4>
+<p class="text-xs text-on-surface-variant font-medium uppercase tracking-widest mb-6">Position: 40% Closed</p>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-white/30">wb_sunny</span>
+<input class="flex-1 accent-secondary h-1 bg-surface-container rounded-full appearance-none cursor-pointer" type="range"/>
+<span class="material-symbols-outlined text-white/30">dark_mode</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 rounded-t-[2rem] bg-[#0e0e10]/80 backdrop-blur-3xl shadow-[0_-8px_32px_rgba(0,0,0,0.8)] flex justify-around items-center px-8 pb-8 pt-4">
+<a class="flex flex-col items-center justify-center text-white/30 hover:text-white/80 transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" data-icon="home">home</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#74b1ff] drop-shadow-[0_0_8px_rgba(116,177,255,0.8)] scale-110" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" data-icon="settings_remote">settings_remote</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Devices</span>
+</a>
+<a class="flex flex-col items-center justify-center text-white/30 hover:text-white/80 transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" data-icon="api">api</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Functions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-white/30 hover:text-white/80 transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl mb-1" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest">Automations</span>
+</a>
+</nav>
+</body></html>

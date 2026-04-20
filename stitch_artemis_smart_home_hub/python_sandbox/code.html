@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary-fixed": "#000000",
+                        "on-tertiary-fixed": "#003840",
+                        "primary-fixed-dim": "#2695ff",
+                        "inverse-on-surface": "#565457",
+                        "secondary": "#b884ff",
+                        "surface-container-lowest": "#000000",
+                        "secondary-container": "#6e06d0",
+                        "on-tertiary": "#005762",
+                        "tertiary-dim": "#00d4ec",
+                        "on-secondary-container": "#ebd8ff",
+                        "on-background": "#fffbfe",
+                        "on-primary-container": "#002345",
+                        "secondary-fixed": "#e1c7ff",
+                        "background": "#0e0e10",
+                        "surface-container-low": "#131316",
+                        "on-error-container": "#ffa8a3",
+                        "on-secondary-fixed": "#4a0090",
+                        "surface-tint": "#74b1ff",
+                        "on-primary-fixed-variant": "#002d55",
+                        "on-tertiary-fixed-variant": "#005762",
+                        "surface-variant": "#262529",
+                        "surface-bright": "#2c2c2f",
+                        "primary-container": "#54a3ff",
+                        "on-surface": "#fffbfe",
+                        "surface-container-high": "#1f1f22",
+                        "on-primary": "#002f59",
+                        "error-container": "#9f0519",
+                        "tertiary-container": "#00e3fd",
+                        "inverse-surface": "#fcf8fb",
+                        "secondary-fixed-dim": "#d6b6ff",
+                        "tertiary-fixed": "#00e3fd",
+                        "on-secondary": "#2f0060",
+                        "tertiary": "#81ecff",
+                        "surface": "#0e0e10",
+                        "surface-container-highest": "#262529",
+                        "primary-dim": "#4da0ff",
+                        "on-error": "#490006",
+                        "surface-container": "#19191c",
+                        "outline-variant": "#48474a",
+                        "error-dim": "#d7383b",
+                        "surface-dim": "#0e0e10",
+                        "primary": "#74b1ff",
+                        "inverse-primary": "#0060ac",
+                        "on-surface-variant": "#adaaad",
+                        "tertiary-fixed-dim": "#00d4ec",
+                        "on-tertiary-container": "#004d57",
+                        "primary-fixed": "#54a3ff",
+                        "outline": "#767578",
+                        "error": "#ff716c",
+                        "on-secondary-fixed-variant": "#6f08d0",
+                        "secondary-dim": "#9547f7"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"],
+                        "mono": ["JetBrains Mono"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .code-scroll::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .code-scroll::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .code-scroll::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        .code-scroll::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .glass-panel {
+            background: rgba(25, 25, 28, 0.7);
+            backdrop-filter: blur(24px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body selection:bg-primary/30 min-h-screen flex flex-col">
+<header class="bg-[#0e0e10]/80 backdrop-blur-xl text-[#74b1ff] fixed top-0 w-full z-50 border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)] flex justify-between items-center px-6 h-16">
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-tertiary flex items-center justify-center shadow-[0_0_15px_rgba(116,177,255,0.4)]">
+<span class="material-symbols-outlined text-on-primary-fixed text-sm">potted_plant</span>
+</div>
+<h1 class="font-headline tracking-widest uppercase text-xl font-bold text-[#74b1ff] drop-shadow-[0_0_8px_rgba(116,177,255,0.5)]">ARTEMIS_OS</h1>
+<div class="h-4 w-[1px] bg-white/10 mx-2"></div>
+<span class="font-label text-[10px] tracking-[0.2em] text-white/40 uppercase">Sandboxed Environment - Limited Permissions</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center gap-6 font-label text-xs tracking-wider">
+<span class="text-white/40">CPU: <span class="text-tertiary">12%</span></span>
+<span class="text-white/40">MEM: <span class="text-secondary">1.2GB</span></span>
+</div>
+<button class="material-symbols-outlined text-[#74b1ff] hover:text-[#81ecff] transition-colors active:scale-95 duration-200">settings_input_component</button>
+</div>
+</header>
+<aside class="fixed left-0 top-0 h-screen z-40 bg-[#0e0e10] h-full w-72 border-r border-white/5 shadow-[20px_0_40px_rgba(0,0,0,0.5)] flex flex-col pt-20 hidden md:flex">
+<div class="px-6 mb-8 flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-surface-container-highest flex items-center justify-center border border-white/5">
+<span class="material-symbols-outlined text-secondary text-2xl">psychology</span>
+</div>
+<div>
+<h2 class="font-headline font-black text-white text-lg">ARTEMIS v2.4</h2>
+<p class="text-[10px] text-white/40 font-mono tracking-tighter">Status: Thinking</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-4 px-4 py-3 text-white/40 hover:text-white/80 hover:bg-white/5 transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined text-xl">monitor_heart</span>
+<span class="font-headline tracking-wide">Diagnostic HUD</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-white/40 hover:text-white/80 hover:bg-white/5 transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined text-xl">psychology</span>
+<span class="font-headline tracking-wide">Neural MCP</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 bg-[#b884ff]/10 text-[#b884ff] border-r-2 border-[#b884ff] transition-all rounded-l-lg group" href="#">
+<span class="material-symbols-outlined text-xl">terminal</span>
+<span class="font-headline tracking-wide">Code Lab</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-white/40 hover:text-white/80 hover:bg-white/5 transition-all rounded-lg group" href="#">
+<span class="material-symbols-outlined text-xl">database</span>
+<span class="font-headline tracking-wide">System Logs</span>
+</a>
+</nav>
+<div class="p-6">
+<div class="bg-gradient-to-r from-transparent via-white/10 to-transparent h-[1px] my-4"></div>
+<div class="flex items-center justify-between text-[10px] font-mono text-white/20">
+<span>LLM-7B-QUANTUM</span>
+<span>SECURED</span>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col md:pl-72 pt-16 pb-20 md:pb-0">
+<div class="flex-1 flex flex-col overflow-hidden">
+<div class="flex items-center justify-between px-6 py-3 bg-surface-container-low/50 border-b border-white/5">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-3 py-1.5 bg-surface-container-highest rounded-lg border border-white/10">
+<span class="material-symbols-outlined text-sm text-[#74b1ff]">description</span>
+<span class="text-xs font-mono text-white/80">main.py</span>
+<span class="material-symbols-outlined text-[12px] text-white/20 hover:text-error transition-colors cursor-pointer">close</span>
+</div>
+<button class="p-1.5 hover:bg-white/5 rounded-lg text-white/40 transition-colors">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-primary to-primary-container text-on-primary-fixed rounded-full font-headline font-bold text-xs shadow-[0_0_20px_rgba(116,177,255,0.3)] hover:scale-[1.02] active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        RUN SCRIPT
+                    </button>
+</div>
+</div>
+<div class="flex-1 flex overflow-hidden">
+<div class="w-12 bg-surface-container-low flex flex-col items-center pt-4 text-white/20 font-mono text-xs select-none">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span>
+</div>
+<div class="flex-1 bg-background p-4 font-mono text-sm overflow-auto code-scroll leading-relaxed">
+<pre class="text-white/90"><span class="text-secondary">import</span> os
+<span class="text-secondary">import</span> time
+<span class="text-secondary">from</span> artemis_core <span class="text-secondary">import</span> QuantumStream
+
+<span class="text-white/40"># Initialize sandboxed neural interface</span>
+<span class="text-tertiary">def</span> <span class="text-primary">initialize_mcp</span>():
+    stream = QuantumStream(mode=<span class="text-error">"read-only"</span>)
+    <span class="text-secondary">print</span>(<span class="text-error">f"Connecting to Artemis v2.4 Node..."</span>)
+    
+    <span class="text-secondary">for</span> i <span class="text-secondary">in</span> <span class="text-secondary">range</span>(<span class="text-primary-fixed-dim">3</span>):
+        time.sleep(<span class="text-primary-fixed-dim">0.5</span>)
+        <span class="text-secondary">print</span>(<span class="text-error">f"Syncing layer {i}..."</span>)
+        
+    <span class="text-secondary">return</span> stream.status
+
+<span class="text-secondary">if</span> __name__ == <span class="text-error">"__main__"</span>:
+    status = initialize_mcp()
+    <span class="text-secondary">print</span>(<span class="text-error">f"System Status: {status}"</span>)</pre>
+</div>
+</div>
+<div class="h-1/3 bg-surface-container border-t border-white/5 flex flex-col">
+<div class="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-surface-container-low/80">
+<div class="flex items-center gap-4">
+<span class="font-headline text-[10px] uppercase tracking-widest text-white/40 font-bold">Terminal Output</span>
+<div class="flex items-center gap-2 px-2 py-0.5 bg-tertiary/10 rounded text-[9px] text-tertiary border border-tertiary/20">
+<span class="w-1 h-1 rounded-full bg-tertiary animate-pulse"></span>
+                            MCP LIVE
+                        </div>
+</div>
+<div class="flex items-center gap-3">
+<button class="material-symbols-outlined text-xs text-white/30 hover:text-white transition-colors">delete</button>
+<button class="material-symbols-outlined text-xs text-white/30 hover:text-white transition-colors">keyboard_arrow_down</button>
+</div>
+</div>
+<div class="flex-1 p-4 font-mono text-xs overflow-auto code-scroll space-y-1">
+<div class="flex gap-4">
+<span class="text-white/20">[14:20:01]</span>
+<span class="text-tertiary-fixed-dim">INFO:</span>
+<span class="text-white/60">Artemis MCP socket established.</span>
+</div>
+<div class="flex gap-4">
+<span class="text-white/20">[14:20:02]</span>
+<span class="text-tertiary-fixed-dim">INFO:</span>
+<span class="text-white/60">Environment: LINUX_SANDBOX_X64</span>
+</div>
+<div class="flex gap-4">
+<span class="text-white/20">[14:20:02]</span>
+<span class="text-secondary">LOG:</span>
+<span class="text-white/60">Allocating 512MB heap for Python interpreter...</span>
+</div>
+<div class="flex gap-4">
+<span class="text-white/20">[14:20:03]</span>
+<span class="text-primary">SYS:</span>
+<span class="text-white/60">Python 3.11.4 (Artemis-Optimized-v2) ready.</span>
+</div>
+<div class="flex gap-4 mt-2">
+<span class="text-tertiary">&gt;&gt;&gt;</span>
+<span class="text-white animate-pulse">_</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 pb-safe bg-[#0e0e10]/90 backdrop-blur-2xl rounded-t-3xl border-t border-white/10 shadow-[0_-10px_40px_rgba(116,177,255,0.1)]">
+<a class="flex flex-col items-center justify-center text-white/30 hover:bg-[#74b1ff]/5 transition-transform active:scale-90" href="#">
+<span class="material-symbols-outlined">dashboard_customize</span>
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-tighter mt-1">Dash</span>
+</a>
+<a class="flex flex-col items-center justify-center text-white/30 hover:bg-[#74b1ff]/5 transition-transform active:scale-90" href="#">
+<span class="material-symbols-outlined">memory</span>
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-tighter mt-1">Neural</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#81ecff] drop-shadow-[0_0_10px_rgba(129,236,255,0.8)] hover:bg-[#74b1ff]/5 transition-transform active:scale-90" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">code_blocks</span>
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-tighter mt-1">Code</span>
+</a>
+<a class="flex flex-col items-center justify-center text-white/30 hover:bg-[#74b1ff]/5 transition-transform active:scale-90" href="#">
+<span class="material-symbols-outlined">security</span>
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-tighter mt-1">Logs</span>
+</a>
+</nav>
+</body></html>

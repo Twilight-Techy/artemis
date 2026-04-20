@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Artemis Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "on-primary-container": "#002345",
+                "surface-container-highest": "#262529",
+                "tertiary-container": "#00e3fd",
+                "secondary-dim": "#9547f7",
+                "on-tertiary-fixed-variant": "#005762",
+                "primary": "#74b1ff",
+                "tertiary-dim": "#00d4ec",
+                "on-tertiary-fixed": "#003840",
+                "primary-fixed": "#54a3ff",
+                "surface-tint": "#74b1ff",
+                "primary-dim": "#4da0ff",
+                "secondary-fixed": "#e1c7ff",
+                "secondary": "#b884ff",
+                "surface-variant": "#262529",
+                "on-error-container": "#ffa8a3",
+                "on-error": "#490006",
+                "surface-container-low": "#131316",
+                "surface-bright": "#2c2c2f",
+                "outline": "#767578",
+                "tertiary-fixed-dim": "#00d4ec",
+                "primary-container": "#54a3ff",
+                "secondary-fixed-dim": "#d6b6ff",
+                "inverse-surface": "#fcf8fb",
+                "on-primary-fixed": "#000000",
+                "surface-container-high": "#1f1f22",
+                "error": "#ff716c",
+                "error-container": "#9f0519",
+                "surface": "#0e0e10",
+                "inverse-on-surface": "#565457",
+                "error-dim": "#d7383b",
+                "on-secondary-container": "#ebd8ff",
+                "tertiary": "#81ecff",
+                "surface-container": "#19191c",
+                "surface-container-lowest": "#000000",
+                "on-background": "#fffbfe",
+                "on-secondary-fixed-variant": "#6f08d0",
+                "on-secondary": "#2f0060",
+                "on-primary": "#002f59",
+                "inverse-primary": "#0060ac",
+                "on-tertiary-container": "#004d57",
+                "on-secondary-fixed": "#4a0090",
+                "on-surface": "#fffbfe",
+                "tertiary-fixed": "#00e3fd",
+                "background": "#0e0e10",
+                "outline-variant": "#48474a",
+                "surface-dim": "#0e0e10",
+                "secondary-container": "#6e06d0",
+                "on-surface-variant": "#adaaad",
+                "on-primary-fixed-variant": "#002d55",
+                "primary-fixed-dim": "#2695ff",
+                "on-tertiary": "#005762"
+            },
+            "fontFamily": {
+                "headline": ["Space Grotesk"],
+                "body": ["Manrope"],
+                "label": ["Manrope"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(38, 37, 41, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .orb-glow {
+            filter: blur(60px);
+            opacity: 0.15;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary/30 min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-[#0e0e10]/60 backdrop-blur-2xl fixed top-0 w-full z-50 shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+<div class="flex justify-between items-center px-6 h-20 w-full">
+<div class="flex items-center gap-4">
+<button class="text-white/60 hover:text-[#81ecff] transition-all duration-300 Active: scale-95 transition-transform duration-200">
+<span class="material-symbols-outlined" data-icon="arrow_back_ios_new">arrow_back_ios_new</span>
+</button>
+<h1 class="text-xl font-black tracking-tighter text-white drop-shadow-[0_0_12px_rgba(116,177,255,0.6)] font-['Space_Grotesk'] uppercase tracking-widest">
+                    Settings
+                </h1>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full border border-primary/20 p-0.5 overflow-hidden">
+<img alt="User Profile Avatar" class="w-full h-full object-cover rounded-full" data-alt="Portrait of a sleek futuristic digital avatar with neon blue accents on dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADMSgUz2ObFIumOleZl4Dx4CyG5HjLsYq1EXR1XweXUKaOwRbMDZ4-DKl5lhoMTUbqba1ePAkq8r4kLPiroo5FZHN8xvkGy3B8YIc--dP4vbIt4k9eQimmZ9G2uLFVZeJOYR4TRLBpyrNOWLa0BXbeN8ibN_rkOimbxNQrBa12eGjM7EQvEkhGvHlZOGSJsn06vv0TeF5nN_LpY_Ljh5Vup51NZTMeXYmzDjC1TgjVk4fY3fXBsDNxqG5g1kpCQA5tNz_-jkiAtsga"/>
+</div>
+</div>
+</div>
+</header>
+<main class="pt-28 pb-32 px-6 max-w-2xl mx-auto relative">
+<!-- Background Atmospheric Glows -->
+<div class="fixed top-1/4 -right-20 w-80 h-80 bg-primary orb-glow rounded-full pointer-events-none"></div>
+<div class="fixed bottom-1/4 -left-20 w-80 h-80 bg-secondary orb-glow rounded-full pointer-events-none"></div>
+<!-- Settings Content -->
+<div class="space-y-10 relative z-10">
+<!-- Section: Account -->
+<section>
+<h2 class="font-headline text-xs font-bold uppercase tracking-[0.2em] text-white/40 mb-6 px-2">Account</h2>
+<div class="space-y-1">
+<!-- Item -->
+<div class="glass-panel rounded-2xl p-5 flex items-center justify-between group cursor-pointer hover:bg-surface-container-highest/40 transition-all duration-300">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(116,177,255,0.15)] group-hover:shadow-[0_0_20px_rgba(116,177,255,0.3)] transition-all">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</div>
+<div>
+<p class="text-on-surface font-semibold">Personal Information</p>
+<p class="text-on-surface-variant text-xs">Manage your profile and ID</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-white/20 group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+<!-- Item with Toggle -->
+<div class="glass-panel rounded-2xl p-5 flex items-center justify-between mt-1">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary shadow-[0_0_15px_rgba(184,132,255,0.15)]">
+<span class="material-symbols-outlined" data-icon="cloud_done" style="font-variation-settings: 'FILL' 1;">cloud_done</span>
+</div>
+<div>
+<p class="text-on-surface font-semibold">Cloud Sync</p>
+<p class="text-on-surface-variant text-xs">Keep data updated across devices</p>
+</div>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-[0_0_10px_rgba(116,177,255,0.2)]"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: System Configuration -->
+<section>
+<h2 class="font-headline text-xs font-bold uppercase tracking-[0.2em] text-white/40 mb-6 px-2">System Configuration</h2>
+<div class="space-y-1">
+<div class="glass-panel rounded-2xl p-5 flex items-center justify-between group cursor-pointer hover:bg-surface-container-highest/40 transition-all duration-300">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-tertiary/10 flex items-center justify-center text-tertiary shadow-[0_0_15px_rgba(129,236,255,0.15)] group-hover:shadow-[0_0_20px_rgba(129,236,255,0.3)] transition-all">
+<span class="material-symbols-outlined" data-icon="settings_suggest">settings_suggest</span>
+</div>
+<div>
+<p class="text-on-surface font-semibold">Interface Theme</p>
+<p class="text-on-surface-variant text-xs">Dark obsidian is currently active</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-white/20" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="glass-panel rounded-2xl p-5 flex items-center justify-between mt-1">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center text-error shadow-[0_0_15px_rgba(255,113,108,0.15)]">
+<span class="material-symbols-outlined" data-icon="notifications_active">notifications_active</span>
+</div>
+<div>
+<p class="text-on-surface font-semibold">Critical Alerts</p>
+<p class="text-on-surface-variant text-xs">Immediate haptic feedback</p>
+</div>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-error shadow-[0_0_10px_rgba(255,113,108,0.2)]"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Privacy & Security -->
+<section>
+<h2 class="font-headline text-xs font-bold uppercase tracking-[0.2em] text-white/40 mb-6 px-2">Privacy &amp; Security</h2>
+<div class="space-y-1">
+<div class="glass-panel rounded-2xl p-5 flex items-center justify-between group cursor-pointer hover:bg-surface-container-highest/40 transition-all duration-300">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(116,177,255,0.15)]">
+<span class="material-symbols-outlined" data-icon="lock">lock</span>
+</div>
+<div>
+<p class="text-on-surface font-semibold">Biometric Lock</p>
+<p class="text-on-surface-variant text-xs">Face ID and Fingerprint enabled</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-white/20" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="glass-panel rounded-2xl p-5 flex items-center justify-between mt-1">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white/80 shadow-[0_0_15px_rgba(255,255,255,0.05)]">
+<span class="material-symbols-outlined" data-icon="visibility_off">visibility_off</span>
+</div>
+<div>
+<p class="text-on-surface font-semibold">Ghost Mode</p>
+<p class="text-on-surface-variant text-xs">Mask location and presence</p>
+</div>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-container-highest rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary shadow-[0_0_10px_rgba(255,255,255,0.1)]"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Voice & Language -->
+<section>
+<h2 class="font-headline text-xs font-bold uppercase tracking-[0.2em] text-white/40 mb-6 px-2">Voice &amp; Language</h2>
+<div class="glass-panel rounded-3xl p-6 border border-outline-variant/10">
+<div class="flex items-center justify-between mb-8">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-gradient-to-tr from-secondary to-primary p-[2px]">
+<div class="w-full h-full bg-background rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-transparent bg-clip-text bg-gradient-to-tr from-secondary to-primary" data-icon="record_voice_over" style="font-variation-settings: 'FILL' 1;">record_voice_over</span>
+</div>
+</div>
+<div>
+<p class="text-on-surface font-bold text-lg">AI Persona: Artemis</p>
+<p class="text-on-surface-variant text-sm">Balanced &amp; Professional</p>
+</div>
+</div>
+<button class="px-4 py-2 bg-surface-container-highest rounded-full text-xs font-bold text-primary border border-primary/20">CHANGE</button>
+</div>
+<div class="space-y-6">
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-bold uppercase tracking-wider text-white/50">
+<span>Voice Pitch</span>
+<span class="text-secondary">Optimal</span>
+</div>
+<div class="h-1 w-full bg-surface-container rounded-full relative">
+<div class="absolute h-1 w-3/5 bg-gradient-to-r from-primary to-secondary rounded-full shadow-[0_0_10px_rgba(184,132,255,0.4)]"></div>
+<div class="absolute top-1/2 left-[60%] -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg border-2 border-secondary"></div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary" data-icon="language">language</span>
+<span class="text-sm font-medium">Global Communication</span>
+</div>
+<span class="text-sm text-on-surface-variant">English (US)</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Suppressing BottomNavBar on Settings screen as per "Shell Visibility & Relevance" rule for focused sub-pages -->
+<!-- But keeping structural anchor if user intended top-level navigation, but the task specifies this is a sub-page accessed from home menu. -->
+</body></html>
