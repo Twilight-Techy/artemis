@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,9 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  KeyboardAvoidingView,
+  Keyboard,
+  Animated,
+  Easing,
   Platform,
   Dimensions,
 } from 'react-native';
@@ -68,16 +70,43 @@ export default function HomeScreen() {
   const [messages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
   const flatListRef = useRef<FlatList>(null);
 
+  const keyboardShift = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      Animated.timing(keyboardShift, {
+        toValue: -e.endCoordinates.height,
+        duration: e.duration || 250,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, (e) => {
+      Animated.timing(keyboardShift, {
+        toValue: 0,
+        duration: e.duration || 250,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [keyboardShift]);
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* ═══ Top App Bar ═══ */}
       <TopNavBar />
 
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoidingContainer}
-        contentContainerStyle={styles.keyboardAvoidingContainer}
-        behavior="position"
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      <Animated.View
+        style={[styles.keyboardAvoidingContainer, { transform: [{ translateY: keyboardShift }] }]}
       >
         {/* ═══ Orb Section (always visible) ═══ */}
         <View style={styles.orbSection}>
@@ -204,7 +233,7 @@ export default function HomeScreen() {
         <View style={[styles.commandSection, { paddingBottom: Math.max(insets.bottom + 64, 80) }]}>
           <CommandBar />
         </View>
-      </KeyboardAvoidingView>
+      </Animated.View>
     </View>
   );
 }
