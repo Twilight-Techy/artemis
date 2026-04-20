@@ -3,12 +3,16 @@ import { View, StyleSheet, ScrollView, Text, TouchableOpacity, TextInput } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import TopNavBar from '../components/TopNavBar';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 export default function AutomationsScreen() {
   const insets = useSafeAreaInsets();
   const [aalInput, setAalInput] = useState('');
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -47,7 +51,23 @@ export default function AutomationsScreen() {
 
         {/* ═══ Active Rules ═══ */}
         <View style={styles.rulesSection}>
-          <Text style={styles.sectionTitle}>Active Protocols</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Active Protocols</Text>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('AALEditor')}
+            >
+              <LinearGradient
+                colors={[Colors.primary, Colors.primaryContainer]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.codeLabButton}
+              >
+                <Ionicons name="terminal-outline" size={14} color={Colors.onPrimary} />
+                <Text style={styles.codeLabText}>Code Lab</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
 
           {/* Rule 1 */}
           <View style={styles.card}>
@@ -209,12 +229,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing['2xl'],
     gap: Spacing.lg,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+  },
   sectionTitle: {
     fontFamily: Typography.families.headline,
     fontSize: Typography.sizes.headlineSm,
     fontWeight: Typography.weights.bold,
     color: Colors.onSurface,
-    marginBottom: Spacing.xs,
+  },
+  codeLabButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radii.full,
+  },
+  codeLabText: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.labelSm,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onPrimary,
+    letterSpacing: 1,
   },
   card: {
     backgroundColor: Colors.surfaceContainerLow,

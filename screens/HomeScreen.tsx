@@ -6,22 +6,27 @@ import {
   StyleSheet,
   Image,
   Pressable,
+  TouchableOpacity,
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import TopNavBar from '../components/TopNavBar';
 import OrbEntity from '../components/OrbEntity';
 import StatChip from '../components/StatChip';
 import QuickActionCard from '../components/QuickActionCard';
 import CommandBar from '../components/CommandBar';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -67,6 +72,22 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* ═══ MCP Diagnostic Strip ═══ */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('MCPOverlay')}
+          style={styles.mcpStrip}
+        >
+          <View style={styles.mcpStripLeft}>
+            <View style={styles.mcpPulse} />
+            <Text style={styles.mcpStripLabel}>Neural MCP</Text>
+          </View>
+          <View style={styles.mcpStripRight}>
+            <Text style={styles.mcpStripStatus}>Idle · 42ms</Text>
+            <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
+          </View>
+        </TouchableOpacity>
+
         {/* ═══ Quick Action Cards ═══ */}
         <View style={styles.cardsSection}>
           <QuickActionCard
@@ -86,6 +107,12 @@ export default function HomeScreen() {
             iconColor={Colors.tertiary}
             title="Security"
             onPress={() => console.log('Security tapped')}
+          />
+          <QuickActionCard
+            icon="pulse-outline"
+            iconColor={Colors.secondary}
+            title="MCP HUD"
+            onPress={() => navigation.navigate('MCPOverlay')}
           />
         </View>
 
@@ -166,6 +193,54 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     bottom: 30,
+  },
+
+  // ── MCP Strip ──
+  mcpStrip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(38, 37, 41, 0.2)',
+    borderRadius: Radii.xl,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    marginBottom: Spacing['2xl'],
+  },
+  mcpStripLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  mcpPulse: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.secondary,
+    shadowColor: Colors.secondary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  mcpStripLabel: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.labelSm,
+    fontWeight: Typography.weights.bold,
+    color: Colors.secondary,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  mcpStripRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  mcpStripStatus: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.labelSm,
+    color: 'rgba(255, 255, 255, 0.4)',
   },
 
   // ── Cards ──

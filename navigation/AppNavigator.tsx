@@ -12,11 +12,15 @@ import FunctionsScreen from '../screens/FunctionsScreen';
 import AutomationsScreen from '../screens/AutomationsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import HistoryScreen from '../screens/HistoryScreen';
+import AALEditorScreen from '../screens/AALEditorScreen';
+import MCPOverlayScreen from '../screens/MCPOverlayScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
   Settings: undefined;
   History: undefined;
+  AALEditor: undefined;
+  MCPOverlay: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -96,6 +100,8 @@ export default function AppNavigator() {
       <Stack.Screen name="MainTabs" component={MainTabs} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="History" component={HistoryScreen} />
+      <Stack.Screen name="AALEditor" component={AALEditorScreen} />
+      <Stack.Screen name="MCPOverlay" component={MCPOverlayScreen} />
     </Stack.Navigator>
   );
 }
