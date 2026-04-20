@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
   ScrollView,
+  FlatList,
   StyleSheet,
-  Image,
-  Pressable,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,32 +21,68 @@ import OrbEntity from '../components/OrbEntity';
 import StatChip from '../components/StatChip';
 import QuickActionCard from '../components/QuickActionCard';
 import CommandBar from '../components/CommandBar';
+import ChatBubble, { ChatMessage } from '../components/chat/ChatBubble';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+type HomeMode = 'dashboard' | 'chat';
+
+const INITIAL_MESSAGES: ChatMessage[] = [
+  {
+    id: '1',
+    role: 'assistant',
+    text: "Good evening, Alex. All systems are nominal. Your home is currently at 72°F with 3 active devices.",
+    timestamp: '9:38 PM',
+  },
+  {
+    id: '2',
+    role: 'user',
+    text: "It's getting late, turn off the lights.",
+    timestamp: '9:40 PM',
+  },
+  {
+    id: '3',
+    role: 'assistant',
+    text: "Certainly. I'm turning off the Living Room lights. Would you also like me to set the alarm for 7:00 AM?",
+    timestamp: '9:40 PM',
+  },
+  {
+    id: '4',
+    role: 'user',
+    text: 'Yes please!',
+    timestamp: '9:40 PM',
+  },
+  {
+    id: '5',
+    role: 'assistant',
+    text: "Done. Living Room lights are off, and your alarm is set for 7:00 AM tomorrow.",
+    timestamp: '9:41 PM',
+  },
+];
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [mode, setMode] = useState<HomeMode>('dashboard');
+  const [messages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+  const flatListRef = useRef<FlatList>(null);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* ═══ Top App Bar ═══ */}
       <TopNavBar />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoidingContainer}
+        contentContainerStyle={styles.keyboardAvoidingContainer}
+        behavior="position"
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        {/* ═══ Central Orb Section ═══ */}
+        {/* ═══ Orb Section (always visible) ═══ */}
         <View style={styles.orbSection}>
-          {/* Atmospheric background glow */}
           <View style={styles.atmosphericGlow} />
-
           <OrbEntity />
-
-          {/* Floating stat chips */}
           <View style={styles.climateChip}>
             <StatChip
               icon="thermometer-outline"
@@ -64,66 +101,110 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* ═══ Greeting Section ═══ */}
-        <View style={styles.greetingSection}>
-          <View style={styles.headlineRow}>
-            <Text style={styles.headline}>Good Evening, </Text>
-            <Text style={styles.headlineGradient}>Alex</Text>
+        {/* ═══ Mode Toggle ═══ */}
+        <View style={styles.toggleBar}>
+          <View style={styles.togglePill}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setMode('dashboard')}
+              style={styles.toggleOption}
+            >
+              {mode === 'dashboard' ? (
+                <LinearGradient
+                  colors={['rgba(116, 177, 255, 0.15)', 'rgba(116, 177, 255, 0.05)']}
+                  style={styles.toggleGradient}
+                >
+                  <Ionicons name="grid" size={14} color={Colors.primary} />
+                  <Text style={[styles.toggleText, styles.toggleTextActive]}>Dashboard</Text>
+                </LinearGradient>
+              ) : (
+                <View style={styles.toggleInner}>
+                  <Ionicons name="grid-outline" size={14} color="rgba(255,255,255,0.35)" />
+                  <Text style={styles.toggleText}>Dashboard</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setMode('chat')}
+              style={styles.toggleOption}
+            >
+              {mode === 'chat' ? (
+                <LinearGradient
+                  colors={['rgba(116, 177, 255, 0.15)', 'rgba(116, 177, 255, 0.05)']}
+                  style={styles.toggleGradient}
+                >
+                  <Ionicons name="chatbubbles" size={14} color={Colors.primary} />
+                  <Text style={[styles.toggleText, styles.toggleTextActive]}>Chat</Text>
+                </LinearGradient>
+              ) : (
+                <View style={styles.toggleInner}>
+                  <Ionicons name="chatbubbles-outline" size={14} color="rgba(255,255,255,0.35)" />
+                  <Text style={styles.toggleText}>Chat</Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* ═══ MCP Diagnostic Strip ═══ */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('MCPOverlay')}
-          style={styles.mcpStrip}
-        >
-          <View style={styles.mcpStripLeft}>
-            <View style={styles.mcpPulse} />
-            <Text style={styles.mcpStripLabel}>Neural MCP</Text>
-          </View>
-          <View style={styles.mcpStripRight}>
-            <Text style={styles.mcpStripStatus}>Idle · 42ms</Text>
-            <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.3)" />
-          </View>
-        </TouchableOpacity>
+        {/* ═══ Middle Content (switches based on mode) ═══ */}
+        <View style={styles.middleContent}>
+          {mode === 'dashboard' ? (
+            <ScrollView
+              contentContainerStyle={styles.dashboardContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Greeting */}
+              <View style={styles.greetingSection}>
+                <View style={styles.headlineRow}>
+                  <Text style={styles.headline}>Good Evening, </Text>
+                  <Text style={styles.headlineGradient}>Alex</Text>
+                </View>
+              </View>
 
-        {/* ═══ Quick Action Cards ═══ */}
-        <View style={styles.cardsSection}>
-          <QuickActionCard
-            icon="bulb-outline"
-            iconColor={Colors.primary}
-            title="Lights"
-            onPress={() => console.log('Lights tapped')}
-          />
-          <QuickActionCard
-            icon="thermometer-outline"
-            iconColor={Colors.secondary}
-            title="Climate"
-            onPress={() => console.log('Climate tapped')}
-          />
-          <QuickActionCard
-            icon="lock-closed-outline"
-            iconColor={Colors.tertiary}
-            title="Security"
-            onPress={() => console.log('Security tapped')}
-          />
-          <QuickActionCard
-            icon="pulse-outline"
-            iconColor={Colors.secondary}
-            title="MCP HUD"
-            onPress={() => navigation.navigate('MCPOverlay')}
-          />
+              {/* Quick Action Cards */}
+              <View style={styles.cardsSection}>
+                <QuickActionCard
+                  icon="bulb-outline"
+                  iconColor={Colors.primary}
+                  title="Lights"
+                  onPress={() => console.log('Lights tapped')}
+                />
+                <QuickActionCard
+                  icon="thermometer-outline"
+                  iconColor={Colors.secondary}
+                  title="Climate"
+                  onPress={() => console.log('Climate tapped')}
+                />
+                <QuickActionCard
+                  icon="lock-closed-outline"
+                  iconColor={Colors.tertiary}
+                  title="Security"
+                  onPress={() => console.log('Security tapped')}
+                />
+              </View>
+            </ScrollView>
+          ) : (
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <ChatBubble message={item} />}
+              contentContainerStyle={styles.chatContent}
+              showsVerticalScrollIndicator={false}
+              onContentSizeChange={() =>
+                flatListRef.current?.scrollToEnd({ animated: true })
+              }
+            />
+          )}
         </View>
 
-        {/* ═══ Command Input Bar ═══ */}
-        <View style={styles.commandSection}>
+        {/* ═══ Command Input Bar (always visible, pushes up with keyboard) ═══ */}
+        <View style={[styles.commandSection, { paddingBottom: Math.max(insets.bottom + 64, 80) }]}>
           <CommandBar />
         </View>
-
-        {/* Bottom spacer for tab bar */}
-        <View style={{ height: 100 }} />
-      </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -133,127 +214,135 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  scroll: {
+  keyboardAvoidingContainer: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: Spacing['2xl'],
+
+  // ── Orb (always visible) ──
+  orbSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 30,
+    position: 'relative',
+  },
+  atmosphericGlow: {
+    position: 'absolute',
+    top: -40,
+    right: -20,
+    width: SCREEN_WIDTH * 0.6,
+    height: SCREEN_WIDTH * 0.6,
+    borderRadius: SCREEN_WIDTH * 0.3,
+    backgroundColor: 'rgba(116, 177, 255, 0.06)',
+  },
+  climateChip: {
+    position: 'absolute',
+    left: Spacing['2xl'],
+    top: 20,
+  },
+  powerChip: {
+    position: 'absolute',
+    right: Spacing['2xl'],
+    bottom: 15,
   },
 
+  // ── Mode Toggle ──
+  toggleBar: {
+    paddingHorizontal: Spacing['2xl'],
+    paddingBottom: Spacing.md,
+    alignItems: 'center',
+  },
+  togglePill: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: Radii.full,
+    padding: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  toggleOption: {
+    borderRadius: Radii.full,
+    overflow: 'hidden',
+  },
+  toggleGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: Radii.full,
+  },
+  toggleInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+  },
+  toggleText: {
+    fontFamily: Typography.families.label,
+    fontSize: Typography.sizes.labelSm,
+    fontWeight: Typography.weights.bold,
+    color: 'rgba(255, 255, 255, 0.35)',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  toggleTextActive: {
+    color: Colors.primary,
+  },
 
-  // ── Greeting ──
+  // ── Middle Content (flex: 1 fills remaining space) ──
+  middleContent: {
+    flex: 1,
+  },
+
+  // ── Dashboard content ──
+  dashboardContent: {
+    paddingHorizontal: Spacing['2xl'],
+    paddingBottom: Spacing.lg,
+  },
   greetingSection: {
-    marginBottom: Spacing['3xl'],
+    marginBottom: Spacing['2xl'],
     alignItems: 'center',
   },
   headlineRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.lg,
   },
   headline: {
     fontFamily: Typography.families.headline,
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: Typography.weights.bold,
     color: Colors.onSurface,
     letterSpacing: -0.5,
   },
   headlineGradient: {
     fontFamily: Typography.families.headline,
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: Typography.weights.bold,
     color: Colors.primary,
     letterSpacing: -0.5,
   },
 
-  // ── Orb Section ──
-  orbSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 50,
-    marginBottom: Spacing['3xl'],
-    position: 'relative',
-  },
-  atmosphericGlow: {
-    position: 'absolute',
-    top: -40,
-    right: -60,
-    width: SCREEN_WIDTH * 0.7,
-    height: SCREEN_WIDTH * 0.7,
-    borderRadius: SCREEN_WIDTH * 0.35,
-    backgroundColor: 'rgba(116, 177, 255, 0.06)',
-  },
-  climateChip: {
-    position: 'absolute',
-    left: 0,
-    top: 40,
-  },
-  powerChip: {
-    position: 'absolute',
-    right: 0,
-    bottom: 30,
-  },
-
-  // ── MCP Strip ──
-  mcpStrip: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'rgba(38, 37, 41, 0.2)',
-    borderRadius: Radii.xl,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    marginBottom: Spacing['2xl'],
-  },
-  mcpStripLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-  },
-  mcpPulse: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.secondary,
-    shadowColor: Colors.secondary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  mcpStripLabel: {
-    fontFamily: Typography.families.headline,
-    fontSize: Typography.sizes.labelSm,
-    fontWeight: Typography.weights.bold,
-    color: Colors.secondary,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-  },
-  mcpStripRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  mcpStripStatus: {
-    fontFamily: Typography.families.body,
-    fontSize: Typography.sizes.labelSm,
-    color: 'rgba(255, 255, 255, 0.4)',
-  },
-
-  // ── Cards ──
   cardsSection: {
     flexDirection: 'row',
     gap: Spacing.sm,
-    marginBottom: Spacing['3xl'],
     alignItems: 'stretch',
     justifyContent: 'space-between',
   },
 
-  // ── Command ──
+  // ── Chat content ──
+  chatContent: {
+    paddingBottom: Spacing.md,
+    paddingTop: Spacing.sm,
+  },
+
+  // ── Command Bar (always bottom) ──
   commandSection: {
-    marginBottom: Spacing['3xl'],
+    paddingHorizontal: Spacing['2xl'],
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: Colors.background,
   },
 });
