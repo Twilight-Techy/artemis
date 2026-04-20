@@ -149,12 +149,21 @@ export default function FunctionsScreen() {
             </View>
             <Text style={styles.cardTitle}>Neural Presence Sync</Text>
             <Text style={styles.cardDescription}>
-              Adapts lighting temperature and acoustic profile to individual bio-rhythms.
+              Adapts lighting temperature and acoustic profile based on your biological circadian rhythm and heart rate data.
             </Text>
             <TouchableOpacity style={styles.actionButton}>
               <Text style={styles.actionButtonText}>Configure Biometrics</Text>
             </TouchableOpacity>
           </TouchableOpacity>
+
+          {/* ═══ Neural Core Footer Graphic ═══ */}
+          <View style={styles.neuralCoreContainer}>
+            <View style={[styles.neuralRing, styles.neuralRingOuter]}>
+              <View style={[styles.neuralRing, styles.neuralRingInner]}>
+                <MaterialCommunityIcons name="brain" size={56} color={Colors.tertiary} style={{ shadowColor: Colors.tertiary, shadowOpacity: 0.8, shadowRadius: 20, shadowOffset: { width: 0, height: 0 } }} />
+              </View>
+            </View>
+          </View>
 
         </View>
       </ScrollView>
@@ -192,10 +201,11 @@ export default function FunctionsScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.modalActionRow}>
-                  <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(0, 227, 253, 0.15)' }]}>
-                    <Ionicons name="play-circle-outline" size={20} color={Colors.onTertiaryFixed} />
+                  <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(129, 236, 255, 0.15)' }]}>
+                    <Ionicons name="play-circle" size={20} color={Colors.tertiary} />
                   </View>
-                  <Text style={[styles.modalActionText, { color: Colors.onTertiaryFixed }]}>Execute Function</Text>
+                  <Text style={styles.modalActionText}>Execute Function</Text>
+                  <Ionicons name="chevron-forward" size={16} color={Colors.onSurfaceVariant} />
                 </TouchableOpacity>
 
                 <TouchableOpacity style={[styles.actionButton, { marginTop: Spacing.xl }]} onPress={handleCloseActionModal}>
@@ -459,5 +469,28 @@ const styles = StyleSheet.create({
     fontFamily: Typography.families.label,
     fontSize: Typography.sizes.labelLg,
     color: Colors.onSurface,
+  },
+  neuralCoreContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing['3xl'],
+    marginBottom: Spacing['2xl'],
+  },
+  neuralRing: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(129, 236, 255, 0.08)',
+  },
+  neuralRingOuter: {
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+  },
+  neuralRingInner: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    borderColor: 'rgba(129, 236, 255, 0.15)',
   },
 });
