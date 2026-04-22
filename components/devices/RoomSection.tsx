@@ -9,9 +9,10 @@ interface Props {
   devices: Device[];
   onDevicePress: (device: Device) => void;
   onDeviceToggle: (id: string, newState: boolean) => void;
+  onDeviceLongPress?: (device: Device) => void;
 }
 
-export function RoomSection({ roomName, devices, onDevicePress, onDeviceToggle }: Props) {
+export function RoomSection({ roomName, devices, onDevicePress, onDeviceToggle, onDeviceLongPress }: Props) {
   if (devices.length === 0) return null;
 
   return (
@@ -24,6 +25,7 @@ export function RoomSection({ roomName, devices, onDevicePress, onDeviceToggle }
             device={device}
             onPress={onDevicePress}
             onToggle={onDeviceToggle}
+            onLongPress={onDeviceLongPress}
           />
         ))}
       </View>

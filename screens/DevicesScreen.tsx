@@ -1,12 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Text } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing } from '../constants/theme';
 import TopNavBar from '../components/TopNavBar';
 import { Device, DeviceType } from '../components/devices/types';
 import { DeviceFilterBar, FilterCategory } from '../components/devices/DeviceFilterBar';
 import { RoomSection } from '../components/devices/RoomSection';
 import { DeviceDetailModal } from '../components/devices/DeviceDetailModal';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 const MOCK_DEVICES: Device[] = [
   {
@@ -31,6 +35,7 @@ const MOCK_DEVICES: Device[] = [
 
 export default function DevicesScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('All');
   const [devices, setDevices] = useState<Device[]>(MOCK_DEVICES);
@@ -61,6 +66,14 @@ export default function DevicesScreen() {
     
     // Update currently selected
     setSelectedDevice(prev => prev ? { ...prev, ...updates } : null);
+  };
+
+  const handleDeviceLongPress = (device: Device) => {
+    navigation.navigate('EditDevice', {
+      deviceId: device.id,
+      deviceName: device.name,
+      roomId: device.roomId,
+    });
   };
 
   const filteredDevices = useMemo(() => {
@@ -112,6 +125,7 @@ export default function DevicesScreen() {
             devices={rooms[roomName]}
             onDevicePress={handleDevicePress}
             onDeviceToggle={handleDeviceToggle}
+            onDeviceLongPress={handleDeviceLongPress}
           />
         ))}
       </ScrollView>
@@ -127,6 +141,15 @@ export default function DevicesScreen() {
         }}
         onUpdateValue={handleUpdateDeviceValue}
       />
+
+      {/* Add Device FAB */}
+      <TouchableOpacity
+        style={styles.fab}
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate('AddDevice')}
+      >
+        <Ionicons name="add" size={28} color={Colors.onPrimary} />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -168,6 +191,22 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 120,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 100,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
 });

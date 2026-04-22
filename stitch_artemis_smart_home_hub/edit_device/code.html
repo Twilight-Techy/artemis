@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Edit Device - Artemis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&amp;family=Manrope:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#48474a",
+                        "secondary-container": "#6e06d0",
+                        "on-secondary-fixed": "#4a0090",
+                        "surface-container-low": "#131316",
+                        "surface-container": "#19191c",
+                        "primary-fixed-dim": "#2695ff",
+                        "error-dim": "#d7383b",
+                        "secondary": "#b884ff",
+                        "tertiary-container": "#00e3fd",
+                        "surface-container-lowest": "#000000",
+                        "tertiary-fixed": "#00e3fd",
+                        "primary-dim": "#4da0ff",
+                        "background": "#0e0e10",
+                        "tertiary": "#81ecff",
+                        "on-tertiary-container": "#004d57",
+                        "on-tertiary-fixed": "#003840",
+                        "secondary-fixed": "#e1c7ff",
+                        "on-surface": "#fffbfe",
+                        "on-secondary": "#2f0060",
+                        "secondary-dim": "#9547f7",
+                        "surface-container-highest": "#262529",
+                        "surface": "#0e0e10",
+                        "inverse-on-surface": "#565457",
+                        "primary": "#74b1ff",
+                        "on-secondary-fixed-variant": "#6f08d0",
+                        "tertiary-dim": "#00d4ec",
+                        "secondary-fixed-dim": "#d6b6ff",
+                        "surface-container-high": "#1f1f22",
+                        "on-primary-fixed-variant": "#002d55",
+                        "error": "#ff716c",
+                        "on-tertiary-fixed-variant": "#005762",
+                        "surface-variant": "#262529",
+                        "primary-fixed": "#54a3ff",
+                        "on-primary-container": "#002345",
+                        "surface-tint": "#74b1ff",
+                        "surface-bright": "#2c2c2f",
+                        "on-primary-fixed": "#000000",
+                        "outline": "#767578",
+                        "on-tertiary": "#005762",
+                        "inverse-surface": "#fcf8fb",
+                        "primary-container": "#54a3ff",
+                        "on-primary": "#002f59",
+                        "on-error-container": "#ffa8a3",
+                        "on-background": "#fffbfe",
+                        "on-error": "#490006",
+                        "tertiary-fixed-dim": "#00d4ec",
+                        "on-secondary-container": "#ebd8ff",
+                        "surface-dim": "#0e0e10",
+                        "inverse-primary": "#0060ac",
+                        "error-container": "#9f0519",
+                        "on-surface-variant": "#adaaad"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Space Grotesk", "sans-serif"],
+                        "body": ["Manrope", "sans-serif"],
+                        "label": ["Manrope", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #0e0e10;
+            color: #fffbfe;
+        }
+        h1, h2, h3, h4, h5, h6, .font-headline {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen relative overflow-x-hidden">
+<!-- Luminous Void Background Elements -->
+<div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
+<div class="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-secondary/10 blur-[120px]"></div>
+<div class="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-primary/5 blur-[150px]"></div>
+</div>
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0e0e10]/80 backdrop-blur-2xl bg-gradient-to-b from-[#0e0e10] to-transparent shadow-[0_10px_40px_rgba(0,0,0,0.5)]">
+<div class="flex items-center justify-between px-8 h-20 w-full">
+<button class="text-white/50 hover:text-[#74b1ff] transition-all duration-300 active:scale-95 transition-transform flex items-center justify-center p-2 rounded-full hover:bg-surface-container-highest/50">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<h1 class="text-[#74b1ff] font-['Space_Grotesk'] tracking-[0.2em] uppercase text-xs font-bold text-center flex-1 mx-4 truncate">EDIT DEVICE</h1>
+<button class="text-white/50 hover:text-[#74b1ff] transition-all duration-300 active:scale-95 transition-transform flex items-center justify-center p-2 rounded-full hover:bg-surface-container-highest/50">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">more_vert</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="pt-28 pb-32 px-6 max-w-3xl mx-auto flex flex-col gap-8">
+<!-- Device Name Section -->
+<section class="flex flex-col gap-4">
+<h2 class="font-headline text-headline-md text-on-surface tracking-wide">Identity</h2>
+<div class="bg-surface-container-highest/20 backdrop-blur-md rounded-xl border border-outline-variant/15 p-6 shadow-[0_8px_32px_rgba(110,6,208,0.05)] relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+<div class="relative z-10">
+<label class="block text-label-sm font-label uppercase tracking-wider text-secondary-fixed mb-2">Device Name</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-4 text-secondary-dim z-10" style="font-variation-settings: 'FILL' 0;">devices</span>
+<input class="w-full bg-surface-container-highest/50 border border-outline-variant/30 rounded-lg py-4 pl-12 pr-4 text-body-lg text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all" placeholder="Enter device name" type="text" value="Studio Fan"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Room Selection Section -->
+<section class="flex flex-col gap-4">
+<h2 class="font-headline text-headline-md text-on-surface tracking-wide">Location</h2>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+<label class="cursor-pointer group">
+<input class="peer sr-only" name="room" type="radio" value="living_room"/>
+<div class="bg-surface-container-low rounded-xl border border-outline-variant/15 p-4 flex flex-col items-center gap-3 transition-all duration-300 peer-checked:bg-surface-container-highest peer-checked:border-secondary peer-checked:shadow-[0_0_15px_rgba(184,132,255,0.2)] hover:bg-surface-container">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-secondary-fixed transition-colors peer-checked:text-secondary" style="font-variation-settings: 'FILL' 0;">chair</span>
+<span class="text-label-sm font-label uppercase tracking-wider text-on-surface-variant peer-checked:text-on-surface">Living Room</span>
+</div>
+</label>
+<label class="cursor-pointer group">
+<input class="peer sr-only" name="room" type="radio" value="kitchen"/>
+<div class="bg-surface-container-low rounded-xl border border-outline-variant/15 p-4 flex flex-col items-center gap-3 transition-all duration-300 peer-checked:bg-surface-container-highest peer-checked:border-secondary peer-checked:shadow-[0_0_15px_rgba(184,132,255,0.2)] hover:bg-surface-container">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-secondary-fixed transition-colors peer-checked:text-secondary" style="font-variation-settings: 'FILL' 0;">kitchen</span>
+<span class="text-label-sm font-label uppercase tracking-wider text-on-surface-variant peer-checked:text-on-surface">Kitchen</span>
+</div>
+</label>
+<label class="cursor-pointer group">
+<input class="peer sr-only" name="room" type="radio" value="bedroom"/>
+<div class="bg-surface-container-low rounded-xl border border-outline-variant/15 p-4 flex flex-col items-center gap-3 transition-all duration-300 peer-checked:bg-surface-container-highest peer-checked:border-secondary peer-checked:shadow-[0_0_15px_rgba(184,132,255,0.2)] hover:bg-surface-container">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-secondary-fixed transition-colors peer-checked:text-secondary" style="font-variation-settings: 'FILL' 0;">bed</span>
+<span class="text-label-sm font-label uppercase tracking-wider text-on-surface-variant peer-checked:text-on-surface">Bedroom</span>
+</div>
+</label>
+<label class="cursor-pointer group">
+<input checked="" class="peer sr-only" name="room" type="radio" value="studio"/>
+<div class="bg-surface-container-highest rounded-xl border border-secondary p-4 flex flex-col items-center gap-3 transition-all duration-300 shadow-[0_0_15px_rgba(184,132,255,0.2)]">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 0;">mic</span>
+<span class="text-label-sm font-label uppercase tracking-wider text-on-surface">Studio</span>
+</div>
+</label>
+<button class="bg-surface-container-low rounded-xl border border-outline-variant/15 border-dashed p-4 flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:bg-surface-container hover:border-outline-variant/30 text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">add</span>
+<span class="text-label-sm font-label uppercase tracking-wider">New Room</span>
+</button>
+</div>
+</section>
+<!-- Technical Protocol Section -->
+<section class="flex flex-col gap-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary-dim" style="font-variation-settings: 'FILL' 0;">settings_ethernet</span>
+<h2 class="font-headline text-headline-md text-on-surface tracking-wide">Technical Configuration</h2>
+</div>
+<div class="bg-surface-container-highest/30 backdrop-blur-xl rounded-xl border border-secondary/20 p-6 flex flex-col gap-6 relative overflow-hidden">
+<!-- Decorative glowing accent -->
+<div class="absolute top-0 right-0 w-32 h-32 bg-secondary/10 rounded-full blur-[40px] pointer-events-none"></div>
+<!-- Protocol Selection -->
+<div class="relative z-10">
+<label class="block text-label-sm font-label uppercase tracking-wider text-secondary-fixed mb-3">Protocol</label>
+<div class="flex flex-wrap gap-3">
+<label class="cursor-pointer group">
+<input checked="" class="peer sr-only" name="protocol" type="radio" value="mqtt"/>
+<div class="px-5 py-2.5 rounded-full border border-outline-variant/30 bg-surface-container-low text-body-sm font-medium text-on-surface-variant peer-checked:bg-secondary/20 peer-checked:border-secondary peer-checked:text-secondary-fixed transition-all shadow-[0_0_10px_rgba(184,132,255,0)] peer-checked:shadow-[0_0_15px_rgba(184,132,255,0.15)] flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary peer-checked:animate-pulse"></span>
+                                MQTT
+                            </div>
+</label>
+<label class="cursor-pointer group">
+<input class="peer sr-only" name="protocol" type="radio" value="http"/>
+<div class="px-5 py-2.5 rounded-full border border-outline-variant/30 bg-surface-container-low text-body-sm font-medium text-on-surface-variant peer-checked:bg-secondary/20 peer-checked:border-secondary peer-checked:text-secondary-fixed transition-all hover:bg-surface-container">
+                                HTTP REST
+                            </div>
+</label>
+</div>
+</div>
+<!-- Broker Settings (Conditional UI visualization) -->
+<div class="space-y-4 relative z-10 border-t border-outline-variant/15 pt-6">
+<div>
+<label class="block text-label-sm font-label uppercase tracking-wider text-on-surface-variant mb-2">Broker Address</label>
+<input class="w-full bg-surface-container-low/50 border border-outline-variant/20 rounded-lg py-3 px-4 text-body-lg text-on-surface font-mono text-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:border-secondary/50 focus:bg-surface-container-highest/50 transition-all" placeholder="mqtt://..." type="text" value="mqtt://192.168.1.100:1883"/>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block text-label-sm font-label uppercase tracking-wider text-on-surface-variant mb-2">Topic</label>
+<input class="w-full bg-surface-container-low/50 border border-outline-variant/20 rounded-lg py-3 px-4 text-body-lg text-secondary-fixed font-mono text-sm focus:outline-none focus:border-secondary/50 focus:bg-surface-container-highest/50 transition-all" type="text" value="home/studio/fan/set"/>
+</div>
+<div>
+<label class="block text-label-sm font-label uppercase tracking-wider text-on-surface-variant mb-2">PIN Configuration</label>
+<input class="w-full bg-surface-container-low/50 border border-outline-variant/20 rounded-lg py-3 px-4 text-body-lg text-on-surface font-mono text-sm focus:outline-none focus:border-secondary/50 focus:bg-surface-container-highest/50 transition-all" placeholder="e.g., GPIO4" type="text" value="D4"/>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Actions -->
+<section class="flex flex-col gap-4 mt-8 pb-8">
+<button class="w-full rounded-full bg-gradient-to-r from-secondary to-secondary-dim text-on-surface py-4 px-6 font-headline font-bold tracking-widest uppercase text-sm shadow-[0_0_20px_rgba(184,132,255,0.3)] hover:shadow-[0_0_30px_rgba(184,132,255,0.5)] transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">save</span>
+                Save Configuration
+            </button>
+<button class="w-full rounded-full border border-error-dim/30 bg-surface-container-low/50 text-error py-4 px-6 font-headline font-bold tracking-widest uppercase text-sm hover:bg-error-container/20 hover:border-error/50 transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-2 group">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" style="font-variation-settings: 'FILL' 0;">delete</span>
+                Delete Device
+            </button>
+</section>
+</main>
+</body></html>

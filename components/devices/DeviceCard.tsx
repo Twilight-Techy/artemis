@@ -8,9 +8,10 @@ interface Props {
   device: Device;
   onPress: (device: Device) => void;
   onToggle: (id: string, newState: boolean) => void;
+  onLongPress?: (device: Device) => void;
 }
 
-export function DeviceCard({ device, onPress, onToggle }: Props) {
+export function DeviceCard({ device, onPress, onToggle, onLongPress }: Props) {
   // Determine icon based on device type
   const getIconName = () => {
     switch (device.type) {
@@ -45,6 +46,7 @@ export function DeviceCard({ device, onPress, onToggle }: Props) {
         device.isOn && { shadowColor: statusColor, elevation: 4, shadowOpacity: 0.15, shadowRadius: 10 }
       ]}
       onPress={() => onPress(device)}
+      onLongPress={() => onLongPress?.(device)}
       activeOpacity={0.8}
     >
       <View style={styles.header}>

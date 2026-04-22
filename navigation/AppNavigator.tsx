@@ -15,6 +15,8 @@ import SettingsScreen from '../screens/SettingsScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import AALEditorScreen from '../screens/AALEditorScreen';
 import MCPOverlayScreen from '../screens/MCPOverlayScreen';
+import AddDeviceScreen from '../screens/AddDeviceScreen';
+import EditDeviceScreen from '../screens/EditDeviceScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -22,6 +24,8 @@ export type RootStackParamList = {
   History: undefined;
   AALEditor: undefined;
   MCPOverlay: undefined;
+  AddDevice: undefined;
+  EditDevice: { deviceId: string; deviceName: string; roomId: string };
 };
 
 const Tab = createBottomTabNavigator();
@@ -112,6 +116,8 @@ export default function AppNavigator() {
       <Stack.Screen name="History" component={HistoryScreen} />
       <Stack.Screen name="AALEditor" component={AALEditorScreen} />
       <Stack.Screen name="MCPOverlay" component={MCPOverlayScreen} />
+      <Stack.Screen name="AddDevice" component={AddDeviceScreen} />
+      <Stack.Screen name="EditDevice" component={EditDeviceScreen} />
     </Stack.Navigator>
   );
 }

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Artemis - Add Device</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&amp;family=Manrope:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#48474a",
+                        "secondary-container": "#6e06d0",
+                        "on-secondary-fixed": "#4a0090",
+                        "surface-container-low": "#131316",
+                        "surface-container": "#19191c",
+                        "primary-fixed-dim": "#2695ff",
+                        "error-dim": "#d7383b",
+                        "secondary": "#b884ff",
+                        "tertiary-container": "#00e3fd",
+                        "surface-container-lowest": "#000000",
+                        "tertiary-fixed": "#00e3fd",
+                        "primary-dim": "#4da0ff",
+                        "background": "#0e0e10",
+                        "tertiary": "#81ecff",
+                        "on-tertiary-container": "#004d57",
+                        "on-tertiary-fixed": "#003840",
+                        "secondary-fixed": "#e1c7ff",
+                        "on-surface": "#fffbfe",
+                        "on-secondary": "#2f0060",
+                        "secondary-dim": "#9547f7",
+                        "surface-container-highest": "#262529",
+                        "surface": "#0e0e10",
+                        "inverse-on-surface": "#565457",
+                        "primary": "#74b1ff",
+                        "on-secondary-fixed-variant": "#6f08d0",
+                        "tertiary-dim": "#00d4ec",
+                        "secondary-fixed-dim": "#d6b6ff",
+                        "surface-container-high": "#1f1f22",
+                        "on-primary-fixed-variant": "#002d55",
+                        "error": "#ff716c",
+                        "on-tertiary-fixed-variant": "#005762",
+                        "surface-variant": "#262529",
+                        "primary-fixed": "#54a3ff",
+                        "on-primary-container": "#002345",
+                        "surface-tint": "#74b1ff",
+                        "surface-bright": "#2c2c2f",
+                        "on-primary-fixed": "#000000",
+                        "outline": "#767578",
+                        "on-tertiary": "#005762",
+                        "inverse-surface": "#fcf8fb",
+                        "primary-container": "#54a3ff",
+                        "on-primary": "#002f59",
+                        "on-error-container": "#ffa8a3",
+                        "on-background": "#fffbfe",
+                        "on-error": "#490006",
+                        "tertiary-fixed-dim": "#00d4ec",
+                        "on-secondary-container": "#ebd8ff",
+                        "surface-dim": "#0e0e10",
+                        "inverse-primary": "#0060ac",
+                        "error-container": "#9f0519",
+                        "on-surface-variant": "#adaaad"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Space Grotesk"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.background'); color: theme('colors.on-surface'); font-family: 'Manrope', sans-serif; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Space Grotesk', sans-serif; }
+        .glass-panel {
+            background-color: theme('colors.surface-variant');
+            background-opacity: 0.2;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid theme('colors.outline-variant');
+        }
+        .orb-gradient {
+            background: radial-gradient(circle at center, theme('colors.tertiary-dim') 0%, theme('colors.tertiary-fixed') 40%, transparent 70%);
+            opacity: 0.15;
+            filter: blur(40px);
+        }
+        .text-gradient {
+            background: linear-gradient(45deg, theme('colors.primary'), theme('colors.primary-container'));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface antialiased overflow-x-hidden min-h-screen flex flex-col relative">
+<!-- The Luminous Void Background -->
+<div class="fixed inset-0 pointer-events-none z-[-1] flex items-center justify-center">
+<div class="orb-gradient w-[800px] h-[800px] rounded-full absolute top-[-200px] right-[-200px]"></div>
+</div>
+<!-- TopAppBar -->
+<header class="bg-[#0e0e10]/80 backdrop-blur-2xl fixed top-0 w-full z-50 shadow-[0_10px_40px_rgba(0,0,0,0.5)] bg-gradient-to-b from-[#0e0e10] to-transparent">
+<div class="flex items-center justify-between px-8 h-20 w-full">
+<button class="text-white/50 hover:text-[#74b1ff] transition-all duration-300 active:scale-95 transition-transform flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">arrow_back</span>
+</button>
+<h1 class="text-[#74b1ff] font-['Space_Grotesk'] tracking-[0.2em] uppercase text-xs font-bold">ADD DEVICE</h1>
+<button class="text-white/50 hover:text-[#74b1ff] transition-all duration-300 active:scale-95 transition-transform flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">more_vert</span>
+</button>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 pt-28 pb-32 px-6 flex flex-col gap-10 max-w-4xl mx-auto w-full z-10">
+<!-- Scanning Section (Asymmetric Hero) -->
+<section class="flex flex-col md:flex-row items-center gap-10">
+<!-- Animated Radar/Orb representation -->
+<div class="relative w-64 h-64 flex items-center justify-center shrink-0">
+<div class="absolute inset-0 rounded-full border border-tertiary/20"></div>
+<div class="absolute inset-4 rounded-full border border-tertiary/40"></div>
+<div class="absolute inset-12 rounded-full border border-tertiary/60"></div>
+<div class="w-20 h-20 bg-tertiary rounded-full shadow-[0_0_60px_rgba(129,236,255,0.6)] flex items-center justify-center">
+<span class="material-symbols-outlined text-background text-3xl" style="font-variation-settings: 'FILL' 1;">radar</span>
+</div>
+</div>
+<div class="flex flex-col gap-4 text-center md:text-left">
+<h2 class="font-headline text-display-lg text-tertiary tracking-tight leading-none">Scanning Network</h2>
+<p class="font-body text-body-lg text-on-surface-variant max-w-md">Looking for compatible hardware protocols. Ensure your devices are powered on and in pairing mode.</p>
+<div class="flex flex-wrap gap-2 justify-center md:justify-start mt-2">
+<span class="px-3 py-1 rounded-full border border-tertiary/30 text-tertiary font-label text-label-sm uppercase tracking-wider bg-tertiary/5">Zigbee</span>
+<span class="px-3 py-1 rounded-full border border-tertiary/30 text-tertiary font-label text-label-sm uppercase tracking-wider bg-tertiary/5">Matter</span>
+<span class="px-3 py-1 rounded-full border border-tertiary/30 text-tertiary font-label text-label-sm uppercase tracking-wider bg-tertiary/5">WiFi</span>
+</div>
+</div>
+</section>
+<!-- Discovered Devices -->
+<section class="flex flex-col gap-6">
+<h3 class="font-headline text-headline-md text-on-surface">Discovered</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Device Card 1 -->
+<div class="bg-surface-container-highest rounded-lg p-6 flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:bg-surface-bright transition-colors duration-300 relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary opacity-50 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex items-center gap-5">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
+<span class="material-symbols-outlined">lightbulb</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline text-lg font-bold">Lumina Bulb A1</span>
+<span class="font-body text-sm text-on-surface-variant">Zigbee Protocol</span>
+</div>
+</div>
+<button class="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-sm uppercase tracking-wider px-5 py-2 rounded-full shadow-[0_4px_16px_rgba(116,177,255,0.3)] hover:brightness-110 active:scale-95 transition-all">
+                        Connect
+                    </button>
+</div>
+<!-- Device Card 2 -->
+<div class="bg-surface-container-highest rounded-lg p-6 flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.3)] hover:bg-surface-bright transition-colors duration-300 relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary opacity-50 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex items-center gap-5">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
+<span class="material-symbols-outlined">thermostat</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline text-lg font-bold">Nest Temp Sensor</span>
+<span class="font-body text-sm text-on-surface-variant">Matter Network</span>
+</div>
+</div>
+<button class="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-sm uppercase tracking-wider px-5 py-2 rounded-full shadow-[0_4px_16px_rgba(116,177,255,0.3)] hover:brightness-110 active:scale-95 transition-all">
+                        Connect
+                    </button>
+</div>
+</div>
+</section>
+<!-- Manual Entry Section -->
+<section class="mt-8 bg-surface-container-low rounded-xl p-8 border border-outline-variant/20 flex flex-col gap-6">
+<div class="flex items-center gap-4 text-on-surface-variant mb-2">
+<span class="material-symbols-outlined text-2xl text-secondary">tune</span>
+<h3 class="font-headline text-headline-md text-on-surface">Manual Setup</h3>
+</div>
+<p class="font-body text-on-surface-variant text-sm max-w-2xl">Can't find your device? Enter the IP address or pairing code manually to bypass the auto-discovery process.</p>
+<div class="flex flex-col md:flex-row gap-4 mt-2">
+<div class="flex-1 relative">
+<input class="w-full bg-surface-container-highest border-outline-variant/30 text-on-surface placeholder-on-surface-variant/50 rounded-lg px-4 py-3 font-body focus:border-primary focus:ring-1 focus:ring-primary transition-colors" placeholder="IP Address or Pairing Code" type="text"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50">keyboard</span>
+</div>
+<button class="bg-surface-container-highest border border-outline-variant/30 text-on-surface font-label text-sm uppercase tracking-wider px-6 py-3 rounded-lg hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg">add_link</span>
+                    Add Manually
+                </button>
+</div>
+</section>
+</main>
+<!-- Navigation Suppressed as this is a Task-Focused/Linear flow (Add Device) -->
+</body></html>
