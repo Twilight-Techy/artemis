@@ -8,9 +8,10 @@ import {
   TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
+import { DeviceType } from '../components/devices/types';
 
 // ── Types ──
 type EditDeviceRouteParams = {
@@ -18,6 +19,7 @@ type EditDeviceRouteParams = {
     deviceId: string;
     deviceName: string;
     roomId: string;
+    deviceType: DeviceType;
   };
 };
 
@@ -34,6 +36,15 @@ const ROOMS: RoomOption[] = [
   { id: 'studio', label: 'STUDIO', icon: 'mic-outline' },
 ];
 
+const DEVICE_TYPES: { id: DeviceType; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
+  { id: 'light', label: 'Light', icon: 'lightbulb-outline' },
+  { id: 'climate', label: 'Climate', icon: 'ac-unit' },
+  { id: 'appliance', label: 'Appliance', icon: 'kitchen' },
+  { id: 'media', label: 'Media', icon: 'speaker' },
+  { id: 'shade', label: 'Shade', icon: 'blinds' },
+  { id: 'sensor', label: 'Sensor', icon: 'sensors' },
+];
+
 type Protocol = 'mqtt' | 'http';
 
 export default function EditDeviceScreen() {
@@ -41,9 +52,10 @@ export default function EditDeviceScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<EditDeviceRouteParams, 'EditDevice'>>();
 
-  const { deviceName: initialName, roomId: initialRoom } = route.params;
+  const { deviceName: initialName, roomId: initialRoom, deviceType: initialType } = route.params;
 
   const [deviceName, setDeviceName] = useState(initialName || 'Studio Fan');
+  const [deviceType, setDeviceType] = useState<DeviceType>(initialType || 'appliance');
   const [selectedRoom, setSelectedRoom] = useState(initialRoom || 'studio');
   const [protocol, setProtocol] = useState<Protocol>('mqtt');
   const [brokerAddress, setBrokerAddress] = useState('mqtt://192.168.1.100:1883');
@@ -77,9 +89,9 @@ export default function EditDeviceScreen() {
           <View style={styles.identityCard}>
             <Text style={styles.fieldLabel}>DEVICE NAME</Text>
             <View style={styles.nameInputRow}>
-              <Ionicons
-                name="phone-portrait-outline"
-                size={20}
+              <MaterialIcons
+                name={DEVICE_TYPES.find(t => t.id === deviceType)?.icon || 'device-unknown'}
+                size={22}
                 color={Colors.secondaryDim}
                 style={styles.nameIcon}
               />
@@ -91,6 +103,28 @@ export default function EditDeviceScreen() {
                 placeholder="Enter device name"
               />
             </View>
+
+            <Text style={[styles.fieldLabel, { marginTop: Spacing.xl }]}>DEVICE TYPE</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeScrollContent}>
+              {DEVICE_TYPES.map((type) => {
+                const isSelected = deviceType === type.id;
+                return (
+                  <TouchableOpacity
+                    key={type.id}
+                    style={[styles.typePill, isSelected && styles.typePillSelected]}
+                    onPress={() => setDeviceType(type.id)}
+                    activeOpacity={0.7}
+                  >
+                    <MaterialIcons 
+                      name={type.icon} 
+                      size={18} 
+                      color={isSelected ? Colors.secondary : Colors.onSurfaceVariant} 
+                    />
+                    <Text style={[styles.typeLabel, isSelected && styles.typeLabelSelected]}>{type.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </View>
         </View>
 
@@ -319,6 +353,34 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.bodyLg,
     color: Colors.onSurface,
     paddingVertical: Spacing.lg,
+  },
+  typeScrollContent: {
+    gap: Spacing.md,
+    marginTop: Spacing.xs,
+  },
+  typePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm + 2,
+    borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: 'rgba(72, 71, 74, 0.3)',
+    backgroundColor: Colors.surfaceContainerLow,
+  },
+  typePillSelected: {
+    backgroundColor: 'rgba(184, 132, 255, 0.2)',
+    borderColor: Colors.secondary,
+  },
+  typeLabel: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.bodySm,
+    fontWeight: Typography.weights.medium,
+    color: Colors.onSurfaceVariant,
+  },
+  typeLabelSelected: {
+    color: Colors.onSurface,
   },
 
   // ── Location ──

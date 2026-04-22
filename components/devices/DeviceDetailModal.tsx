@@ -14,9 +14,10 @@ interface Props {
   onClose: () => void;
   onToggle: () => void;
   onUpdateValue: (updates: Partial<Device>) => void;
+  onEdit: (device: Device) => void;
 }
 
-export function DeviceDetailModal({ visible, device, onClose, onToggle, onUpdateValue }: Props) {
+export function DeviceDetailModal({ visible, device, onClose, onToggle, onUpdateValue, onEdit }: Props) {
   if (!device) return null;
 
   return (
@@ -28,9 +29,14 @@ export function DeviceDetailModal({ visible, device, onClose, onToggle, onUpdate
               <Text style={styles.title}>{device.name}</Text>
               <Text style={styles.subtitle}>{device.roomId}</Text>
             </View>
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <MaterialIcons name="close" size={24} color={Colors.onSurface} />
-            </TouchableOpacity>
+            <View style={styles.headerRight}>
+              <TouchableOpacity style={styles.iconBtn} onPress={() => onEdit(device)}>
+                <MaterialIcons name="edit" size={24} color={Colors.onSurface} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconBtn} onPress={onClose}>
+                <MaterialIcons name="close" size={24} color={Colors.onSurface} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.statusSection}>
@@ -148,7 +154,11 @@ const styles = StyleSheet.create({
     color: Colors.onSurfaceVariant,
     marginTop: Spacing.xs,
   },
-  closeBtn: {
+  headerRight: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  iconBtn: {
     padding: Spacing.sm,
     backgroundColor: Colors.surfaceContainerHighest,
     borderRadius: Radii.full,

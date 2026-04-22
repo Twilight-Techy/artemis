@@ -73,6 +73,7 @@ export default function DevicesScreen() {
       deviceId: device.id,
       deviceName: device.name,
       roomId: device.roomId,
+      deviceType: device.type,
     });
   };
 
@@ -140,6 +141,10 @@ export default function DevicesScreen() {
           }
         }}
         onUpdateValue={handleUpdateDeviceValue}
+        onEdit={(device) => {
+          setSelectedDevice(null); // Close modal
+          handleDeviceLongPress(device); // Navigate to edit
+        }}
       />
 
       {/* Add Device FAB */}

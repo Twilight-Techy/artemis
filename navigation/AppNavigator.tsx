@@ -25,7 +25,7 @@ export type RootStackParamList = {
   AALEditor: undefined;
   MCPOverlay: undefined;
   AddDevice: undefined;
-  EditDevice: { deviceId: string; deviceName: string; roomId: string };
+  EditDevice: { deviceId: string; deviceName: string; roomId: string; deviceType: string };
 };
 
 const Tab = createBottomTabNavigator();
