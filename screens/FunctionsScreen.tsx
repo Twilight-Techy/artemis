@@ -6,6 +6,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import TopNavBar from '../components/TopNavBar';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 type FilterCategory = 'All Actions' | 'Daily Routine' | 'Security' | 'Energy Saving';
 const CATEGORIES: FilterCategory[] = ['All Actions', 'Daily Routine', 'Security', 'Energy Saving'];
@@ -14,6 +17,7 @@ export default function FunctionsScreen() {
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('All Actions');
   const [selectedFunction, setSelectedFunction] = useState<string | null>(null);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleOpenActionModal = (functionName: string) => {
     setSelectedFunction(functionName);
@@ -35,7 +39,7 @@ export default function FunctionsScreen() {
             Orchestrate your environment with reactive intelligence macros.
           </Text>
 
-          <TouchableOpacity activeOpacity={0.8} style={styles.addButtonContainer}>
+          <TouchableOpacity activeOpacity={0.8} style={styles.addButtonContainer} onPress={() => navigation.navigate('AddEditFunction', { mode: 'add' })}>
             <LinearGradient
               colors={[Colors.primary, Colors.primaryContainer]}
               start={{ x: 0, y: 0 }}
@@ -184,7 +188,10 @@ export default function FunctionsScreen() {
                 <Text style={styles.modalTitle}>{selectedFunction}</Text>
                 <Text style={styles.modalSubtitle}>Manage your function</Text>
                 
-                <TouchableOpacity style={styles.modalActionRow}>
+                <TouchableOpacity style={styles.modalActionRow} onPress={() => {
+                  handleCloseActionModal();
+                  navigation.navigate('AddEditFunction', { mode: 'edit', functionName: selectedFunction || '' });
+                }}>
                   <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(116, 177, 255, 0.15)' }]}>
                     <Ionicons name="create-outline" size={20} color={Colors.primary} />
                   </View>
