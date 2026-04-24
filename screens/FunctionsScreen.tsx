@@ -121,6 +121,7 @@ export default function FunctionsScreen() {
               key={fn.id} 
               activeOpacity={0.8} 
               onPress={() => handleOpenActionModal(fn.name)} 
+              onLongPress={() => navigation.navigate('AddEditFunction', { mode: 'edit', functionName: fn.name })}
               style={styles.card}
             >
               <View style={styles.cardHeader}>

@@ -60,7 +60,7 @@ export default function AutomationsScreen() {
         <View style={styles.listContainer}>
 
           {/* Automation Card 1: Evening Ambiance */}
-          <View style={styles.card}>
+          <TouchableOpacity style={styles.card} activeOpacity={0.8} onLongPress={() => navigation.navigate('AALEditor')}>
             <View style={styles.cardHeader}>
               <View style={styles.tagContainer}>
                 <View style={[styles.iconWrapper, { backgroundColor: 'rgba(129, 236, 255, 0.1)' }]}>
@@ -89,10 +89,10 @@ export default function AutomationsScreen() {
                 <Text style={styles.ruleText}>THEN <Text style={styles.ruleHighlight}>Dim lights to 20% & Play Lo-Fi</Text></Text>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
 
           {/* Automation Card 2: Night Guard */}
-          <View style={styles.card}>
+          <TouchableOpacity style={styles.card} activeOpacity={0.8} onLongPress={() => navigation.navigate('AALEditor')}>
             <View style={styles.cardHeader}>
               <View style={styles.tagContainer}>
                 <View style={[styles.iconWrapper, { backgroundColor: 'rgba(184, 132, 255, 0.1)' }]}>
@@ -121,10 +121,10 @@ export default function AutomationsScreen() {
                 <Text style={styles.ruleText}>THEN <Text style={styles.ruleHighlight}>Activate Perimeter & Notify Admin</Text></Text>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
 
           {/* Automation Card 3: Smart Thermal Optima */}
-          <View style={[styles.card, activeEco ? {} : { opacity: 0.7 }]}>
+          <TouchableOpacity style={[styles.card, activeEco ? {} : { opacity: 0.7 }]} activeOpacity={0.8} onLongPress={() => navigation.navigate('AALEditor')}>
             <View style={styles.cardHeader}>
               <View style={styles.tagContainer}>
                 <View style={[styles.iconWrapper, { backgroundColor: 'rgba(116, 177, 255, 0.1)' }]}>
@@ -157,7 +157,7 @@ export default function AutomationsScreen() {
             {!activeEco && (
               <Text style={styles.deactivatedText}>DEACTIVATED 2 DAYS AGO</Text>
             )}
-          </View>
+          </TouchableOpacity>
 
         </View>
 
