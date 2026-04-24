@@ -75,6 +75,11 @@ export default function AddEditFunctionScreen() {
   // Software config
   const [endpoint, setEndpoint] = useState('');
   const [method, setMethod] = useState('POST');
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [headerInput, setHeaderInput] = useState('');
+  const [body, setBody] = useState('');
+  const [parameters, setParameters] = useState<string[]>(isEdit ? ['targetEmail', 'reportDate'] : []);
+  const [parameterInput, setParameterInput] = useState('');
 
   const toggleDevice = (id: string) => {
     setSelectedDevices(prev => {
@@ -106,6 +111,30 @@ export default function AddEditFunctionScreen() {
 
   const removeCondition = (cond: string) => {
     setConditions(prev => prev.filter(c => c !== cond));
+  };
+
+  const addHeader = () => {
+    const val = headerInput.trim();
+    if (val && !headers.includes(val)) {
+      setHeaders(prev => [...prev, val]);
+      setHeaderInput('');
+    }
+  };
+
+  const removeHeader = (val: string) => {
+    setHeaders(prev => prev.filter(t => t !== val));
+  };
+
+  const addParameter = () => {
+    const val = parameterInput.trim();
+    if (val && !parameters.includes(val)) {
+      setParameters(prev => [...prev, val]);
+      setParameterInput('');
+    }
+  };
+
+  const removeParameter = (val: string) => {
+    setParameters(prev => prev.filter(t => t !== val));
   };
 
   const handleSave = () => {
@@ -280,11 +309,94 @@ export default function AddEditFunctionScreen() {
                     activeOpacity={0.7}
                   >
                     <Text style={[styles.methodText, method === m && styles.methodTextActive]}>
-                      {m}
+                       {m}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
+
+              <Text style={[styles.fieldLabel, { marginTop: Spacing.xl }]}>REQUIRED PARAMETERS</Text>
+              <Text style={{ fontFamily: Typography.families.body, fontSize: 13, color: Colors.onSurfaceVariant, marginBottom: Spacing.sm }}>
+                These will be requested from the user before executing.
+              </Text>
+              {parameters.length > 0 && (
+                <View style={styles.tagList}>
+                  {parameters.map((p) => (
+                    <View key={p} style={[styles.tag, { backgroundColor: 'rgba(184,132,255,0.1)', borderColor: 'rgba(184,132,255,0.2)' }]}>
+                      <Ionicons name="pricetag" size={12} color={Colors.secondary} />
+                      <Text style={[styles.tagText, { color: Colors.secondary }]}>{p}</Text>
+                      <TouchableOpacity onPress={() => removeParameter(p)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <Ionicons name="close-circle" size={16} color={Colors.onSurfaceVariant} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+              <View style={styles.addTagRow}>
+                <TextInput
+                  style={[styles.textInput, { flex: 1 }]}
+                  value={parameterInput}
+                  onChangeText={setParameterInput}
+                  placeholder="e.g. email_address"
+                  placeholderTextColor="rgba(173,170,173,0.5)"
+                  onSubmitEditing={addParameter}
+                  returnKeyType="done"
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity style={styles.addTagBtn} onPress={addParameter} activeOpacity={0.7}>
+                  <Ionicons name="add" size={20} color={Colors.onPrimary} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.fieldLabel, { marginTop: Spacing.xl }]}>HEADERS (KEY: VALUE)</Text>
+              <Text style={{ fontFamily: Typography.families.body, fontSize: 13, color: Colors.onSurfaceVariant, marginBottom: Spacing.md }}>
+                Hint: Inject variables using <Text style={{ color: Colors.secondary }}>{`{{parameterName}}`}</Text>
+              </Text>
+              {headers.length > 0 && (
+                <View style={styles.tagList}>
+                  {headers.map((h) => (
+                    <View key={h} style={[styles.tag, { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }]}>
+                      <Ionicons name="code" size={12} color={Colors.onSurface} />
+                      <Text style={[styles.tagText, { color: Colors.onSurface }]}>{h}</Text>
+                      <TouchableOpacity onPress={() => removeHeader(h)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <Ionicons name="close-circle" size={16} color={Colors.onSurfaceVariant} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+              <View style={styles.addTagRow}>
+                <TextInput
+                  style={[styles.textInput, { flex: 1 }]}
+                  value={headerInput}
+                  onChangeText={setHeaderInput}
+                  placeholder='e.g. "Authorization: Bearer {{token}}"'
+                  placeholderTextColor="rgba(173,170,173,0.5)"
+                  onSubmitEditing={addHeader}
+                  returnKeyType="done"
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity style={styles.addTagBtn} onPress={addHeader} activeOpacity={0.7}>
+                  <Ionicons name="add" size={20} color={Colors.onPrimary} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={[styles.fieldLabel, { marginTop: Spacing.xl }]}>REQUEST BODY</Text>
+              <Text style={{ fontFamily: Typography.families.body, fontSize: 13, color: Colors.onSurfaceVariant, marginBottom: Spacing.sm }}>
+                Hint: Inject variables using <Text style={{ color: Colors.secondary }}>{`{{parameterName}}`}</Text>
+              </Text>
+              <TextInput
+                style={[styles.textInput, styles.textArea, { fontFamily: 'Courier' }]}
+                value={body}
+                onChangeText={setBody}
+                placeholder={`{\n  "email": "{{email_address}}"\n}`}
+                placeholderTextColor="rgba(173,170,173,0.5)"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                autoCapitalize="none"
+              />
+
             </View>
           </View>
         )}

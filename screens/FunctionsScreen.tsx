@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, TextInput, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -31,6 +31,7 @@ const MOCK_FUNCTIONS = [
     description: 'Fetch overnight security logs and email the summary to admin account.',
     type: 'Software' as const,
     endpoint: 'POST /api/alerts',
+    parameters: ['adminEmail', 'reportDate'],
     icon: 'cloud-outline',
     color: Colors.tertiary,
     tagBg: 'rgba(129, 236, 255, 0.15)',
@@ -43,6 +44,7 @@ const MOCK_FUNCTIONS = [
     type: 'Hybrid' as const,
     deviceCount: 4,
     endpoint: 'POST /api/lockdown',
+    parameters: ['authorizationCode'],
     icon: 'git-merge-outline',
     color: Colors.secondary,
     tagBg: 'rgba(184, 132, 255, 0.15)',
@@ -53,17 +55,59 @@ const MOCK_FUNCTIONS = [
 export default function FunctionsScreen() {
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('All Functions');
-  const [selectedFunction, setSelectedFunction] = useState<string | null>(null);
-  const [confirmExecute, setConfirmExecute] = useState<string | null>(null);
+  const [selectedFunctionId, setSelectedFunctionId] = useState<string | null>(null);
+  const [confirmExecuteId, setConfirmExecuteId] = useState<string | null>(null);
+  const [parameterValues, setParameterValues] = useState<Record<string, string>>({});
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const handleOpenActionModal = (functionName: string) => {
-    setSelectedFunction(functionName);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastAnim = React.useRef(new Animated.Value(0)).current;
+
+  const handleOpenActionModal = (id: string) => {
+    setSelectedFunctionId(id);
   };
 
   const handleCloseActionModal = () => {
-    setSelectedFunction(null);
+    setSelectedFunctionId(null);
   };
+
+  const handleOpenExecuteModal = (id: string) => {
+    setConfirmExecuteId(id);
+    setParameterValues({});
+  };
+
+  const handleCloseExecuteModal = () => {
+    setConfirmExecuteId(null);
+    setParameterValues({});
+  };
+
+  const showToast = (message: string) => {
+    toastAnim.setValue(0);
+    setToastMessage(message);
+    Animated.sequence([
+      Animated.timing(toastAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.delay(2000),
+      Animated.timing(toastAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const executeFunction = () => {
+    // Cache name before destroying the modal to prevent it showing up as generic "Function"
+    const functionName = confirmExecuteObj?.name || 'Function';
+    handleCloseExecuteModal();
+    showToast(`${functionName} executed successfully`);
+  };
+
+  const selectedFunctionObj = MOCK_FUNCTIONS.find(f => f.id === selectedFunctionId);
+  const confirmExecuteObj = MOCK_FUNCTIONS.find(f => f.id === confirmExecuteId);
 
 
   return (
@@ -120,7 +164,7 @@ export default function FunctionsScreen() {
             <TouchableOpacity 
               key={fn.id} 
               activeOpacity={0.8} 
-              onPress={() => handleOpenActionModal(fn.name)} 
+              onPress={() => handleOpenActionModal(fn.id)} 
               onLongPress={() => navigation.navigate('AddEditFunction', { mode: 'edit', functionName: fn.name })}
               style={styles.card}
             >
@@ -172,7 +216,7 @@ export default function FunctionsScreen() {
 
       {/* ═══ Action Modal ═══ */}
       <Modal
-        visible={!!selectedFunction}
+        visible={!!selectedFunctionId}
         transparent={true}
         animationType="fade"
         onRequestClose={handleCloseActionModal}
@@ -183,12 +227,12 @@ export default function FunctionsScreen() {
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
                 <View style={styles.modalHandle} />
-                <Text style={styles.modalTitle}>{selectedFunction}</Text>
+                <Text style={styles.modalTitle}>{selectedFunctionObj?.name}</Text>
                 <Text style={styles.modalSubtitle}>Manage your function</Text>
                 
                 <TouchableOpacity style={styles.modalActionRow} onPress={() => {
                   handleCloseActionModal();
-                  navigation.navigate('AddEditFunction', { mode: 'edit', functionName: selectedFunction || '' });
+                  navigation.navigate('AddEditFunction', { mode: 'edit', functionName: selectedFunctionObj?.name || '' });
                 }}>
                   <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(116, 177, 255, 0.15)' }]}>
                     <Ionicons name="create-outline" size={20} color={Colors.primary} />
@@ -199,7 +243,7 @@ export default function FunctionsScreen() {
 
                 <TouchableOpacity style={styles.modalActionRow} onPress={() => {
                   handleCloseActionModal();
-                  navigation.navigate('AddEditFunction', { mode: 'edit', functionName: selectedFunction || '' });
+                  navigation.navigate('AddEditFunction', { mode: 'edit', functionName: selectedFunctionObj?.name || '' });
                 }}>
                   <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(116, 177, 255, 0.15)' }]}>
                     <Ionicons name="options-outline" size={20} color={Colors.primary} />
@@ -209,8 +253,9 @@ export default function FunctionsScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.modalActionRow} onPress={() => {
+                  const id = selectedFunctionId;
                   handleCloseActionModal();
-                  setConfirmExecute(selectedFunction);
+                  if (id) handleOpenExecuteModal(id);
                 }}>
                   <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(129, 236, 255, 0.15)' }]}>
                     <Ionicons name="play-circle" size={20} color={Colors.tertiary} />
@@ -230,12 +275,12 @@ export default function FunctionsScreen() {
 
       {/* ═══ Execute Confirmation Modal ═══ */}
       <Modal
-        visible={!!confirmExecute}
+        visible={!!confirmExecuteId}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setConfirmExecute(null)}
+        onRequestClose={handleCloseExecuteModal}
       >
-        <TouchableWithoutFeedback onPress={() => setConfirmExecute(null)}>
+        <TouchableWithoutFeedback onPress={handleCloseExecuteModal}>
           <View style={[styles.modalOverlay, { justifyContent: 'center' }]}>
             <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
             <TouchableWithoutFeedback>
@@ -247,20 +292,39 @@ export default function FunctionsScreen() {
                   </View>
                   <Text style={[styles.modalTitle, { textAlign: 'center' }]}>Execute Function</Text>
                   <Text style={[styles.modalSubtitle, { textAlign: 'center', marginHorizontal: Spacing.xl, marginTop: Spacing.xs }]}>
-                    Are you sure you want to manually trigger "{confirmExecute}"?
+                    Are you sure you want to manually trigger "{confirmExecuteObj?.name}"?
                   </Text>
                 </View>
 
-                <View style={{ flexDirection: 'row', gap: Spacing.md }}>
+                {confirmExecuteObj?.parameters && confirmExecuteObj.parameters.length > 0 && (
+                  <View style={{ marginBottom: Spacing.xl, width: '100%', paddingHorizontal: Spacing.xl }}>
+                    <Text style={{ fontFamily: Typography.families.label, fontSize: 10, color: Colors.onSurfaceVariant, marginBottom: Spacing.sm, letterSpacing: 1 }}>REQUIRED PARAMETERS</Text>
+                    {confirmExecuteObj.parameters.map((param) => (
+                      <View key={param} style={{ marginBottom: Spacing.md }}>
+                        <Text style={{ fontFamily: Typography.families.body, fontSize: Typography.sizes.bodySm, color: Colors.onSurface, marginBottom: 4 }}>{param}</Text>
+                        <TextInput
+                          style={[styles.textInput, { backgroundColor: Colors.surfaceContainerHighest, borderRadius: Radii.lg, padding: Spacing.md, color: Colors.onSurface, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' }]}
+                          value={parameterValues[param] || ''}
+                          onChangeText={(val) => setParameterValues(prev => ({ ...prev, [param]: val }))}
+                          placeholderTextColor="rgba(255,255,255,0.3)"
+                          placeholder={`Enter ${param}...`}
+                          autoCapitalize="none"
+                        />
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                <View style={{ flexDirection: 'row', gap: Spacing.md, paddingHorizontal: Spacing.xl }}>
                   <TouchableOpacity 
-                    style={[styles.actionButton, { flex: 1, backgroundColor: Colors.surfaceContainerHigh }]} 
-                    onPress={() => setConfirmExecute(null)}
+                    style={[styles.actionButton, { flex: 1, backgroundColor: 'rgba(255, 255, 255, 0.05)' }]} 
+                    onPress={handleCloseExecuteModal}
                   >
-                    <Text style={[styles.actionButtonText, { color: Colors.onSurface }]}>Cancel</Text>
+                    <Text style={styles.actionButtonText}>Cancel</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={[styles.actionButton, { flex: 1, backgroundColor: Colors.tertiary }]} 
-                    onPress={() => setConfirmExecute(null)}
+                    onPress={executeFunction}
                   >
                     <Text style={[styles.actionButtonText, { color: Colors.background }]}>Execute</Text>
                   </TouchableOpacity>
@@ -271,6 +335,23 @@ export default function FunctionsScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* ═══ Custom Animated Toast ═══ */}
+      <Animated.View 
+        style={[
+          styles.toastContainer, 
+          { 
+            top: insets.top + 20,
+            opacity: toastAnim, 
+            transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] 
+          }
+        ]}
+        pointerEvents="none"
+      >
+        <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
+        <Ionicons name="checkmark-circle" size={24} color={Colors.tertiary} />
+        <Text style={styles.toastText} numberOfLines={1}>{toastMessage || 'Success'}</Text>
+      </Animated.View>
     </View>
   );
 }
@@ -505,6 +586,10 @@ const styles = StyleSheet.create({
     color: Colors.onSurfaceVariant,
     marginBottom: Spacing['2xl'],
   },
+  textInput: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.bodyLg,
+  },
   modalActionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -547,5 +632,32 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: 70,
     borderColor: 'rgba(129, 236, 255, 0.15)',
+  },
+  toastContainer: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: 'rgba(129, 236, 255, 0.4)',
+    backgroundColor: 'rgba(14, 14, 16, 0.95)',
+    gap: Spacing.sm,
+    shadowColor: Colors.tertiary,
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 4 },
+    overflow: 'hidden',
+    zIndex: 9999,
+    elevation: 20,
+  },
+  toastText: {
+    flex: 1,
+    fontFamily: Typography.families.label,
+    fontSize: Typography.sizes.labelLg,
+    color: Colors.onSurface,
   },
 });
