@@ -10,13 +10,51 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
-type FilterCategory = 'All Actions' | 'Daily Routine' | 'Security' | 'Energy Saving';
-const CATEGORIES: FilterCategory[] = ['All Actions', 'Daily Routine', 'Security', 'Energy Saving'];
+type FilterCategory = 'All Functions' | 'Hardware' | 'Software' | 'Hybrid';
+const CATEGORIES: FilterCategory[] = ['All Functions', 'Hardware', 'Software', 'Hybrid'];
+
+const MOCK_FUNCTIONS = [
+  {
+    id: '1',
+    name: 'Wake Up Living Room',
+    description: 'Gradual light increase, temperature adjustment, and coffee initiation sequence.',
+    type: 'Hardware' as const,
+    deviceCount: 3,
+    icon: 'hardware-chip-outline', // Ionicons
+    color: Colors.primary,
+    tagBg: 'rgba(116, 177, 255, 0.15)',
+    tagBorder: 'rgba(116, 177, 255, 0.3)',
+  },
+  {
+    id: '2',
+    name: 'Morning Summary Email',
+    description: 'Fetch overnight security logs and email the summary to admin account.',
+    type: 'Software' as const,
+    endpoint: 'POST /api/alerts',
+    icon: 'cloud-outline',
+    color: Colors.tertiary,
+    tagBg: 'rgba(129, 236, 255, 0.15)',
+    tagBorder: 'rgba(129, 236, 255, 0.3)',
+  },
+  {
+    id: '3',
+    name: 'Deep Shield',
+    description: 'Lock all entry points, arm perimeter sensors, and notify external security service API.',
+    type: 'Hybrid' as const,
+    deviceCount: 4,
+    endpoint: 'POST /api/lockdown',
+    icon: 'git-merge-outline',
+    color: Colors.secondary,
+    tagBg: 'rgba(184, 132, 255, 0.15)',
+    tagBorder: 'rgba(184, 132, 255, 0.3)',
+  }
+];
 
 export default function FunctionsScreen() {
   const insets = useSafeAreaInsets();
-  const [activeFilter, setActiveFilter] = useState<FilterCategory>('All Actions');
+  const [activeFilter, setActiveFilter] = useState<FilterCategory>('All Functions');
   const [selectedFunction, setSelectedFunction] = useState<string | null>(null);
+  const [confirmExecute, setConfirmExecute] = useState<string | null>(null);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleOpenActionModal = (functionName: string) => {
@@ -26,6 +64,7 @@ export default function FunctionsScreen() {
   const handleCloseActionModal = () => {
     setSelectedFunction(null);
   };
+
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -77,88 +116,46 @@ export default function FunctionsScreen() {
 
         {/* ═══ Functions List ═══ */}
         <View style={styles.functionsList}>
-          
-          {/* Card 1: Solar Awakening */}
-          <TouchableOpacity activeOpacity={0.8} onPress={() => handleOpenActionModal('Solar Awakening')} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.tag, { backgroundColor: 'rgba(129, 236, 255, 0.15)', borderColor: 'rgba(129, 236, 255, 0.3)' }]}>
-                <View style={[styles.tagDot, { backgroundColor: Colors.tertiary }]} />
-                <Text style={[styles.tagText, { color: Colors.tertiary }]}>Daily Routine</Text>
+          {MOCK_FUNCTIONS.filter(f => activeFilter === 'All Functions' || f.type === activeFilter).map((fn) => (
+            <TouchableOpacity 
+              key={fn.id} 
+              activeOpacity={0.8} 
+              onPress={() => handleOpenActionModal(fn.name)} 
+              style={styles.card}
+            >
+              <View style={styles.cardHeader}>
+                <View style={[styles.tag, { backgroundColor: fn.tagBg, borderColor: fn.tagBorder }]}>
+                  <View style={[styles.tagDot, { backgroundColor: fn.color }]} />
+                  <Text style={[styles.tagText, { color: fn.color }]}>{fn.type} Function</Text>
+                </View>
+                <Ionicons name={fn.icon as any} size={24} color={fn.color} />
               </View>
-              <MaterialCommunityIcons name="weather-sunny" size={24} color={Colors.tertiary} />
-            </View>
-            <Text style={styles.cardTitle}>Solar Awakening</Text>
-            <Text style={styles.cardDescription}>
-              Gradual light increase, temperature adjustment, and coffee initiation sequence.
-            </Text>
-            <View style={styles.deviceRow}>
-              <View style={styles.deviceCircle}>
-                <MaterialCommunityIcons name="lightbulb-outline" size={16} color={Colors.onSurface} />
+              <Text style={styles.cardTitle}>{fn.name}</Text>
+              <Text style={styles.cardDescription}>
+                {fn.description}
+              </Text>
+              
+              <View style={{ gap: Spacing.sm }}>
+                {(fn.type === 'Hardware' || fn.type === 'Hybrid') && (
+                  <View style={styles.deviceRow}>
+                    <View style={styles.deviceCircle}>
+                      <Ionicons name="hardware-chip-outline" size={16} color={Colors.onSurface} />
+                    </View>
+                    <Text style={styles.deviceText}>{fn.deviceCount} Connected Devices</Text>
+                  </View>
+                )}
+                
+                {(fn.type === 'Software' || fn.type === 'Hybrid') && (
+                  <View style={styles.deviceRow}>
+                    <View style={styles.deviceCircle}>
+                      <Ionicons name="cloud-outline" size={16} color={Colors.onSurface} />
+                    </View>
+                    <Text style={styles.deviceText}>{fn.endpoint}</Text>
+                  </View>
+                )}
               </View>
-              <View style={styles.deviceCircle}>
-                <MaterialCommunityIcons name="thermometer" size={16} color={Colors.onSurface} />
-              </View>
-              <View style={styles.deviceCircle}>
-                <MaterialCommunityIcons name="coffee-outline" size={16} color={Colors.onSurface} />
-              </View>
-              <Text style={styles.deviceText}>3 Connected Devices</Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* Card 2: Deep Shield */}
-          <TouchableOpacity activeOpacity={0.8} onPress={() => handleOpenActionModal('Deep Shield')} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.tag, { backgroundColor: 'rgba(255, 113, 108, 0.15)', borderColor: 'rgba(255, 113, 108, 0.3)' }]}>
-                <View style={[styles.tagDot, { backgroundColor: Colors.error }]} />
-                <Text style={[styles.tagText, { color: Colors.error }]}>Security</Text>
-              </View>
-              <View style={styles.activeStatus}>
-                <Text style={styles.activeText}>Active</Text>
-                <MaterialCommunityIcons name="shield-lock-outline" size={24} color={Colors.error} />
-              </View>
-            </View>
-            <Text style={styles.cardTitle}>Deep Shield</Text>
-            <Text style={styles.cardDescription}>
-              Lock all entry points, arm perimeter sensors, and close blinds.
-            </Text>
-          </TouchableOpacity>
-
-          {/* Card 3: Eco Flow */}
-          <TouchableOpacity activeOpacity={0.8} onPress={() => handleOpenActionModal('Eco Flow')} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.tag, { backgroundColor: 'rgba(184, 132, 255, 0.15)', borderColor: 'rgba(184, 132, 255, 0.3)' }]}>
-                <View style={[styles.tagDot, { backgroundColor: Colors.secondary }]} />
-                <Text style={[styles.tagText, { color: Colors.secondary }]}>Energy Saving</Text>
-              </View>
-              <MaterialCommunityIcons name="leaf" size={24} color={Colors.secondary} />
-            </View>
-            <Text style={styles.cardTitle}>Eco Flow</Text>
-            <Text style={styles.cardDescription}>
-              Optimizes HVAC usage based on room occupancy and external temperature.
-            </Text>
-            <View style={styles.savingsBox}>
-              <Text style={styles.savingsLabel}>Today's Saving</Text>
-              <Text style={styles.savingsValue}>4.2 kWh</Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* Card 4: Neural Presence Sync */}
-          <TouchableOpacity activeOpacity={0.8} onPress={() => handleOpenActionModal('Neural Presence Sync')} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <View style={[styles.tag, { backgroundColor: 'rgba(129, 236, 255, 0.15)', borderColor: 'rgba(129, 236, 255, 0.3)' }]}>
-                <View style={[styles.tagDot, { backgroundColor: Colors.tertiary }]} />
-                <Text style={[styles.tagText, { color: Colors.tertiary }]}>Beta Function</Text>
-              </View>
-              <MaterialCommunityIcons name="brain" size={24} color={Colors.tertiary} />
-            </View>
-            <Text style={styles.cardTitle}>Neural Presence Sync</Text>
-            <Text style={styles.cardDescription}>
-              Adapts lighting temperature and acoustic profile based on your biological circadian rhythm and heart rate data.
-            </Text>
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionButtonText}>Configure Biometrics</Text>
             </TouchableOpacity>
-          </TouchableOpacity>
+          ))}
 
           {/* ═══ Neural Core Footer Graphic ═══ */}
           <View style={styles.neuralCoreContainer}>
@@ -212,14 +209,7 @@ export default function FunctionsScreen() {
 
                 <TouchableOpacity style={styles.modalActionRow} onPress={() => {
                   handleCloseActionModal();
-                  Alert.alert(
-                    'Execute Function',
-                    `Are you sure you want to execute "${selectedFunction}"?`,
-                    [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'Execute', onPress: () => {} },
-                    ]
-                  );
+                  setConfirmExecute(selectedFunction);
                 }}>
                   <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(129, 236, 255, 0.15)' }]}>
                     <Ionicons name="play-circle" size={20} color={Colors.tertiary} />
@@ -231,6 +221,50 @@ export default function FunctionsScreen() {
                 <TouchableOpacity style={[styles.actionButton, { marginTop: Spacing.xl }]} onPress={handleCloseActionModal}>
                   <Text style={styles.actionButtonText}>Done</Text>
                 </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* ═══ Execute Confirmation Modal ═══ */}
+      <Modal
+        visible={!!confirmExecute}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setConfirmExecute(null)}
+      >
+        <TouchableWithoutFeedback onPress={() => setConfirmExecute(null)}>
+          <View style={[styles.modalOverlay, { justifyContent: 'center' }]}>
+            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
+            <TouchableWithoutFeedback>
+              <View style={[styles.modalContent, { marginTop: 0, paddingBottom: Spacing.xl, borderRadius: Radii.xl, marginHorizontal: Spacing['2xl'] }]}>
+                
+                <View style={{ alignItems: 'center', marginBottom: Spacing.xl, paddingTop: Spacing.lg }}>
+                  <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(129, 236, 255, 0.15)', width: 64, height: 64, borderRadius: 32, marginBottom: Spacing.md }]}>
+                    <Ionicons name="play" size={32} color={Colors.tertiary} />
+                  </View>
+                  <Text style={[styles.modalTitle, { textAlign: 'center' }]}>Execute Function</Text>
+                  <Text style={[styles.modalSubtitle, { textAlign: 'center', marginHorizontal: Spacing.xl, marginTop: Spacing.xs }]}>
+                    Are you sure you want to manually trigger "{confirmExecute}"?
+                  </Text>
+                </View>
+
+                <View style={{ flexDirection: 'row', gap: Spacing.md }}>
+                  <TouchableOpacity 
+                    style={[styles.actionButton, { flex: 1, backgroundColor: Colors.surfaceContainerHigh }]} 
+                    onPress={() => setConfirmExecute(null)}
+                  >
+                    <Text style={[styles.actionButtonText, { color: Colors.onSurface }]}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.actionButton, { flex: 1, backgroundColor: Colors.tertiary }]} 
+                    onPress={() => setConfirmExecute(null)}
+                  >
+                    <Text style={[styles.actionButtonText, { color: Colors.background }]}>Execute</Text>
+                  </TouchableOpacity>
+                </View>
+
               </View>
             </TouchableWithoutFeedback>
           </View>
