@@ -17,6 +17,7 @@ import AALEditorScreen from '../screens/AALEditorScreen';
 import MCPOverlayScreen from '../screens/MCPOverlayScreen';
 import AddDeviceScreen from '../screens/AddDeviceScreen';
 import EditDeviceScreen from '../screens/EditDeviceScreen';
+import ManageRoomsScreen from '../screens/ManageRoomsScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -26,6 +27,7 @@ export type RootStackParamList = {
   MCPOverlay: undefined;
   AddDevice: undefined;
   EditDevice: { deviceId: string; deviceName: string; roomId: string; deviceType: string };
+  ManageRooms: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -118,6 +120,7 @@ export default function AppNavigator() {
       <Stack.Screen name="MCPOverlay" component={MCPOverlayScreen} />
       <Stack.Screen name="AddDevice" component={AddDeviceScreen} />
       <Stack.Screen name="EditDevice" component={EditDeviceScreen} />
+      <Stack.Screen name="ManageRooms" component={ManageRoomsScreen} />
     </Stack.Navigator>
   );
 }

@@ -10,8 +10,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { DeviceType } from '../components/devices/types';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 // ── Types ──
 type EditDeviceRouteParams = {
@@ -49,7 +51,7 @@ type Protocol = 'mqtt' | 'http';
 
 export default function EditDeviceScreen() {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<EditDeviceRouteParams, 'EditDevice'>>();
 
   const { deviceName: initialName, roomId: initialRoom, deviceType: initialType } = route.params;
@@ -85,7 +87,10 @@ export default function EditDeviceScreen() {
       >
         {/* ═══ Identity Section ═══ */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeading}>Identity</Text>
+          <View style={styles.sectionHeadingRow}>
+            <Ionicons name="finger-print-outline" size={20} color={Colors.primaryDim} />
+            <Text style={styles.sectionHeading}>Identity</Text>
+          </View>
           <View style={styles.identityCard}>
             <Text style={styles.fieldLabel}>DEVICE NAME</Text>
             <View style={styles.nameInputRow}>
@@ -130,7 +135,10 @@ export default function EditDeviceScreen() {
 
         {/* ═══ Location Section ═══ */}
         <View style={styles.section}>
-          <Text style={styles.sectionHeading}>Location</Text>
+          <View style={styles.sectionHeadingRow}>
+            <Ionicons name="location-outline" size={20} color={Colors.primaryDim} />
+            <Text style={styles.sectionHeading}>Location</Text>
+          </View>
           <View style={styles.roomGrid}>
             {ROOMS.map((room) => {
               const isSelected = selectedRoom === room.id;
@@ -161,7 +169,11 @@ export default function EditDeviceScreen() {
               );
             })}
             {/* New Room */}
-            <TouchableOpacity style={styles.newRoomCard} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.newRoomCard}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('ManageRooms')}
+            >
               <Ionicons name="add" size={24} color={Colors.onSurfaceVariant} />
               <Text style={styles.roomLabel}>NEW ROOM</Text>
             </TouchableOpacity>
@@ -170,9 +182,9 @@ export default function EditDeviceScreen() {
 
         {/* ═══ Technical Configuration ═══ */}
         <View style={styles.section}>
-          <View style={styles.techHeadingRow}>
-            <Ionicons name="code-slash-outline" size={22} color={Colors.secondaryDim} />
-            <Text style={styles.sectionHeading}>Technical Configuration</Text>
+          <View style={styles.sectionHeadingRow}>
+            <Ionicons name="code-slash-outline" size={20} color={Colors.primaryDim} />
+            <Text style={styles.sectionHeading}>Configuration</Text>
           </View>
 
           <View style={styles.techCard}>
@@ -310,13 +322,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing['2xl'],
     marginBottom: Spacing['3xl'],
   },
+  sectionHeadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
   sectionHeading: {
     fontFamily: Typography.families.headline,
-    fontSize: Typography.sizes.headlineMd,
+    fontSize: Typography.sizes.headlineSm,
     fontWeight: Typography.weights.bold,
     color: Colors.onSurface,
     letterSpacing: 0.3,
-    marginBottom: Spacing.lg,
   },
 
   // ── Identity ──
@@ -431,12 +448,7 @@ const styles = StyleSheet.create({
   },
 
   // ── Technical Configuration ──
-  techHeadingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
-  },
+
   techCard: {
     backgroundColor: Colors.surfaceContainerHigh,
     borderRadius: Radii.xl,
