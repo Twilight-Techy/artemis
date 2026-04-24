@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -199,15 +199,28 @@ export default function FunctionsScreen() {
                   <Ionicons name="chevron-forward" size={16} color={Colors.onSurfaceVariant} />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.modalActionRow}>
-                  <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(184, 132, 255, 0.15)' }]}>
-                    <Ionicons name="options-outline" size={20} color={Colors.secondary} />
+                <TouchableOpacity style={styles.modalActionRow} onPress={() => {
+                  handleCloseActionModal();
+                  navigation.navigate('AddEditFunction', { mode: 'edit', functionName: selectedFunction || '' });
+                }}>
+                  <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(116, 177, 255, 0.15)' }]}>
+                    <Ionicons name="options-outline" size={20} color={Colors.primary} />
                   </View>
                   <Text style={styles.modalActionText}>Modify Triggers / Conditions</Text>
                   <Ionicons name="chevron-forward" size={16} color={Colors.onSurfaceVariant} />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.modalActionRow}>
+                <TouchableOpacity style={styles.modalActionRow} onPress={() => {
+                  handleCloseActionModal();
+                  Alert.alert(
+                    'Execute Function',
+                    `Are you sure you want to execute "${selectedFunction}"?`,
+                    [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Execute', onPress: () => {} },
+                    ]
+                  );
+                }}>
                   <View style={[styles.modalActionIcon, { backgroundColor: 'rgba(129, 236, 255, 0.15)' }]}>
                     <Ionicons name="play-circle" size={20} color={Colors.tertiary} />
                   </View>

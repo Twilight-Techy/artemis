@@ -16,48 +16,37 @@ import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
 // ── Types ──
-type Category = 'Daily Routine' | 'Security' | 'Energy Saving' | 'Custom';
-
-type TriggerType = 'time' | 'sensor' | 'manual' | 'presence';
+type FunctionType = 'hardware' | 'software' | 'hybrid';
 
 interface ConnectableDevice {
   id: string;
   name: string;
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  room: string;
 }
 
 // ── Constants ──
-const CATEGORIES: { id: Category; label: string; color: string; bgColor: string }[] = [
-  { id: 'Daily Routine', label: 'Daily Routine', color: Colors.tertiary, bgColor: 'rgba(129, 236, 255, 0.15)' },
-  { id: 'Security', label: 'Security', color: Colors.error, bgColor: 'rgba(255, 113, 108, 0.15)' },
-  { id: 'Energy Saving', label: 'Energy Saving', color: Colors.primary, bgColor: 'rgba(116, 177, 255, 0.15)' },
-  { id: 'Custom', label: 'Custom', color: Colors.onSurfaceVariant, bgColor: 'rgba(72, 71, 74, 0.15)' },
-];
-
-const TRIGGER_TYPES: { id: TriggerType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { id: 'time', label: 'Time', icon: 'time-outline' },
-  { id: 'sensor', label: 'Sensor', icon: 'pulse-outline' },
-  { id: 'manual', label: 'Manual', icon: 'hand-left-outline' },
-  { id: 'presence', label: 'Presence', icon: 'person-outline' },
+const FUNCTION_TYPES: { id: FunctionType; label: string; icon: keyof typeof Ionicons.glyphMap; desc: string }[] = [
+  { id: 'hardware', label: 'Hardware', icon: 'hardware-chip-outline', desc: 'Controls physical devices' },
+  { id: 'software', label: 'Software', icon: 'cloud-outline', desc: 'Calls APIs & services' },
+  { id: 'hybrid', label: 'Hybrid', icon: 'git-merge-outline', desc: 'Devices + services' },
 ];
 
 const AVAILABLE_DEVICES: ConnectableDevice[] = [
-  { id: '1', name: 'Main Lights', icon: 'lightbulb-outline' },
-  { id: '2', name: 'AC Unit', icon: 'air-conditioner' },
-  { id: '3', name: 'Blinds', icon: 'blinds' },
-  { id: '4', name: 'Coffee Maker', icon: 'coffee-outline' },
-  { id: '5', name: 'Door Lock', icon: 'lock-outline' },
-  { id: '6', name: 'Speakers', icon: 'speaker' },
-  { id: '7', name: 'Thermostat', icon: 'thermometer' },
-  { id: '8', name: 'Camera', icon: 'cctv' },
+  { id: '1', name: 'Main Lights', icon: 'lightbulb-outline', room: 'Living Room' },
+  { id: '2', name: 'AC Unit', icon: 'air-conditioner', room: 'Living Room' },
+  { id: '3', name: 'Smart Blinds', icon: 'blinds', room: 'Bedroom' },
+  { id: '4', name: 'Coffee Maker', icon: 'coffee-outline', room: 'Kitchen' },
+  { id: '5', name: 'Door Lock', icon: 'lock-outline', room: 'Entrance' },
+  { id: '6', name: 'Speakers', icon: 'speaker', room: 'Living Room' },
+  { id: '7', name: 'Thermostat', icon: 'thermometer', room: 'Living Room' },
+  { id: '8', name: 'Fireplace', icon: 'fireplace', room: 'Living Room' },
 ];
 
 type AddEditFunctionRouteParams = {
   AddEditFunction: {
     mode: 'add' | 'edit';
     functionName?: string;
-    functionCategory?: Category;
-    functionDescription?: string;
   };
 };
 
@@ -66,26 +55,57 @@ export default function AddEditFunctionScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<AddEditFunctionRouteParams, 'AddEditFunction'>>();
 
-  const { mode = 'add', functionName: initName, functionCategory: initCategory, functionDescription: initDesc } = route.params ?? {};
+  const { mode = 'add', functionName: initName } = route.params ?? {};
   const isEdit = mode === 'edit';
 
+  // ── State ──
   const [name, setName] = useState(initName || '');
-  const [description, setDescription] = useState(initDesc || '');
-  const [category, setCategory] = useState<Category>(initCategory || 'Daily Routine');
-  const [triggerType, setTriggerType] = useState<TriggerType>('manual');
-  const [triggerValue, setTriggerValue] = useState('');
+  const [description, setDescription] = useState('');
+  const [functionType, setFunctionType] = useState<FunctionType>('hardware');
   const [selectedDevices, setSelectedDevices] = useState<Set<string>>(new Set());
+
+  // Triggers — voice phrases the AI listens for
+  const [triggers, setTriggers] = useState<string[]>(isEdit ? ['good morning', 'wake up the house'] : []);
+  const [triggerInput, setTriggerInput] = useState('');
+
+  // Conditions — contextual hints for AI suggestions
+  const [conditions, setConditions] = useState<string[]>(isEdit ? ['temperature falls below 18°C'] : []);
+  const [conditionInput, setConditionInput] = useState('');
+
+  // Software config
+  const [endpoint, setEndpoint] = useState('');
+  const [method, setMethod] = useState('POST');
 
   const toggleDevice = (id: string) => {
     setSelectedDevices(prev => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  };
+
+  const addTrigger = () => {
+    const val = triggerInput.trim();
+    if (val && !triggers.includes(val)) {
+      setTriggers(prev => [...prev, val]);
+      setTriggerInput('');
+    }
+  };
+
+  const removeTrigger = (phrase: string) => {
+    setTriggers(prev => prev.filter(t => t !== phrase));
+  };
+
+  const addCondition = () => {
+    const val = conditionInput.trim();
+    if (val && !conditions.includes(val)) {
+      setConditions(prev => [...prev, val]);
+      setConditionInput('');
+    }
+  };
+
+  const removeCondition = (cond: string) => {
+    setConditions(prev => prev.filter(c => c !== cond));
   };
 
   const handleSave = () => {
@@ -93,7 +113,6 @@ export default function AddEditFunctionScreen() {
       Alert.alert('Missing Name', 'Please give your function a name.');
       return;
     }
-    // In production, would persist the function here
     navigation.goBack();
   };
 
@@ -108,7 +127,8 @@ export default function AddEditFunctionScreen() {
     );
   };
 
-  const activeCategoryColor = CATEGORIES.find(c => c.id === category)?.color || Colors.primary;
+  const showDevices = functionType === 'hardware' || functionType === 'hybrid';
+  const showSoftware = functionType === 'software' || functionType === 'hybrid';
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -141,7 +161,7 @@ export default function AddEditFunctionScreen() {
               style={styles.textInput}
               value={name}
               onChangeText={setName}
-              placeholder="e.g. Solar Awakening"
+              placeholder="e.g. Wake Up Living Room"
               placeholderTextColor="rgba(173,170,173,0.5)"
             />
 
@@ -150,7 +170,7 @@ export default function AddEditFunctionScreen() {
               style={[styles.textInput, styles.textArea]}
               value={description}
               onChangeText={setDescription}
-              placeholder="What does this function do?"
+              placeholder="What does this function do when executed?"
               placeholderTextColor="rgba(173,170,173,0.5)"
               multiline
               numberOfLines={3}
@@ -159,116 +179,207 @@ export default function AddEditFunctionScreen() {
           </View>
         </View>
 
-        {/* ═══ Category ═══ */}
+        {/* ═══ Function Type ═══ */}
         <View style={styles.section}>
           <View style={styles.sectionHeadingRow}>
-            <Ionicons name="pricetag-outline" size={20} color={Colors.primaryDim} />
-            <Text style={styles.sectionHeading}>Category</Text>
+            <Ionicons name="layers-outline" size={20} color={Colors.primaryDim} />
+            <Text style={styles.sectionHeading}>Type</Text>
           </View>
-          <View style={styles.categoryGrid}>
-            {CATEGORIES.map((cat) => {
-              const isSelected = category === cat.id;
+          <View style={styles.typeGrid}>
+            {FUNCTION_TYPES.map((ft) => {
+              const isSelected = functionType === ft.id;
               return (
                 <TouchableOpacity
-                  key={cat.id}
-                  style={[
-                    styles.categoryPill,
-                    isSelected && { backgroundColor: cat.bgColor, borderColor: cat.color },
-                  ]}
-                  onPress={() => setCategory(cat.id)}
+                  key={ft.id}
+                  style={[styles.typeCard, isSelected && styles.typeCardSelected]}
+                  onPress={() => setFunctionType(ft.id)}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.categoryDot, { backgroundColor: isSelected ? cat.color : Colors.onSurfaceVariant }]} />
-                  <Text style={[styles.categoryText, isSelected && { color: cat.color }]}>
-                    {cat.label}
+                  <Ionicons
+                    name={ft.icon}
+                    size={24}
+                    color={isSelected ? Colors.primary : Colors.onSurfaceVariant}
+                  />
+                  <Text style={[styles.typeLabel, isSelected && styles.typeLabelSelected]}>
+                    {ft.label}
                   </Text>
+                  <Text style={styles.typeDesc}>{ft.desc}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
         </View>
 
-        {/* ═══ Trigger ═══ */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeadingRow}>
-            <Ionicons name="git-branch-outline" size={20} color={Colors.primaryDim} />
-            <Text style={styles.sectionHeading}>Trigger</Text>
-          </View>
-          <View style={styles.card}>
-            <Text style={styles.fieldLabel}>TRIGGER TYPE</Text>
-            <View style={styles.triggerRow}>
-              {TRIGGER_TYPES.map((t) => {
-                const isSelected = triggerType === t.id;
+        {/* ═══ Devices (Hardware / Hybrid) ═══ */}
+        {showDevices && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeadingRow}>
+              <Ionicons name="hardware-chip-outline" size={20} color={Colors.primaryDim} />
+              <Text style={styles.sectionHeading}>Devices</Text>
+            </View>
+            <Text style={styles.sectionSubtext}>
+              Select devices this function will control.
+              {selectedDevices.size > 0 ? ` ${selectedDevices.size} selected.` : ''}
+            </Text>
+            <View style={styles.devicesGrid}>
+              {AVAILABLE_DEVICES.map((device) => {
+                const isSelected = selectedDevices.has(device.id);
                 return (
                   <TouchableOpacity
-                    key={t.id}
-                    style={[styles.triggerChip, isSelected && styles.triggerChipActive]}
-                    onPress={() => setTriggerType(t.id)}
+                    key={device.id}
+                    style={[styles.deviceChip, isSelected && styles.deviceChipSelected]}
+                    onPress={() => toggleDevice(device.id)}
                     activeOpacity={0.7}
                   >
-                    <Ionicons
-                      name={t.icon}
-                      size={16}
+                    <MaterialCommunityIcons
+                      name={device.icon}
+                      size={18}
                       color={isSelected ? Colors.primary : Colors.onSurfaceVariant}
                     />
-                    <Text style={[styles.triggerText, isSelected && styles.triggerTextActive]}>
-                      {t.label}
-                    </Text>
+                    <View style={styles.deviceChipInfo}>
+                      <Text style={[styles.deviceChipText, isSelected && styles.deviceChipTextSelected]}>
+                        {device.name}
+                      </Text>
+                      <Text style={styles.deviceChipRoom}>{device.room}</Text>
+                    </View>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={16} color={Colors.primary} />
+                    )}
                   </TouchableOpacity>
                 );
               })}
             </View>
+          </View>
+        )}
 
-            <Text style={[styles.fieldLabel, { marginTop: Spacing.xl }]}>CONDITION</Text>
-            <TextInput
-              style={styles.textInput}
-              value={triggerValue}
-              onChangeText={setTriggerValue}
-              placeholder={
-                triggerType === 'time' ? 'e.g. 06:30 AM every day' :
-                triggerType === 'sensor' ? 'e.g. temperature > 28°C' :
-                triggerType === 'presence' ? 'e.g. when someone enters' :
-                'Tap to execute manually'
-              }
-              placeholderTextColor="rgba(173,170,173,0.5)"
-              editable={triggerType !== 'manual'}
-            />
+        {/* ═══ Protocol (Software / Hybrid) ═══ */}
+        {showSoftware && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeadingRow}>
+              <Ionicons name="cloud-outline" size={20} color={Colors.primaryDim} />
+              <Text style={styles.sectionHeading}>Protocol</Text>
+            </View>
+            <View style={styles.card}>
+              <Text style={styles.fieldLabel}>ENDPOINT</Text>
+              <TextInput
+                style={styles.textInput}
+                value={endpoint}
+                onChangeText={setEndpoint}
+                placeholder="e.g. https://api.example.com/send"
+                placeholderTextColor="rgba(173,170,173,0.5)"
+                autoCapitalize="none"
+              />
+
+              <Text style={[styles.fieldLabel, { marginTop: Spacing.xl }]}>METHOD</Text>
+              <View style={styles.methodRow}>
+                {['GET', 'POST', 'PUT', 'DELETE'].map((m) => (
+                  <TouchableOpacity
+                    key={m}
+                    style={[styles.methodPill, method === m && styles.methodPillActive]}
+                    onPress={() => setMethod(m)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.methodText, method === m && styles.methodTextActive]}>
+                      {m}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* ═══ Triggers ═══ */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeadingRow}>
+            <Ionicons name="mic-outline" size={20} color={Colors.primaryDim} />
+            <Text style={styles.sectionHeading}>Triggers</Text>
+          </View>
+          <Text style={styles.sectionSubtext}>
+            Voice phrases the AI listens for. When you say one of these, Artemis will consider executing this function.
+          </Text>
+          <View style={styles.card}>
+            {/* Existing triggers */}
+            {triggers.length > 0 && (
+              <View style={styles.tagList}>
+                {triggers.map((phrase) => (
+                  <View key={phrase} style={styles.tag}>
+                    <Ionicons name="mic" size={12} color={Colors.tertiary} />
+                    <Text style={styles.tagText}>"{phrase}"</Text>
+                    <TouchableOpacity onPress={() => removeTrigger(phrase)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Ionicons name="close-circle" size={16} color={Colors.onSurfaceVariant} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Add trigger input */}
+            <View style={styles.addTagRow}>
+              <TextInput
+                style={[styles.textInput, { flex: 1 }]}
+                value={triggerInput}
+                onChangeText={setTriggerInput}
+                placeholder='e.g. "good morning"'
+                placeholderTextColor="rgba(173,170,173,0.5)"
+                onSubmitEditing={addTrigger}
+                returnKeyType="done"
+              />
+              <TouchableOpacity
+                style={styles.addTagBtn}
+                onPress={addTrigger}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="add" size={20} color={Colors.onPrimary} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
-        {/* ═══ Devices ═══ */}
+        {/* ═══ Conditions ═══ */}
         <View style={styles.section}>
           <View style={styles.sectionHeadingRow}>
-            <Ionicons name="hardware-chip-outline" size={20} color={Colors.primaryDim} />
-            <Text style={styles.sectionHeading}>Devices</Text>
+            <Ionicons name="bulb-outline" size={20} color={Colors.primaryDim} />
+            <Text style={styles.sectionHeading}>Conditions</Text>
           </View>
           <Text style={styles.sectionSubtext}>
-            Select which devices this function controls. {selectedDevices.size > 0 ? `${selectedDevices.size} selected.` : ''}
+            Contextual situations where Artemis will suggest executing this function. It will never auto-execute — only recommend.
           </Text>
-          <View style={styles.devicesGrid}>
-            {AVAILABLE_DEVICES.map((device) => {
-              const isSelected = selectedDevices.has(device.id);
-              return (
-                <TouchableOpacity
-                  key={device.id}
-                  style={[styles.deviceChip, isSelected && styles.deviceChipSelected]}
-                  onPress={() => toggleDevice(device.id)}
-                  activeOpacity={0.7}
-                >
-                  <MaterialCommunityIcons
-                    name={device.icon}
-                    size={18}
-                    color={isSelected ? Colors.primary : Colors.onSurfaceVariant}
-                  />
-                  <Text style={[styles.deviceChipText, isSelected && styles.deviceChipTextSelected]}>
-                    {device.name}
-                  </Text>
-                  {isSelected && (
-                    <Ionicons name="checkmark-circle" size={16} color={Colors.primary} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+          <View style={styles.card}>
+            {/* Existing conditions */}
+            {conditions.length > 0 && (
+              <View style={styles.tagList}>
+                {conditions.map((cond) => (
+                  <View key={cond} style={[styles.tag, styles.conditionTag]}>
+                    <Ionicons name="bulb" size={12} color={Colors.primary} />
+                    <Text style={[styles.tagText, { color: Colors.primary }]}>{cond}</Text>
+                    <TouchableOpacity onPress={() => removeCondition(cond)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Ionicons name="close-circle" size={16} color={Colors.onSurfaceVariant} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Add condition input */}
+            <View style={styles.addTagRow}>
+              <TextInput
+                style={[styles.textInput, { flex: 1 }]}
+                value={conditionInput}
+                onChangeText={setConditionInput}
+                placeholder='e.g. "temperature falls below 18°C"'
+                placeholderTextColor="rgba(173,170,173,0.5)"
+                onSubmitEditing={addCondition}
+                returnKeyType="done"
+              />
+              <TouchableOpacity
+                style={styles.addTagBtn}
+                onPress={addCondition}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="add" size={20} color={Colors.onPrimary} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -354,6 +465,7 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.bodySm,
     color: Colors.onSurfaceVariant,
     marginBottom: Spacing.lg,
+    lineHeight: 20,
   },
 
   // ── Cards ──
@@ -390,64 +502,42 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md + 2,
   },
 
-  // ── Category ──
-  categoryGrid: {
+  // ── Function Type ──
+  typeGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
+    gap: Spacing.md,
   },
-  categoryPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm + 2,
-    borderRadius: Radii.full,
+  typeCard: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    borderRadius: Radii.xl,
     borderWidth: 1,
-    borderColor: 'rgba(72, 71, 74, 0.3)',
-    backgroundColor: Colors.surfaceContainerLow,
-  },
-  categoryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  categoryText: {
-    fontFamily: Typography.families.body,
-    fontSize: Typography.sizes.bodySm,
-    fontWeight: Typography.weights.medium,
-    color: Colors.onSurfaceVariant,
-  },
-
-  // ── Triggers ──
-  triggerRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-  },
-  triggerChip: {
-    flexDirection: 'row',
+    borderColor: 'transparent',
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.md,
     alignItems: 'center',
     gap: Spacing.xs,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm + 2,
-    borderRadius: Radii.full,
-    borderWidth: 1,
-    borderColor: 'rgba(72, 71, 74, 0.3)',
-    backgroundColor: Colors.surfaceContainerLow,
   },
-  triggerChipActive: {
-    backgroundColor: 'rgba(116, 177, 255, 0.15)',
+  typeCardSelected: {
+    backgroundColor: 'rgba(116, 177, 255, 0.1)',
     borderColor: Colors.primary,
   },
-  triggerText: {
-    fontFamily: Typography.families.body,
-    fontSize: Typography.sizes.bodySm,
-    fontWeight: Typography.weights.medium,
+  typeLabel: {
+    fontFamily: Typography.families.label,
+    fontSize: Typography.sizes.labelSm,
+    fontWeight: Typography.weights.bold,
     color: Colors.onSurfaceVariant,
+    letterSpacing: 0.5,
+    marginTop: Spacing.xs,
   },
-  triggerTextActive: {
-    color: Colors.primary,
+  typeLabelSelected: {
+    color: Colors.onSurface,
+  },
+  typeDesc: {
+    fontFamily: Typography.families.body,
+    fontSize: 10,
+    color: Colors.onSurfaceVariant,
+    textAlign: 'center',
   },
 
   // ── Devices ──
@@ -460,7 +550,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    paddingHorizontal: Spacing.lg,
+    width: '48%',
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
     borderRadius: Radii.lg,
     borderWidth: 1,
@@ -471,6 +562,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(116, 177, 255, 0.1)',
     borderColor: 'rgba(116, 177, 255, 0.3)',
   },
+  deviceChipInfo: {
+    flexShrink: 1,
+  },
   deviceChipText: {
     fontFamily: Typography.families.body,
     fontSize: Typography.sizes.bodySm,
@@ -479,6 +573,81 @@ const styles = StyleSheet.create({
   },
   deviceChipTextSelected: {
     color: Colors.onSurface,
+  },
+  deviceChipRoom: {
+    fontFamily: Typography.families.label,
+    fontSize: 10,
+    color: Colors.onSurfaceVariant,
+    opacity: 0.7,
+  },
+
+  // ── Method Pills ──
+  methodRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  methodPill: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm + 2,
+    borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: 'rgba(72, 71, 74, 0.3)',
+    backgroundColor: Colors.surfaceContainerLow,
+  },
+  methodPillActive: {
+    backgroundColor: 'rgba(116, 177, 255, 0.15)',
+    borderColor: Colors.primary,
+  },
+  methodText: {
+    fontFamily: Typography.families.label,
+    fontSize: Typography.sizes.labelSm,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onSurfaceVariant,
+    letterSpacing: 1,
+  },
+  methodTextActive: {
+    color: Colors.primary,
+  },
+
+  // ── Tags (Triggers & Conditions) ──
+  tagList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginBottom: Spacing.lg,
+  },
+  tag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radii.full,
+    backgroundColor: 'rgba(129, 236, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(129, 236, 255, 0.2)',
+  },
+  conditionTag: {
+    backgroundColor: 'rgba(116, 177, 255, 0.1)',
+    borderColor: 'rgba(116, 177, 255, 0.2)',
+  },
+  tagText: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.bodySm,
+    color: Colors.tertiary,
+  },
+  addTagRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    alignItems: 'center',
+  },
+  addTagBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: Radii.lg,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // ── Actions ──
