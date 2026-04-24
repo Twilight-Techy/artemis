@@ -341,16 +341,15 @@ export default function FunctionsScreen() {
         style={[
           styles.toastContainer, 
           { 
-            top: insets.top + 20,
             opacity: toastAnim, 
-            transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [-20, 0] }) }] 
+            transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] 
           }
         ]}
         pointerEvents="none"
       >
         <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill} />
         <Ionicons name="checkmark-circle" size={24} color={Colors.tertiary} />
-        <Text style={styles.toastText} numberOfLines={1}>{toastMessage || 'Success'}</Text>
+        <Text style={styles.toastText}>{toastMessage}</Text>
       </Animated.View>
     </View>
   );
@@ -635,8 +634,9 @@ const styles = StyleSheet.create({
   },
   toastContainer: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    bottom: 120, // Far enough to clear tab bar safely
+    alignSelf: 'center',
+    maxWidth: '90%',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.xl,
@@ -655,7 +655,7 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   toastText: {
-    flex: 1,
+    flexShrink: 1,
     fontFamily: Typography.families.label,
     fontSize: Typography.sizes.labelLg,
     color: Colors.onSurface,
