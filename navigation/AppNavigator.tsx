@@ -70,6 +70,8 @@ function MainTabs() {
         },
         tabBarLabel: ({ focused }) => (
           <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
             style={[
               styles.tabLabel,
               { color: focused ? Colors.primary : 'rgba(255, 255, 255, 0.3)' },
@@ -156,9 +158,9 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontFamily: Typography.families.label,
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: Typography.weights.bold,
-    letterSpacing: 2,
+    letterSpacing: 0.5,
     marginTop: 4,
   },
   activeIconWrapper: {
