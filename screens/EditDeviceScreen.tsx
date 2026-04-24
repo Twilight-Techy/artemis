@@ -92,7 +92,7 @@ export default function EditDeviceScreen() {
               <MaterialIcons
                 name={DEVICE_TYPES.find(t => t.id === deviceType)?.icon || 'device-unknown'}
                 size={22}
-                color={Colors.secondaryDim}
+                color={Colors.primaryDim}
                 style={styles.nameIcon}
               />
               <TextInput
@@ -118,7 +118,7 @@ export default function EditDeviceScreen() {
                     <MaterialIcons 
                       name={type.icon} 
                       size={18} 
-                      color={isSelected ? Colors.secondary : Colors.onSurfaceVariant} 
+                      color={isSelected ? Colors.primary : Colors.onSurfaceVariant} 
                     />
                     <Text style={[styles.typeLabel, isSelected && styles.typeLabelSelected]}>{type.label}</Text>
                   </TouchableOpacity>
@@ -147,7 +147,7 @@ export default function EditDeviceScreen() {
                   <Ionicons
                     name={room.icon}
                     size={24}
-                    color={isSelected ? Colors.secondary : Colors.onSurfaceVariant}
+                    color={isSelected ? Colors.primary : Colors.onSurfaceVariant}
                   />
                   <Text
                     style={[
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
 
   // ── Identity ──
   identityCard: {
-    backgroundColor: 'rgba(38, 37, 41, 0.2)',
+    backgroundColor: Colors.surfaceContainerHigh,
     borderRadius: Radii.xl,
     borderWidth: 1,
     borderColor: 'rgba(72, 71, 74, 0.15)',
@@ -331,14 +331,14 @@ const styles = StyleSheet.create({
     fontFamily: Typography.families.label,
     fontSize: Typography.sizes.labelSm,
     fontWeight: Typography.weights.bold,
-    color: Colors.secondaryFixed,
+    color: Colors.onSurfaceVariant,
     letterSpacing: 1.5,
     marginBottom: Spacing.sm,
   },
   nameInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(38, 37, 41, 0.5)',
+    backgroundColor: Colors.surfaceContainerHighest,
     borderWidth: 1,
     borderColor: 'rgba(72, 71, 74, 0.3)',
     borderRadius: Radii.lg,
@@ -370,8 +370,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceContainerLow,
   },
   typePillSelected: {
-    backgroundColor: 'rgba(184, 132, 255, 0.2)',
-    borderColor: Colors.secondary,
+    backgroundColor: 'rgba(116, 177, 255, 0.15)',
+    borderColor: Colors.primary,
   },
   typeLabel: {
     fontFamily: Typography.families.body,
@@ -401,8 +401,8 @@ const styles = StyleSheet.create({
   },
   roomCardSelected: {
     backgroundColor: Colors.surfaceContainerHighest,
-    borderColor: Colors.secondary,
-    shadowColor: Colors.secondary,
+    borderColor: Colors.primary,
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 15,
@@ -438,10 +438,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   techCard: {
-    backgroundColor: 'rgba(38, 37, 41, 0.3)',
+    backgroundColor: Colors.surfaceContainerHigh,
     borderRadius: Radii.xl,
     borderWidth: 1,
-    borderColor: 'rgba(184, 132, 255, 0.2)',
+    borderColor: 'rgba(72, 71, 74, 0.15)',
     padding: Spacing['2xl'],
     gap: Spacing.lg,
   },
@@ -461,9 +461,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceContainerLow,
   },
   protocolPillActive: {
-    backgroundColor: 'rgba(184, 132, 255, 0.2)',
-    borderColor: Colors.secondary,
-    shadowColor: Colors.secondary,
+    backgroundColor: 'rgba(116, 177, 255, 0.15)',
+    borderColor: Colors.primary,
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.secondary,
+    backgroundColor: Colors.primary,
   },
   protocolText: {
     fontFamily: Typography.families.body,
@@ -481,14 +481,14 @@ const styles = StyleSheet.create({
     color: Colors.onSurfaceVariant,
   },
   protocolTextActive: {
-    color: Colors.secondaryFixed,
+    color: Colors.primary,
   },
   techDivider: {
     height: 1,
     backgroundColor: 'rgba(72, 71, 74, 0.15)',
   },
   monoInput: {
-    backgroundColor: 'rgba(19, 19, 22, 0.5)',
+    backgroundColor: Colors.surfaceContainerLow,
     borderWidth: 1,
     borderColor: 'rgba(72, 71, 74, 0.2)',
     borderRadius: Radii.lg,
@@ -510,10 +510,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.secondary,
+    backgroundColor: Colors.primary,
     borderRadius: Radii.full,
     paddingVertical: Spacing.lg + 2,
-    shadowColor: Colors.secondary,
+    shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
     fontFamily: Typography.families.headline,
     fontSize: Typography.sizes.labelMd,
     fontWeight: Typography.weights.bold,
-    color: Colors.onSurface,
+    color: Colors.onPrimary,
     letterSpacing: 2,
   },
   deleteBtn: {
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    backgroundColor: 'rgba(19, 19, 22, 0.5)',
+    backgroundColor: Colors.surfaceContainerLow,
     borderRadius: Radii.full,
     paddingVertical: Spacing.lg + 2,
     borderWidth: 1,
