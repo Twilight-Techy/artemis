@@ -14,12 +14,6 @@ export default function TopNavBar() {
   return (
     <View style={styles.topBar}>
       <View style={styles.topBarLeft}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Settings')}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="menu" size={26} color={Colors.primary} />
-        </TouchableOpacity>
         <Text style={styles.logoText}>ARTEMIS</Text>
       </View>
       <View style={styles.topBarRight}>
