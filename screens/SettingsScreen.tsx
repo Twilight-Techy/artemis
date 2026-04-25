@@ -13,6 +13,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
+import { useNetwork } from '../contexts/NetworkContext';
 
 type SettingsItem = {
   icon: string;
@@ -103,6 +104,8 @@ const SECTIONS: { title: string; items: SettingsItem[] }[] = [
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const { isOffline, toggleOfflineSimulation } = useNetwork();
+  
   const [toggleStates, setToggleStates] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     SECTIONS.forEach(section =>
@@ -246,6 +249,34 @@ export default function SettingsScreen() {
               </View>
               <Text style={styles.languageValue}>English (US)</Text>
             </View>
+          </View>
+        </View>
+
+        {/* ═══ Developer Diagnostics ═══ */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Developer Diagnostics</Text>
+          <View style={styles.sectionCards}>
+            <TouchableOpacity
+              style={styles.settingRow}
+              activeOpacity={1}
+            >
+              <View style={styles.settingRowLeft}>
+                <View style={[styles.iconBox, { backgroundColor: 'rgba(255, 113, 108, 0.15)' }]}>
+                  <Ionicons name="wifi-outline" size={20} color={Colors.error} />
+                </View>
+                <View style={styles.settingTextGroup}>
+                  <Text style={styles.settingLabel}>Simulate Offline Mode</Text>
+                  <Text style={styles.settingSubtitle}>Force Local-Only Hardware Fallback</Text>
+                </View>
+              </View>
+              <Switch
+                value={isOffline}
+                onValueChange={toggleOfflineSimulation}
+                trackColor={{ false: Colors.surfaceContainerHighest, true: Colors.error }}
+                thumbColor={Colors.onSurface}
+                ios_backgroundColor={Colors.surfaceContainerHighest}
+              />
+            </TouchableOpacity>
           </View>
         </View>
 

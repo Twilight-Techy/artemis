@@ -20,6 +20,7 @@ import {
 
 import AppNavigator from './navigation/AppNavigator';
 import { Colors } from './constants/theme';
+import { NetworkProvider } from './contexts/NetworkContext';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -54,10 +55,12 @@ export default function App() {
 
   return (
     <SafeAreaProvider style={{ backgroundColor: Colors.background }}>
-      <NavigationContainer theme={MyTheme}>
-        <AppNavigator />
-        <StatusBar style="light" />
-      </NavigationContainer>
+      <NetworkProvider>
+        <NavigationContainer theme={MyTheme}>
+          <AppNavigator />
+          <StatusBar style="light" />
+        </NavigationContainer>
+      </NetworkProvider>
     </SafeAreaProvider>
   );
 }

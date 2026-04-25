@@ -9,6 +9,7 @@ import TopNavBar from '../components/TopNavBar';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { useNetwork } from '../contexts/NetworkContext';
 
 type FilterCategory = 'All Functions' | 'Hardware' | 'Software' | 'Hybrid';
 const CATEGORIES: FilterCategory[] = ['All Functions', 'Hardware', 'Software', 'Hybrid'];
@@ -54,6 +55,7 @@ const MOCK_FUNCTIONS = [
 
 export default function FunctionsScreen() {
   const insets = useSafeAreaInsets();
+  const { isOffline } = useNetwork();
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('All Functions');
   const [selectedFunctionId, setSelectedFunctionId] = useState<string | null>(null);
   const [confirmExecuteId, setConfirmExecuteId] = useState<string | null>(null);
@@ -164,9 +166,10 @@ export default function FunctionsScreen() {
             <TouchableOpacity 
               key={fn.id} 
               activeOpacity={0.8} 
+              disabled={isOffline}
               onPress={() => handleOpenActionModal(fn.id)} 
               onLongPress={() => navigation.navigate('AddEditFunction', { mode: 'edit', functionName: fn.name })}
-              style={styles.card}
+              style={[styles.card, isOffline && { opacity: 0.3, borderColor: 'rgba(255,255,255,0.05)' }]}
             >
               <View style={styles.cardHeader}>
                 <View style={[styles.tag, { backgroundColor: fn.tagBg, borderColor: fn.tagBorder }]}>

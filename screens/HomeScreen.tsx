@@ -25,6 +25,7 @@ import QuickActionCard from '../components/QuickActionCard';
 import CommandBar from '../components/CommandBar';
 import ChatBubble, { ChatMessage } from '../components/chat/ChatBubble';
 import MCPActionModal from '../components/MCPActionModal';
+import { useNetwork } from '../contexts/NetworkContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -67,6 +68,7 @@ const INITIAL_MESSAGES: ChatMessage[] = [
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isOffline } = useNetwork();
   const [mode, setMode] = useState<HomeMode>('dashboard');
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
   const [showMCPModal, setShowMCPModal] = useState(false);
@@ -127,6 +129,12 @@ export default function HomeScreen() {
       >
         {/* ═══ Orb Section (always visible) ═══ */}
         <View style={styles.orbSection}>
+          {isOffline && (
+            <View style={styles.offlineBanner}>
+              <Ionicons name="cloud-offline-outline" size={12} color={Colors.error} />
+              <Text style={styles.offlineText}>OFFLINE: LOCAL PERSISTENCE MODE</Text>
+            </View>
+          )}
           <View style={styles.atmosphericGlow} />
           <TouchableOpacity activeOpacity={0.9} onPress={() => setShowMCPModal(true)}>
             <OrbEntity />
@@ -275,10 +283,33 @@ const styles = StyleSheet.create({
 
   // ── Orb (always visible) ──
   orbSection: {
+    paddingVertical: Spacing.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 30,
     position: 'relative',
+    height: 220,
+  },
+  offlineBanner: {
+    position: 'absolute',
+    top: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 113, 108, 0.1)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 113, 108, 0.3)',
+    zIndex: 20,
+  },
+  offlineText: {
+    fontFamily: Typography.families.headline,
+    fontSize: 9,
+    fontWeight: Typography.weights.bold,
+    color: Colors.error,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
   atmosphericGlow: {
     position: 'absolute',
