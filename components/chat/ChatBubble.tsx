@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 export type ChatMessage = {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   text: string;
   timestamp: string;
 };
@@ -16,6 +16,23 @@ type Props = {
 };
 
 export default function ChatBubble({ message }: Props) {
+  if (message.role === 'system') {
+    return (
+      <View style={styles.systemWrapper}>
+        <LinearGradient
+          colors={['rgba(0, 227, 253, 0.15)', 'rgba(0, 227, 253, 0.05)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.systemPill}
+        >
+          <Ionicons name="flash" size={12} color="#00e3fd" />
+          <Text style={styles.systemText}>{message.text.replace('⚡ [SYSTEM]: ', '')}</Text>
+        </LinearGradient>
+        <Text style={styles.systemTimestamp}>{message.timestamp}</Text>
+      </View>
+    );
+  }
+
   const isUser = message.role === 'user';
 
   return (
@@ -148,4 +165,35 @@ const styles = StyleSheet.create({
   },
   tsRight: { alignSelf: 'flex-end' },
   tsLeft: { alignSelf: 'flex-start' },
+
+  /* ── System Executed Action Styling ── */
+  systemWrapper: {
+    alignItems: 'center',
+    marginVertical: Spacing.xl,
+    paddingHorizontal: Spacing['2xl'],
+  },
+  systemPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 227, 253, 0.25)',
+  },
+  systemText: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.labelXs,
+    fontWeight: Typography.weights.bold,
+    color: '#00e3fd', // on_tertiary_fixed
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  systemTimestamp: {
+    fontFamily: Typography.families.body,
+    fontSize: 10,
+    color: 'rgba(255, 255, 255, 0.3)',
+    marginTop: 6,
+  },
 });

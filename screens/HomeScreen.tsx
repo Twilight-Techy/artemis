@@ -77,13 +77,22 @@ export default function HomeScreen() {
   const handleExecuteLogic = () => {
     setShowMCPModal(false);
     setMode('chat');
+    
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
     setMessages(prev => [
       ...prev, 
       {
-        id: Date.now().toString(),
+        id: Date.now().toString() + '_sys',
+        role: 'system',
+        text: "Action Executed: Studio Fan — Power ON",
+        timestamp
+      },
+      {
+        id: Date.now().toString() + '_ai',
         role: 'assistant',
-        text: "⚡ [SYSTEM]: Logic executed. Turned on the studio fan.",
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        text: "I've turned on the studio fan for you. The room should start cooling down shortly.",
+        timestamp
       }
     ]);
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 250);
