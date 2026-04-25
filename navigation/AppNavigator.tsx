@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -32,7 +32,7 @@ export type RootStackParamList = {
   AddEditFunction: { mode: 'add' | 'edit'; functionName?: string; functionCategory?: string; functionDescription?: string };
 };
 
-const Tab = createBottomTabNavigator();
+const Tab = createMaterialTopTabNavigator();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 type TabIconMap = {
@@ -49,56 +49,70 @@ const TAB_ICONS: TabIconMap = {
   Automations: { active: 'sparkles', inactive: 'sparkles-outline' },
 };
 
+function CustomTabBar({ state, descriptors, navigation, insets }: any) {
+  return (
+    <View style={[styles.tabBar, { height: 64 + insets.bottom, paddingBottom: insets.bottom > 0 ? insets.bottom - 8 : 8 }]}>
+      {Platform.OS === 'ios' ? (
+        <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, styles.tabBarAndroidBg]} />
+      )}
+      <View style={{ flexDirection: 'row', flex: 1, paddingTop: 4 }}>
+        {state.routes.map((route: any, index: number) => {
+          const { options } = descriptors[route.key];
+          const isFocused = state.index === index;
+
+          const onPress = () => {
+            const event = navigation.emit({
+              type: 'tabPress',
+              target: route.key,
+              canPreventDefault: true,
+            });
+
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name);
+            }
+          };
+
+          const icons = TAB_ICONS[route.name];
+          const iconName = isFocused ? icons.active : icons.inactive;
+          const iconColor = isFocused ? Colors.primary : 'rgba(255, 255, 255, 0.3)';
+          const iconSize = isFocused ? 26 : 24;
+
+          return (
+            <TouchableOpacity
+              key={route.key}
+              accessibilityRole="button"
+              accessibilityState={isFocused ? { selected: true } : {}}
+              onPress={onPress}
+              style={{ flex: 1, alignItems: 'center' }}
+              activeOpacity={0.7}
+            >
+              <View style={isFocused ? styles.activeIconWrapper : undefined}>
+                <Ionicons name={iconName as any} size={iconSize} color={iconColor} />
+              </View>
+              <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.tabLabel, { color: isFocused ? Colors.primary : 'rgba(255, 255, 255, 0.3)' }]}>
+                {route.name.toUpperCase()}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
 function MainTabs() {
   const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarHideOnKeyboard: true,
-        tabBarIcon: ({ focused, size }) => {
-          const icons = TAB_ICONS[route.name];
-          const iconName = focused ? icons.active : icons.inactive;
-          const iconColor = focused ? Colors.primary : 'rgba(255, 255, 255, 0.3)';
-          const iconSize = focused ? size + 2 : size;
-          return (
-            <View style={focused ? styles.activeIconWrapper : undefined}>
-              <Ionicons name={iconName} size={iconSize} color={iconColor} />
-            </View>
-          );
-        },
-        tabBarLabel: ({ focused }) => (
-          <Text
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            style={[
-              styles.tabLabel,
-              { color: focused ? Colors.primary : 'rgba(255, 255, 255, 0.3)' },
-            ]}
-          >
-            {route.name.toUpperCase()}
-          </Text>
-        ),
-        tabBarStyle: [
-          styles.tabBar,
-          {
-            height: 64 + insets.bottom,
-            paddingBottom: insets.bottom > 0 ? insets.bottom - 8 : 8,
-          },
-        ],
-        tabBarBackground: () =>
-          Platform.OS === 'ios' ? (
-            <BlurView
-              intensity={80}
-              tint="dark"
-              style={StyleSheet.absoluteFill}
-            />
-          ) : (
-            <View style={[StyleSheet.absoluteFill, styles.tabBarAndroidBg]} />
-          ),
-        tabBarItemStyle: styles.tabBarItem,
-      })}
+      tabBar={(props) => <CustomTabBar {...props} insets={insets} />}
+      tabBarPosition="bottom"
+      swipeEnabled={true}
+      screenOptions={{
+        lazy: true,
+      }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Devices" component={DevicesScreen} />
