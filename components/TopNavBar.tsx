@@ -22,16 +22,25 @@ export default function TopNavBar() {
         </TouchableOpacity>
         <Text style={styles.logoText}>ARTEMIS</Text>
       </View>
-      <TouchableOpacity
-        onPress={() => navigation.navigate('Settings')}
-        activeOpacity={0.7}
-        style={styles.avatarRing}
-      >
-        <Image
-          source={require('../assets/avatar.png')}
-          style={styles.avatar}
-        />
-      </TouchableOpacity>
+      <View style={styles.topBarRight}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('History')}
+          activeOpacity={0.7}
+          style={styles.actionIcon}
+        >
+          <Ionicons name="time-outline" size={24} color={Colors.primary} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Settings')}
+          activeOpacity={0.7}
+          style={styles.avatarRing}
+        >
+          <Image
+            source={require('../assets/avatar.png')}
+            style={styles.avatar}
+          />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -49,6 +58,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.lg,
+  },
+  topBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.lg,
+  },
+  actionIcon: {
+    padding: Spacing.xs,
   },
   logoText: {
     fontFamily: Typography.families.headline,
