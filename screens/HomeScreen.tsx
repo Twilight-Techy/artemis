@@ -263,11 +263,15 @@ export default function HomeScreen() {
               }
             />
           )}
-        </View>
 
-        {/* ═══ Command Input Bar (always visible, pushes up with keyboard) ═══ */}
-        <View style={[styles.commandSection, { paddingBottom: Math.max(insets.bottom + 64, 80) }]}>
-          <CommandBar />
+          {/* ═══ Floating Command Input Bar ═══ */}
+          <View style={{ 
+            paddingHorizontal: 24, 
+            paddingTop: 16, 
+            paddingBottom: mode === 'dashboard' ? Math.max(insets.bottom + 90, 110) : Math.max(insets.bottom + 64, 80) 
+          }}>
+            <CommandBar />
+          </View>
         </View>
       </Animated.View>
 
@@ -392,8 +396,10 @@ const styles = StyleSheet.create({
 
   // ── Dashboard content ──
   dashboardContent: {
+    flexGrow: 1,
     paddingHorizontal: Spacing['2xl'],
     paddingBottom: Spacing.lg,
+    justifyContent: 'center',
   },
   greetingSection: {
     marginBottom: Spacing['2xl'],
@@ -431,13 +437,8 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.md,
     paddingTop: Spacing.sm,
   },
-
-  // ── Command Bar (always bottom) ──
-  commandSection: {
-    paddingHorizontal: Spacing['2xl'],
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.04)',
-    backgroundColor: Colors.background,
+  chatRoot: {
+    flex: 1,
+    justifyContent: 'space-between',
   },
 });
