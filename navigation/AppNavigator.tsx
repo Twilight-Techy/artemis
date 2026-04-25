@@ -125,9 +125,10 @@ function MainTabs() {
 export default function AppNavigator() {
   return (
     <Stack.Navigator
+      detachInactiveScreens={Platform.OS === 'android' ? false : true}
       screenOptions={{
         headerShown: false,
-        animation: 'slide_from_right',
+        animation: 'simple_push',
         contentStyle: { backgroundColor: Colors.background },
       }}
     >

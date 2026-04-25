@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   useFonts,
@@ -43,9 +43,18 @@ export default function App() {
     );
   }
 
+  const MyTheme = {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      background: Colors.background,
+      card: Colors.surfaceContainer,
+    },
+  };
+
   return (
-    <SafeAreaProvider>
-      <NavigationContainer>
+    <SafeAreaProvider style={{ backgroundColor: Colors.background }}>
+      <NavigationContainer theme={MyTheme}>
         <AppNavigator />
         <StatusBar style="light" />
       </NavigationContainer>
