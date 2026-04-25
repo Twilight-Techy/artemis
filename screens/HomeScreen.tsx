@@ -24,6 +24,7 @@ import StatChip from '../components/StatChip';
 import QuickActionCard from '../components/QuickActionCard';
 import CommandBar from '../components/CommandBar';
 import ChatBubble, { ChatMessage } from '../components/chat/ChatBubble';
+import MCPActionModal from '../components/MCPActionModal';
 import { RootStackParamList } from '../navigation/AppNavigator';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -67,8 +68,24 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [mode, setMode] = useState<HomeMode>('dashboard');
-  const [messages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+  const [showMCPModal, setShowMCPModal] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+
+  const handleExecuteLogic = () => {
+    setShowMCPModal(false);
+    setMode('chat');
+    setMessages(prev => [
+      ...prev, 
+      {
+        id: Date.now().toString(),
+        role: 'assistant',
+        text: "⚡ [SYSTEM]: Logic executed. Turned on the studio fan.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 250);
+  };
 
   const keyboardShift = useRef(new Animated.Value(0)).current;
 
@@ -111,7 +128,9 @@ export default function HomeScreen() {
         {/* ═══ Orb Section (always visible) ═══ */}
         <View style={styles.orbSection}>
           <View style={styles.atmosphericGlow} />
-          <OrbEntity />
+          <TouchableOpacity activeOpacity={0.9} onPress={() => setShowMCPModal(true)}>
+            <OrbEntity />
+          </TouchableOpacity>
           <View style={styles.climateChip}>
             <StatChip
               icon="thermometer-outline"
@@ -234,6 +253,13 @@ export default function HomeScreen() {
           <CommandBar />
         </View>
       </Animated.View>
+
+      {/* ═══ MCP Proactive Overlay Modal ═══ */}
+      <MCPActionModal 
+        visible={showMCPModal} 
+        onClose={() => setShowMCPModal(false)}
+        onExecute={handleExecuteLogic}
+      />
     </View>
   );
 }

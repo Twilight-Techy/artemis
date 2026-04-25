@@ -5,11 +5,11 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 
 /* ────────────────────── Log Data ────────────────────── */
@@ -32,204 +32,194 @@ const REASONING_LINES = [
   { text: 'Synthesizing Arduino control signal... _', highlight: null },
 ];
 
-export default function MCPOverlayScreen() {
+interface MCPActionModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onExecute: () => void;
+}
+
+export default function MCPActionModal({ visible, onClose, onExecute }: MCPActionModalProps) {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
-      {/* ═══ Header ═══ */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="chevron-back" size={24} color={Colors.onSurfaceVariant} />
-        </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <View style={styles.headerOrb} />
-          <Text style={styles.headerTitle}>ARTEMIS_OS</Text>
-        </View>
-        <View style={{ width: 40 }} />
-      </View>
-
-      {/* ═══ Drag Handle + Status ═══ */}
-      <View style={styles.handleSection}>
-        <View style={styles.dragHandle} />
-        <View style={styles.statusRow}>
-          <View style={styles.statusBadge}>
-            <View style={styles.statusPing} />
-            <Text style={styles.statusText}>Thinking</Text>
-          </View>
-          <View style={styles.dividerLine} />
-          <Text style={styles.nodeId}>NODE_ID: LLM-7B-QUANTUM-04</Text>
-        </View>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ═══ Intent Detection Card ═══ */}
-        <View style={styles.intentCard}>
-          <Text style={styles.cardLabel}>Intent Detected</Text>
-          <View style={styles.intentRow}>
-            <Ionicons name="locate-outline" size={32} color={Colors.primary} />
-            <View style={styles.intentBody}>
-              <Text style={styles.intentTitle}>
-                "Turn on the studio fan"
-              </Text>
-              <Text style={styles.intentConfidence}>
-                Confidence Score:{' '}
-                <Text style={{ color: Colors.tertiary, fontFamily: 'Manrope-Bold' }}>
-                  0.9984
-                </Text>
-              </Text>
+    <Modal visible={visible} animationType="slide" transparent>
+      <View style={styles.modalBg}>
+        <View style={[styles.root, { paddingBottom: insets.bottom }]}>
+          {/* ═══ Header ═══ */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={onClose}
+              style={styles.backButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={24} color={Colors.onSurfaceVariant} />
+            </TouchableOpacity>
+            <View style={styles.headerCenter}>
+              <View style={styles.headerOrb} />
+              <Text style={styles.headerTitle}>ARTEMIS_OS</Text>
             </View>
+            <View style={{ width: 40 }} />
           </View>
-        </View>
 
-        {/* ═══ Bento: Context + Tool Selection ═══ */}
-        <View style={styles.bentoRow}>
-          {/* Context Card */}
-          <View style={styles.bentoCard}>
-            <View style={styles.bentoHeader}>
-              <Ionicons name="thermometer-outline" size={14} color={Colors.tertiary} />
-              <Text style={styles.bentoLabel}>Context Evaluated</Text>
-            </View>
-            <View style={styles.bentoBody}>
-              <View style={styles.contextRow}>
-                <Text style={styles.contextKey}>Ambient Temp</Text>
-                <Text style={styles.contextValue}>29.4°C</Text>
+          {/* ═══ Drag Handle + Status ═══ */}
+          <View style={styles.handleSection}>
+            <View style={styles.dragHandle} />
+            <View style={styles.statusRow}>
+              <View style={styles.statusBadge}>
+                <View style={styles.statusPing} />
+                <Text style={styles.statusText}>Thinking</Text>
               </View>
-              <View style={styles.progressTrack}>
-                <LinearGradient
-                  colors={['rgba(129,236,255,0.2)', Colors.tertiary]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[styles.progressFill, { width: '75%' }]}
-                />
-              </View>
-              <View style={styles.contextRow}>
-                <Text style={styles.contextKey}>Studio Occupancy</Text>
-                <Text style={styles.contextValueDetected}>DETECTED</Text>
-              </View>
+              <View style={styles.dividerLine} />
+              <Text style={styles.nodeId}>NODE_ID: LLM-7B-QUANTUM-04</Text>
             </View>
           </View>
 
-          {/* Tool Selection Card */}
-          <View style={styles.bentoCard}>
-            <View style={styles.bentoHeader}>
-              <Ionicons name="construct-outline" size={14} color={Colors.secondary} />
-              <Text style={styles.bentoLabel}>Tool Selection</Text>
-            </View>
-            <View style={styles.bentoBody}>
-              <View style={styles.toolBadge}>
-                <Ionicons name="hardware-chip-outline" size={18} color={Colors.secondary} />
-                <Text style={styles.toolName}>Arduino_Executor.v2</Text>
-              </View>
-              <Text style={styles.toolEndpoint}>
-                Executing endpoint:{'\n'}/api/v1/relays/studio_fan/state/ON
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ═══ Neural Logic Reasoning ═══ */}
-        <View style={styles.reasoningCard}>
-          <Text style={styles.cardLabelAlt}>Neural Logic Reasoning</Text>
-          <View style={styles.reasoningBody}>
-            {REASONING_LINES.map((line, i) => (
-              <View key={i} style={styles.reasoningRow}>
-                <Text style={styles.reasoningPrompt}>{'>'}</Text>
-                <Text style={styles.reasoningText}>
-                  {line.text}
-                  {line.highlight && (
-                    <Text style={{ color: line.highlight.color }}>
-                      {line.highlight.text}
+          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            {/* ═══ Intent Detection Card ═══ */}
+            <View style={styles.intentCard}>
+              <Text style={styles.cardLabel}>Proactive Suggestion</Text>
+              <View style={styles.intentRow}>
+                <Ionicons name="bulb-outline" size={32} color={Colors.primary} />
+                <View style={styles.intentBody}>
+                  <Text style={styles.intentTitle}>
+                    "Turn on the studio fan"
+                  </Text>
+                  <Text style={styles.intentConfidence}>
+                    Confidence Score:{' '}
+                    <Text style={{ color: Colors.tertiary, fontFamily: 'Manrope-Bold' }}>
+                      0.9984
                     </Text>
-                  )}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* ═══ Visualization + Stats ═══ */}
-        <View style={styles.vizCard}>
-          {/* Abstract background glows */}
-          <View style={styles.vizGlowPrimary} />
-          <View style={styles.vizGlowSecondary} />
-
-          {/* Concentric rings */}
-          <View style={styles.vizCenter}>
-            <View style={styles.vizRingOuter}>
-              <View style={styles.vizRingInner}>
-                <LinearGradient
-                  colors={[Colors.primary, Colors.secondary]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.vizCore}
-                />
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
 
-          {/* Stats overlay */}
-          <View style={styles.vizStats}>
-            <View style={styles.vizStat}>
-              <Text style={styles.vizStatValue}>42ms</Text>
-              <Text style={styles.vizStatLabel}>LATENCY</Text>
+            {/* ═══ Bento: Context + Tool Selection ═══ */}
+            <View style={styles.bentoRow}>
+              <View style={styles.bentoCard}>
+                <View style={styles.bentoHeader}>
+                  <Ionicons name="thermometer-outline" size={14} color={Colors.tertiary} />
+                  <Text style={styles.bentoLabel}>Context Evaluated</Text>
+                </View>
+                <View style={styles.bentoBody}>
+                  <View style={styles.contextRow}>
+                    <Text style={styles.contextKey}>Ambient Temp</Text>
+                    <Text style={styles.contextValue}>29.4°C</Text>
+                  </View>
+                  <View style={styles.progressTrack}>
+                    <LinearGradient
+                      colors={['rgba(129,236,255,0.2)', Colors.tertiary]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={[styles.progressFill, { width: '75%' }]}
+                    />
+                  </View>
+                  <View style={styles.contextRow}>
+                    <Text style={styles.contextKey}>Studio Occupancy</Text>
+                    <Text style={styles.contextValueDetected}>DETECTED</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.bentoCard}>
+                <View style={styles.bentoHeader}>
+                  <Ionicons name="construct-outline" size={14} color={Colors.secondary} />
+                  <Text style={styles.bentoLabel}>Tool Selection</Text>
+                </View>
+                <View style={styles.bentoBody}>
+                  <View style={styles.toolBadge}>
+                    <Ionicons name="hardware-chip-outline" size={18} color={Colors.secondary} />
+                    <Text style={styles.toolName}>Arduino_Executor.v2</Text>
+                  </View>
+                  <Text style={styles.toolEndpoint}>
+                    Executing endpoint:{'\n'}/api/v1/relays/studio_fan/state/ON
+                  </Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.vizStat}>
-              <Text style={styles.vizStatValue}>0.024</Text>
-              <Text style={styles.vizStatLabel}>LOSS</Text>
+
+            {/* ═══ Neural Logic Reasoning ═══ */}
+            <View style={styles.reasoningCard}>
+              <Text style={styles.cardLabelAlt}>Neural Logic Reasoning</Text>
+              <View style={styles.reasoningBody}>
+                {REASONING_LINES.map((line, i) => (
+                  <View key={i} style={styles.reasoningRow}>
+                    <Text style={styles.reasoningPrompt}>{'>'}</Text>
+                    <Text style={styles.reasoningText}>
+                      {line.text}
+                      {line.highlight && (
+                        <Text style={{ color: line.highlight.color }}>
+                          {line.highlight.text}
+                        </Text>
+                      )}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             </View>
-            <View style={styles.vizStat}>
-              <Text style={styles.vizStatValue}>124k</Text>
-              <Text style={styles.vizStatLabel}>TOKENS</Text>
+
+            <View style={styles.logsCard}>
+              <View style={styles.logsHeader}>
+                <Text style={styles.bentoLabel}>System Logs</Text>
+                <Ionicons name="server-outline" size={14} color="rgba(255,255,255,0.2)" />
+              </View>
+              {SYSTEM_LOGS.map((log, i) => (
+                <View key={i} style={styles.logRow}>
+                  <View style={[styles.logDot, { backgroundColor: log.color }]} />
+                  <Text style={[styles.logText, i === SYSTEM_LOGS.length - 1 && { color: log.color }]}>
+                    {log.time}: {log.text}
+                  </Text>
+                </View>
+              ))}
             </View>
-          </View>
+
+            {/* ═══ Execute Button ═══ */}
+            <TouchableOpacity onPress={onExecute} activeOpacity={0.8} style={styles.executeWrapper}>
+              <LinearGradient
+                colors={[Colors.primary, Colors.primaryContainer]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.executeButton}
+              >
+                <Text style={styles.executeText}>Confirm & Execute Logic</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+            
+            <TouchableOpacity onPress={onClose} activeOpacity={0.8} style={[styles.executeWrapper, { marginTop: -10 }]}>
+              <View style={[styles.executeButton, { backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 }]}>
+                <Text style={[styles.executeText, { color: Colors.onSurfaceVariant }]}>Dismiss Suggestion</Text>
+              </View>
+            </TouchableOpacity>
+
+            <View style={{ height: 40 }} />
+          </ScrollView>
         </View>
-
-        {/* ═══ System Logs ═══ */}
-        <View style={styles.logsCard}>
-          <View style={styles.logsHeader}>
-            <Text style={styles.bentoLabel}>System Logs</Text>
-            <Ionicons name="server-outline" size={14} color="rgba(255,255,255,0.2)" />
-          </View>
-          {SYSTEM_LOGS.map((log, i) => (
-            <View key={i} style={styles.logRow}>
-              <View style={[styles.logDot, { backgroundColor: log.color }]} />
-              <Text style={[styles.logText, i === SYSTEM_LOGS.length - 1 && { color: log.color }]}>
-                {log.time}: {log.text}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        {/* ═══ Execute Button ═══ */}
-        <TouchableOpacity activeOpacity={0.8} style={styles.executeWrapper}>
-          <LinearGradient
-            colors={[Colors.primary, Colors.primaryContainer]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.executeButton}
-          >
-            <Text style={styles.executeText}>Execute Logic Process</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </View>
+      </View>
+    </Modal>
   );
 }
 
 /* ────────────────────── Styles ────────────────────── */
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.background },
+  modalBg: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  root: { 
+    height: '92%', 
+    backgroundColor: Colors.background,
+    borderTopLeftRadius: Radii['3xl'],
+    borderTopRightRadius: Radii['3xl'],
+    shadowColor: '#000',
+    shadowOpacity: 1,
+    shadowRadius: 50,
+    shadowOffset: { width: 0, height: -10 },
+    elevation: 40,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
 
   /* ── Header ── */
   header: {
@@ -242,12 +232,13 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40, height: 40, borderRadius: 20,
     justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   headerCenter: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
   },
   headerOrb: {
-    width: 28, height: 28, borderRadius: 14,
+    width: 24, height: 24, borderRadius: 12,
     backgroundColor: Colors.primary,
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 0 },
@@ -257,7 +248,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: Typography.families.headline,
-    fontSize: Typography.sizes.titleLg,
+    fontSize: Typography.sizes.titleMd,
     fontWeight: Typography.weights.bold,
     color: Colors.primary,
     letterSpacing: 4,
@@ -462,70 +453,6 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.bodyMd,
     color: 'rgba(255,255,255,0.8)',
     lineHeight: 22,
-  },
-
-  /* ── Visualization ── */
-  vizCard: {
-    height: 200,
-    borderRadius: Radii.xl,
-    backgroundColor: '#000000',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-    marginBottom: Spacing.lg,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  vizGlowPrimary: {
-    position: 'absolute',
-    width: 160, height: 160, borderRadius: 80,
-    backgroundColor: 'rgba(116,177,255,0.08)',
-  },
-  vizGlowSecondary: {
-    position: 'absolute',
-    top: 20, left: '15%',
-    width: 100, height: 100, borderRadius: 50,
-    backgroundColor: 'rgba(184,132,255,0.06)',
-  },
-  vizCenter: { justifyContent: 'center', alignItems: 'center' },
-  vizRingOuter: {
-    width: 100, height: 100, borderRadius: 50,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.08)',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  vizRingInner: {
-    width: 72, height: 72, borderRadius: 36,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  vizCore: {
-    width: 32, height: 32, borderRadius: 16,
-  },
-  vizStats: {
-    position: 'absolute',
-    bottom: Spacing.xl, left: Spacing.xl, right: Spacing.xl,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  vizStat: { alignItems: 'center' },
-  vizStatValue: {
-    fontFamily: Typography.families.body,
-    fontSize: Typography.sizes.bodySm,
-    fontWeight: Typography.weights.bold,
-    color: Colors.onSurface,
-  },
-  vizStatLabel: {
-    fontFamily: Typography.families.label,
-    fontSize: 8,
-    color: 'rgba(255,255,255,0.4)',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginTop: 2,
   },
 
   /* ── System Logs ── */
