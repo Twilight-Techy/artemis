@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
-from app.models import Device, User
+from app.models import Device, ExecutionLog, User
 from app.schemas import DeviceCreate, DeviceOut, DeviceCommand
 from app.services.auth_service import get_current_user
+from app.services import hardware_service
+from app.services.hardware_service import HardwareError
 
 router = APIRouter(prefix="/devices", tags=["Devices"])
 
@@ -53,14 +55,34 @@ async def send_command(
     if not device:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found")
 
-    # TODO: Dispatch actual command to hardware bridge via HTTP/MQTT
-    # For now, update the local state
-    if body.action == "on":
+    # Dispatch to ESP32 hardware bridge
+    hw_response = None
+    try:
+        hw_response = await hardware_service.send_command(device.name, body.action, body.value)
+    except HardwareError as e:
+        # Log the failed attempt, but still update local state as fallback
+        hw_response = {"error": e.message}
+
+    # Update local DB state
+    if body.action in ("on", "activate"):
         device.is_active = True
-    elif body.action == "off":
+    elif body.action in ("off", "deactivate"):
         device.is_active = False
     elif body.action == "set":
         device.current_value = body.value
+
+    # Log execution
+    log = ExecutionLog(
+        action_type="device_control",
+        target_id=device.id,
+        target_name=device.name,
+        status="success" if hw_response and "error" not in hw_response else "failed",
+        request_payload={"action": body.action, "value": body.value},
+        response_payload=hw_response,
+        triggered_by="user",
+        user_id=current_user.id,
+    )
+    db.add(log)
 
     await db.commit()
     await db.refresh(device)

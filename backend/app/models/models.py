@@ -79,7 +79,7 @@ class SensorReading(Base):
     __tablename__ = "sensor_readings"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    device_id: Mapped[str] = mapped_column(ForeignKey("devices.id"), nullable=False)
+    device_id: Mapped[str | None] = mapped_column(ForeignKey("devices.id"), nullable=True)
     reading_type: Mapped[str] = mapped_column(String(50), nullable=False)  # temperature, humidity, motion, light_level
     value: Mapped[float] = mapped_column(Float, nullable=False)
     unit: Mapped[str] = mapped_column(String(20), nullable=False)  # °C, %, lux, bool

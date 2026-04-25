@@ -10,6 +10,8 @@ from app.routes import (
     functions_router,
     automations_router,
     chat_router,
+    sensors_router,
+    mcp_router,
 )
 
 settings = get_settings()
@@ -47,6 +49,12 @@ app.include_router(devices_router, prefix="/api/v1")
 app.include_router(functions_router, prefix="/api/v1")
 app.include_router(automations_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
+app.include_router(sensors_router, prefix="/api/v1")
+app.include_router(mcp_router, prefix="/api/v1")
+
+# WebSocket Router doesn't need /api/v1 prefix necessarily, but keeping it standard is fine
+from app.routes.websockets import router as ws_router
+app.include_router(ws_router)
 
 
 @app.get("/")
