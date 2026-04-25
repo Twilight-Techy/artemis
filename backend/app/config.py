@@ -19,13 +19,13 @@ class Settings(BaseSettings):
     # ── CORS ──
     allowed_origins: str = "http://localhost:8081"
 
-    # ── MCP Core ──
-    mcp_model_endpoint: str = "http://localhost:11434/api/generate"
-    mcp_model_name: str = "llama3"
+    # ── Gemini API (MCP Core) ──
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
 
-    # ── Hardware Bridge ──
-    hardware_bridge_url: str = "http://192.168.1.50"
-    mqtt_broker_url: str = "mqtt://192.168.1.50:1883"
+    # ── ESP32 Hardware Bridge ──
+    esp32_base_url: str = "http://192.168.1.50"
+    esp32_auth_token: str = ""
 
     @property
     def cors_origins(self) -> list[str]:
