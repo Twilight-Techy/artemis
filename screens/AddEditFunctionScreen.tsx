@@ -14,6 +14,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { artemisApi } from '../api/artemisClient';
 
 // ── Types ──
 type FunctionType = 'hardware' | 'software' | 'hybrid';
@@ -137,12 +138,68 @@ export default function AddEditFunctionScreen() {
     setParameters(prev => prev.filter(t => t !== val));
   };
 
-  const handleSave = () => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch initial data if editing
+  React.useEffect(() => {
+    if (isEdit) {
+      const fetchInitial = async () => {
+        try {
+          // In a heavily optimized app, we'd pass the full object or fetch the specific function by ID.
+          // For now, let's assume we can fetch all and find ours.
+          const fns = await artemisApi.getFunctions();
+          const target = fns.find((f: any) => f.name === initName);
+          if (target) {
+            setDescription(target.description || '');
+            setFunctionType(target.function_type as FunctionType);
+            setEndpoint(target.url || '');
+            setMethod(target.method || 'POST');
+            if (target.parameters) setParameters(target.parameters);
+            // Hydrate headers and bodies if available in the model (requires body_template/headers support)
+          }
+        } catch (e) {
+          console.warn("Failed to fetch initial function", e);
+        }
+      };
+      fetchInitial();
+    }
+  }, [isEdit, initName]);
+
+  const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('Missing Name', 'Please give your function a name.');
       return;
     }
-    navigation.goBack();
+    
+    setIsLoading(true);
+    try {
+      const payload = {
+        name: name.trim(),
+        description: description.trim(),
+        function_type: functionType,
+        method: method,
+        url: functionType !== 'hardware' ? endpoint : undefined,
+        parameters: parameters,
+        // body_template: body ? JSON.parse(body) : undefined, // add back if needed
+      };
+
+      if (isEdit) {
+        // we need the ID of the function we are editing to perform the PUT request. 
+        // We'll fetch it by name matching for brevity, but passing the ID down via route params is much better!
+        const fns = await artemisApi.getFunctions();
+        const target = fns.find((f: any) => f.name === initName);
+        if (target) {
+          await artemisApi.updateFunction(target.id, payload);
+        }
+      } else {
+        await artemisApi.createFunction(payload);
+      }
+      navigation.goBack();
+    } catch (e) {
+      Alert.alert("Error", "Failed to save the function.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDelete = () => {
@@ -151,7 +208,25 @@ export default function AddEditFunctionScreen() {
       `Are you sure you want to delete "${name}"?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => navigation.goBack() },
+        { 
+          text: 'Delete', 
+          style: 'destructive', 
+          onPress: async () => {
+            setIsLoading(true);
+            try {
+              const fns = await artemisApi.getFunctions();
+              const target = fns.find((f: any) => f.name === initName);
+              if (target) {
+                await artemisApi.deleteFunction(target.id);
+              }
+              navigation.goBack();
+            } catch (e) {
+              Alert.alert("Error", "Failed to delete function.");
+            } finally {
+              setIsLoading(false);
+            }
+          } 
+        },
       ]
     );
   };

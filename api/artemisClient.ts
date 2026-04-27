@@ -225,5 +225,89 @@ export const artemisApi = {
             console.error("Delete Room API error:", error);
             throw error;
         }
+    },
+
+    // ──────────────────────────────
+    // Functions API
+    // ──────────────────────────────
+    getFunctions: async () => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/functions/`, {
+                headers: { 'Authorization': 'Bearer placeholder-artemis-mcp-token' }
+            });
+            if (!response.ok) throw new Error("Failed to fetch functions");
+            return await response.json();
+        } catch (error) {
+            console.error("Get Functions error:", error);
+            throw error;
+        }
+    },
+
+    createFunction: async (payload: { name: string, description?: string, function_type: string, method?: string, url?: string, headers?: object, body_template?: object, parameters?: string[] }) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/functions/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error("Failed to create function");
+            return await response.json();
+        } catch (error) {
+            console.error("Create Function error:", error);
+            throw error;
+        }
+    },
+
+    updateFunction: async (id: string, payload: { name: string, description?: string, function_type: string, method?: string, url?: string, headers?: object, body_template?: object, parameters?: string[] }) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/functions/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error("Failed to update function");
+            return await response.json();
+        } catch (error) {
+            console.error("Update Function error:", error);
+            throw error;
+        }
+    },
+
+    deleteFunction: async (id: string) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/functions/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer placeholder-artemis-mcp-token' }
+            });
+            if (!response.ok) throw new Error("Failed to delete function");
+            return true;
+        } catch (error) {
+            console.error("Delete Function error:", error);
+            throw error;
+        }
+    },
+
+    executeFunction: async (id: string, params: Record<string, string> = {}) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/functions/${id}/execute`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                },
+                body: JSON.stringify(params) // Send params if needed
+            });
+            if (!response.ok) throw new Error("Failed to execute function");
+            return await response.json();
+        } catch (error) {
+            console.error("Execute Function error:", error);
+            throw error;
+        }
     }
 };

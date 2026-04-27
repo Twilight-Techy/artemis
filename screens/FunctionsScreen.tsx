@@ -1,62 +1,28 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, TextInput, Animated } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, TextInput, Animated, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import TopNavBar from '../components/TopNavBar';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useNetwork } from '../contexts/NetworkContext';
+import { artemisApi } from '../api/artemisClient';
 
 type FilterCategory = 'All Functions' | 'Hardware' | 'Software' | 'Hybrid';
 const CATEGORIES: FilterCategory[] = ['All Functions', 'Hardware', 'Software', 'Hybrid'];
-
-const MOCK_FUNCTIONS = [
-  {
-    id: '1',
-    name: 'Wake Up Living Room',
-    description: 'Gradual light increase, temperature adjustment, and coffee initiation sequence.',
-    type: 'Hardware' as const,
-    deviceCount: 3,
-    icon: 'hardware-chip-outline', // Ionicons
-    color: Colors.primary,
-    tagBg: 'rgba(116, 177, 255, 0.15)',
-    tagBorder: 'rgba(116, 177, 255, 0.3)',
-  },
-  {
-    id: '2',
-    name: 'Morning Summary Email',
-    description: 'Fetch overnight security logs and email the summary to admin account.',
-    type: 'Software' as const,
-    endpoint: 'POST /api/alerts',
-    parameters: ['adminEmail', 'reportDate'],
-    icon: 'cloud-outline',
-    color: Colors.tertiary,
-    tagBg: 'rgba(129, 236, 255, 0.15)',
-    tagBorder: 'rgba(129, 236, 255, 0.3)',
-  },
-  {
-    id: '3',
-    name: 'Deep Shield',
-    description: 'Lock all entry points, arm perimeter sensors, and notify external security service API.',
-    type: 'Hybrid' as const,
-    deviceCount: 4,
-    endpoint: 'POST /api/lockdown',
-    parameters: ['authorizationCode'],
-    icon: 'git-merge-outline',
-    color: Colors.secondary,
-    tagBg: 'rgba(184, 132, 255, 0.15)',
-    tagBorder: 'rgba(184, 132, 255, 0.3)',
-  }
-];
 
 export default function FunctionsScreen() {
   const insets = useSafeAreaInsets();
   const { isOffline } = useNetwork();
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('All Functions');
+  
+  const [functionsList, setFunctionsList] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [selectedFunctionId, setSelectedFunctionId] = useState<string | null>(null);
   const [confirmExecuteId, setConfirmExecuteId] = useState<string | null>(null);
   const [parameterValues, setParameterValues] = useState<Record<string, string>>({});
@@ -64,6 +30,24 @@ export default function FunctionsScreen() {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastAnim = React.useRef(new Animated.Value(0)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchFunctions();
+    }, [])
+  );
+
+  const fetchFunctions = async () => {
+    setIsLoading(true);
+    try {
+      const data = await artemisApi.getFunctions();
+      setFunctionsList(data);
+    } catch (e) {
+      console.warn("Failed to fetch functions", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleOpenActionModal = (id: string) => {
     setSelectedFunctionId(id);
@@ -101,15 +85,22 @@ export default function FunctionsScreen() {
     ]).start();
   };
 
-  const executeFunction = () => {
-    // Cache name before destroying the modal to prevent it showing up as generic "Function"
-    const functionName = confirmExecuteObj?.name || 'Function';
-    handleCloseExecuteModal();
-    showToast(`${functionName} executed successfully`);
+  const executeFunction = async () => {
+    if (!confirmExecuteId) return;
+    const fnName = confirmExecuteObj?.name || 'Function';
+    
+    try {
+      await artemisApi.executeFunction(confirmExecuteId, parameterValues);
+      handleCloseExecuteModal();
+      showToast(`${fnName} executed successfully`);
+    } catch (e) {
+      Alert.alert("Execution Failed", `Could not run ${fnName}`);
+      handleCloseExecuteModal();
+    }
   };
 
-  const selectedFunctionObj = MOCK_FUNCTIONS.find(f => f.id === selectedFunctionId);
-  const confirmExecuteObj = MOCK_FUNCTIONS.find(f => f.id === confirmExecuteId);
+  const selectedFunctionObj = functionsList.find(f => f.id === selectedFunctionId);
+  const confirmExecuteObj = functionsList.find(f => f.id === confirmExecuteId);
 
 
   return (
@@ -162,48 +153,74 @@ export default function FunctionsScreen() {
 
         {/* ═══ Functions List ═══ */}
         <View style={styles.functionsList}>
-          {MOCK_FUNCTIONS.filter(f => activeFilter === 'All Functions' || f.type === activeFilter).map((fn) => (
-            <TouchableOpacity 
-              key={fn.id} 
-              activeOpacity={0.8} 
-              disabled={isOffline}
-              onPress={() => handleOpenActionModal(fn.id)} 
-              onLongPress={() => navigation.navigate('AddEditFunction', { mode: 'edit', functionName: fn.name })}
-              style={[styles.card, isOffline && { opacity: 0.3, borderColor: 'rgba(255,255,255,0.05)' }]}
-            >
-              <View style={styles.cardHeader}>
-                <View style={[styles.tag, { backgroundColor: fn.tagBg, borderColor: fn.tagBorder }]}>
-                  <View style={[styles.tagDot, { backgroundColor: fn.color }]} />
-                  <Text style={[styles.tagText, { color: fn.color }]}>{fn.type} Function</Text>
-                </View>
-                <Ionicons name={fn.icon as any} size={24} color={fn.color} />
-              </View>
-              <Text style={styles.cardTitle}>{fn.name}</Text>
-              <Text style={styles.cardDescription}>
-                {fn.description}
-              </Text>
-              
-              <View style={{ gap: Spacing.sm }}>
-                {(fn.type === 'Hardware' || fn.type === 'Hybrid') && (
-                  <View style={styles.deviceRow}>
-                    <View style={styles.deviceCircle}>
-                      <Ionicons name="hardware-chip-outline" size={16} color={Colors.onSurface} />
-                    </View>
-                    <Text style={styles.deviceText}>{fn.deviceCount} Connected Devices</Text>
-                  </View>
-                )}
+          {isLoading ? (
+            <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
+          ) : (
+            functionsList
+              .filter(f => {
+                if (activeFilter === 'All Functions') return true;
+                return f.function_type.toLowerCase() === activeFilter.toLowerCase();
+              })
+              .map((fn) => {
                 
-                {(fn.type === 'Software' || fn.type === 'Hybrid') && (
-                  <View style={styles.deviceRow}>
-                    <View style={styles.deviceCircle}>
-                      <Ionicons name="cloud-outline" size={16} color={Colors.onSurface} />
+                // Determine styling based on type
+                let icon: string = 'hardware-chip-outline';
+                let color: string = Colors.primary;
+                let bg: string = 'rgba(116, 177, 255, 0.15)';
+                let border: string = 'rgba(116, 177, 255, 0.3)';
+                let typeLabel: string = "Hardware";
+
+                const typeLower = (fn.function_type || '').toLowerCase();
+                if (typeLower === 'software') {
+                  icon = 'cloud-outline';
+                  color = Colors.tertiary;
+                  bg = 'rgba(129, 236, 255, 0.15)';
+                  border = 'rgba(129, 236, 255, 0.3)';
+                  typeLabel = "Software";
+                } else if (typeLower === 'hybrid') {
+                  icon = 'git-merge-outline';
+                  color = Colors.secondary;
+                  bg = 'rgba(184, 132, 255, 0.15)';
+                  border = 'rgba(184, 132, 255, 0.3)';
+                  typeLabel = "Hybrid";
+                }
+
+                return (
+                  <TouchableOpacity 
+                    key={fn.id} 
+                    activeOpacity={0.8} 
+                    disabled={isOffline}
+                    onPress={() => handleOpenActionModal(fn.id)} 
+                    onLongPress={() => navigation.navigate('AddEditFunction', { mode: 'edit', functionName: fn.name })}
+                    style={[styles.card, isOffline && { opacity: 0.3, borderColor: 'rgba(255,255,255,0.05)' }]}
+                  >
+                    <View style={styles.cardHeader}>
+                      <View style={[styles.tag, { backgroundColor: bg, borderColor: border }]}>
+                        <View style={[styles.tagDot, { backgroundColor: color }]} />
+                        <Text style={[styles.tagText, { color: color }]}>{typeLabel} Function</Text>
+                      </View>
+                      <Ionicons name={icon as any} size={24} color={color} />
                     </View>
-                    <Text style={styles.deviceText}>{fn.endpoint}</Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
+                    <Text style={styles.cardTitle}>{fn.name}</Text>
+                    {fn.description ? (
+                      <Text style={styles.cardDescription}>{fn.description}</Text>
+                    ) : null}
+                    
+                    <View style={{ gap: Spacing.sm, marginTop: Spacing.md }}>
+                      {fn.url && (
+                        <View style={styles.deviceRow}>
+                          <View style={styles.deviceCircle}>
+                            <Ionicons name="cloud-outline" size={16} color={Colors.onSurface} />
+                          </View>
+                          <Text style={styles.deviceText}>{fn.method} {fn.url}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+          )}
+
 
           {/* ═══ Neural Core Footer Graphic ═══ */}
           <View style={styles.neuralCoreContainer}>
@@ -302,7 +319,7 @@ export default function FunctionsScreen() {
                 {confirmExecuteObj?.parameters && confirmExecuteObj.parameters.length > 0 && (
                   <View style={{ marginBottom: Spacing.xl, width: '100%', paddingHorizontal: Spacing.xl }}>
                     <Text style={{ fontFamily: Typography.families.label, fontSize: 10, color: Colors.onSurfaceVariant, marginBottom: Spacing.sm, letterSpacing: 1 }}>REQUIRED PARAMETERS</Text>
-                    {confirmExecuteObj.parameters.map((param) => (
+                    {confirmExecuteObj.parameters.map((param: string) => (
                       <View key={param} style={{ marginBottom: Spacing.md }}>
                         <Text style={{ fontFamily: Typography.families.body, fontSize: Typography.sizes.bodySm, color: Colors.onSurface, marginBottom: 4 }}>{param}</Text>
                         <TextInput

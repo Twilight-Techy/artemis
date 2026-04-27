@@ -66,6 +66,60 @@ async def seed_database():
             )
             db.add(auto)
 
+        auto2 = await db.get(Automation, "test-auto-id-2")
+        if not auto2:
+            auto2 = Automation(
+                id="test-auto-id-2",
+                name="Morning Routine",
+                automation_type="aal",
+                trigger="time is 07:00",
+                condition="someone is home",
+                action="suggest wake up living room",
+                is_enabled=True,
+                owner_id="test-user-id"
+            )
+            db.add(auto2)
+
+        print("Creating Core Functions...")
+        from app.models import Function
+        
+        functions = [
+            Function(
+                id="test-func-1",
+                name="Wake Up Living Room",
+                description="Gradual light increase, temperature adjustment, and coffee initiation sequence.",
+                function_type="hardware",
+                method="GET",
+                url=None,
+                owner_id="test-user-id"
+            ),
+            Function(
+                id="test-func-2",
+                name="Morning Summary Email",
+                description="Fetch overnight security logs and email the summary to admin account.",
+                function_type="software",
+                method="POST",
+                url="https://api.artemis.local/alerts",
+                parameters=["adminEmail", "reportDate"],
+                owner_id="test-user-id"
+            ),
+            Function(
+                id="test-func-3",
+                name="Deep Shield",
+                description="Lock all entry points, arm perimeter sensors, and notify external security service API.",
+                function_type="hybrid",
+                method="POST",
+                url="https://api.artemis.local/lockdown",
+                parameters=["authorizationCode"],
+                owner_id="test-user-id"
+            )
+        ]
+
+        for num, f in enumerate(functions):
+            existing = await db.get(Function, f.id)
+            if not existing:
+                db.add(f)
+
         await db.commit()
         print("Database Seeded Successfully!")
         print("-------------------------------")
