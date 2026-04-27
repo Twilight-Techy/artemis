@@ -6,6 +6,7 @@ from .automations import router as automations_router
 from .chat import router as chat_router
 from .sensors import router as sensors_router
 from .mcp import router as mcp_router
+from .logs import router as logs_router
 
 __all__ = [
     "auth_router",
@@ -16,4 +17,5 @@ __all__ = [
     "chat_router",
     "sensors_router",
     "mcp_router",
+    "logs_router",
 ]

@@ -5,8 +5,65 @@ from app.database import get_db
 from app.models import Automation, User
 from app.schemas import AutomationCreate, AutomationOut
 from app.services.auth_service import get_current_user
+from pydantic import BaseModel
+import os
+from google import genai
+from google.genai import types
 
 router = APIRouter(prefix="/automations", tags=["Automations"])
+
+class AALParseRequest(BaseModel):
+    text: str
+
+class AALParseResponse(BaseModel):
+    trigger: str
+    condition: str | None = None
+    action: str
+    fallback: str | None = None
+
+@router.post("/parse", response_model=AALParseResponse)
+async def parse_aal_text(body: AALParseRequest, current_user: User = Depends(get_current_user)):
+    """Parse natural language into structured AAL JSON."""
+    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY", "mock-key"))
+    
+    prompt = f"""
+You are an expert natural language parser for an AI smart home hub called Artemis.
+Convert the following natural language automation rule into a structured JSON object with 4 fields:
+1. trigger: The event or time (e.g., "time is 07:00" or "temperature > 28")
+2. condition: Optional contextual gate (e.g., "someone is home")
+3. action: What to do (e.g., "turn on the fan". If bypassing approval, prefix with "silently ")
+4. fallback: Optional action if condition fails (e.g., "silently do nothing")
+
+Text to parse: "{body.text}"
+
+Ensure the output is ONLY valid JSON mapping exactly to these keys.
+"""
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+            ),
+        )
+        import json
+        data = json.loads(response.text)
+        return AALParseResponse(**data)
+    except Exception as e:
+        # Fallback to naive parse if LLM fails
+        print(f"LLM parse failed: {e}")
+        text = body.text.replace('\n', ' ')
+        import re
+        when_match = re.search(r'WHEN\s+(.*?)(?=\s+IF|\s+THEN|\s+ELSE|$)', text, re.I)
+        if_match = re.search(r'IF\s+(.*?)(?=\s+THEN|\s+ELSE|$)', text, re.I)
+        then_match = re.search(r'THEN\s+(.*?)(?=\s+ELSE|$)', text, re.I)
+        else_match = re.search(r'ELSE\s+(.*)$', text, re.I)
+        return AALParseResponse(
+            trigger=when_match.group(1).strip() if when_match else "unknown",
+            condition=if_match.group(1).strip() if if_match else None,
+            action=then_match.group(1).strip() if then_match else "silently do nothing",
+            fallback=else_match.group(1).strip() if else_match else None
+        )
 
 
 @router.get("/", response_model=list[AutomationOut])

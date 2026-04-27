@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Switch, Dimensions } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Switch, Dimensions, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import TopNavBar from '../components/TopNavBar';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { artemisApi } from '../api/artemisClient';
 
 const { width } = Dimensions.get('window');
 
@@ -15,10 +16,38 @@ export default function AutomationsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  // Local state for our mock toggles
-  const [activeAmbiance, setActiveAmbiance] = useState(true);
-  const [activeGuard, setActiveGuard] = useState(true);
-  const [activeEco, setActiveEco] = useState(false);
+  const [automations, setAutomations] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchAutomations();
+    }, [])
+  );
+
+  const fetchAutomations = async () => {
+    setIsLoading(true);
+    try {
+      const data = await artemisApi.getAutomations();
+      setAutomations(data);
+    } catch (error) {
+      console.warn('Failed to fetch automations:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleToggle = async (id: string, currentValue: boolean) => {
+    // Optimistic toggle
+    setAutomations(prev => prev.map(a => a.id === id ? { ...a, is_enabled: !currentValue } : a));
+    try {
+      await artemisApi.toggleAutomation(id);
+    } catch (error) {
+      console.warn('Failed to toggle automation:', error);
+      // Revert optimistic
+      setAutomations(prev => prev.map(a => a.id === id ? { ...a, is_enabled: currentValue } : a));
+    }
+  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -58,107 +87,76 @@ export default function AutomationsScreen() {
 
         {/* Active Automations Matrix */}
         <View style={styles.listContainer}>
+          {isLoading ? (
+            <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
+          ) : (
+            automations.map((auto) => {
+              // We'll deterministically set icon and color based on ID length or just generic for now
+              const isEco = auto.name.toLowerCase().includes('eco') || auto.name.toLowerCase().includes('cooling');
+              const isSecurity = auto.name.toLowerCase().includes('guard') || auto.name.toLowerCase().includes('security');
+              
+              let color: string = Colors.tertiary;
+              let iconName: string = 'auto-awesome';
+              let tagLabel: string = 'AUTOMATION';
+              let bg: string = 'rgba(129, 236, 255, 0.1)';
 
-          {/* Automation Card 1: Evening Ambiance */}
-          <TouchableOpacity style={styles.card} activeOpacity={0.8} onLongPress={() => navigation.navigate('AALEditor')}>
-            <View style={styles.cardHeader}>
-              <View style={styles.tagContainer}>
-                <View style={[styles.iconWrapper, { backgroundColor: 'rgba(129, 236, 255, 0.1)' }]}>
-                  <MaterialIcons name="wb-twilight" size={16} color={Colors.tertiary} />
-                </View>
-                <Text style={[styles.tagText, { color: Colors.tertiary }]}>ENVIRONMENTAL</Text>
-              </View>
-              <Switch
-                trackColor={{ false: Colors.surfaceContainerHighest, true: Colors.tertiary }}
-                thumbColor={Colors.onSurface}
-                ios_backgroundColor={Colors.surfaceContainerHighest}
-                onValueChange={setActiveAmbiance}
-                value={activeAmbiance}
-                style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
-              />
-            </View>
-            <Text style={styles.cardTitle}>Evening Ambiance</Text>
-            
-            <View style={styles.ruleContainer}>
-              <View style={styles.ruleRow}>
-                <MaterialIcons name="schedule" size={16} color={Colors.onSurfaceVariant} />
-                <Text style={styles.ruleText}>IF <Text style={styles.ruleHighlight}>Sunset</Text></Text>
-              </View>
-              <View style={styles.ruleRow}>
-                <Ionicons name="bulb-outline" size={16} color={Colors.onSurfaceVariant} />
-                <Text style={styles.ruleText}>THEN <Text style={styles.ruleHighlight}>Dim lights to 20% & Play Lo-Fi</Text></Text>
-              </View>
-            </View>
-          </TouchableOpacity>
+              if (isEco) {
+                 color = Colors.primary;
+                 iconName = 'eco';
+                 tagLabel = 'EFFICIENCY';
+                 bg = 'rgba(116, 177, 255, 0.1)';
+              } else if (isSecurity) {
+                 color = Colors.secondary;
+                 iconName = 'security';
+                 tagLabel = 'SECURITY';
+                 bg = 'rgba(184, 132, 255, 0.1)';
+              }
 
-          {/* Automation Card 2: Night Guard */}
-          <TouchableOpacity style={styles.card} activeOpacity={0.8} onLongPress={() => navigation.navigate('AALEditor')}>
-            <View style={styles.cardHeader}>
-              <View style={styles.tagContainer}>
-                <View style={[styles.iconWrapper, { backgroundColor: 'rgba(184, 132, 255, 0.1)' }]}>
-                  <MaterialIcons name="security" size={16} color={Colors.secondary} />
-                </View>
-                <Text style={[styles.tagText, { color: Colors.secondary }]}>SECURITY</Text>
-              </View>
-              <Switch
-                trackColor={{ false: Colors.surfaceContainerHighest, true: Colors.secondary }}
-                thumbColor={Colors.onSurface}
-                ios_backgroundColor={Colors.surfaceContainerHighest}
-                onValueChange={setActiveGuard}
-                value={activeGuard}
-                style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
-              />
-            </View>
-            <Text style={styles.cardTitle}>Night Guard</Text>
-            
-            <View style={styles.ruleContainer}>
-              <View style={styles.ruleRow}>
-                <MaterialCommunityIcons name="door-open" size={16} color={Colors.onSurfaceVariant} />
-                <Text style={styles.ruleText}>IF <Text style={styles.ruleHighlight}>External Motion</Text> (22:00-06:00)</Text>
-              </View>
-              <View style={styles.ruleRow}>
-                <MaterialIcons name="notifications-active" size={16} color={Colors.onSurfaceVariant} />
-                <Text style={styles.ruleText}>THEN <Text style={styles.ruleHighlight}>Activate Perimeter & Notify Admin</Text></Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-
-          {/* Automation Card 3: Smart Thermal Optima */}
-          <TouchableOpacity style={[styles.card, activeEco ? {} : { opacity: 0.7 }]} activeOpacity={0.8} onLongPress={() => navigation.navigate('AALEditor')}>
-            <View style={styles.cardHeader}>
-              <View style={styles.tagContainer}>
-                <View style={[styles.iconWrapper, { backgroundColor: 'rgba(116, 177, 255, 0.1)' }]}>
-                  <MaterialIcons name="eco" size={16} color={Colors.primary} />
-                </View>
-                <Text style={[styles.tagText, { color: Colors.primary }]}>EFFICIENCY</Text>
-              </View>
-              <Switch
-                trackColor={{ false: Colors.surfaceContainerHighest, true: Colors.primary }}
-                thumbColor={Colors.onSurface}
-                ios_backgroundColor={Colors.surfaceContainerHighest}
-                onValueChange={setActiveEco}
-                value={activeEco}
-                style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
-              />
-            </View>
-            <Text style={styles.cardTitle}>Smart Thermal Optima</Text>
-            
-            <View style={styles.ruleContainer}>
-              <View style={styles.ruleRow}>
-                <MaterialIcons name="person" size={16} color={Colors.onSurfaceVariant} />
-                <Text style={styles.ruleText}>IF <Text style={styles.ruleHighlight}>Room Unoccupied</Text> ({'>'}30m)</Text>
-              </View>
-              <View style={styles.ruleRow}>
-                <MaterialCommunityIcons name="thermostat" size={16} color={Colors.onSurfaceVariant} />
-                <Text style={styles.ruleText}>THEN <Text style={styles.ruleHighlight}>Eco-Mode HVAC (-4°)</Text></Text>
-              </View>
-            </View>
-            
-            {!activeEco && (
-              <Text style={styles.deactivatedText}>DEACTIVATED 2 DAYS AGO</Text>
-            )}
-          </TouchableOpacity>
-
+              return (
+                <TouchableOpacity 
+                  key={auto.id}
+                  style={[styles.card, !auto.is_enabled ? { opacity: 0.7 } : {}]} 
+                  activeOpacity={0.8} 
+                  onLongPress={() => navigation.navigate('AALEditor', { mode: 'edit', automationId: auto.id })}
+                >
+                  <View style={styles.cardHeader}>
+                    <View style={styles.tagContainer}>
+                      <View style={[styles.iconWrapper, { backgroundColor: bg }]}>
+                        <MaterialIcons name={iconName as any} size={16} color={color} />
+                      </View>
+                      <Text style={[styles.tagText, { color: color }]}>{tagLabel}</Text>
+                    </View>
+                    <Switch
+                      trackColor={{ false: Colors.surfaceContainerHighest, true: color }}
+                      thumbColor={Colors.onSurface}
+                      ios_backgroundColor={Colors.surfaceContainerHighest}
+                      onValueChange={() => handleToggle(auto.id, auto.is_enabled)}
+                      value={auto.is_enabled}
+                      style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+                    />
+                  </View>
+                  <Text style={styles.cardTitle}>{auto.name}</Text>
+                  
+                  <View style={styles.ruleContainer}>
+                    <View style={styles.ruleRow}>
+                      <MaterialIcons name="schedule" size={16} color={Colors.onSurfaceVariant} />
+                      <Text style={styles.ruleText}>WHEN <Text style={styles.ruleHighlight}>{auto.trigger}</Text></Text>
+                    </View>
+                    {auto.condition && auto.condition !== 'true' && (
+                      <View style={styles.ruleRow}>
+                        <MaterialIcons name="fact-check" size={16} color={Colors.onSurfaceVariant} />
+                        <Text style={styles.ruleText}>IF <Text style={styles.ruleHighlight}>{auto.condition}</Text></Text>
+                      </View>
+                    )}
+                    <View style={styles.ruleRow}>
+                      <Ionicons name="flash-outline" size={16} color={Colors.onSurfaceVariant} />
+                      <Text style={styles.ruleText}>THEN <Text style={styles.ruleHighlight}>{auto.action}</Text></Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
         </View>
 
       </ScrollView>

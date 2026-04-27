@@ -81,7 +81,7 @@ async def seed_database():
             db.add(auto2)
 
         print("Creating Core Functions...")
-        from app.models import Function
+        from app.models import Function, ExecutionLog
         
         functions = [
             Function(
@@ -119,6 +119,42 @@ async def seed_database():
             existing = await db.get(Function, f.id)
             if not existing:
                 db.add(f)
+
+        print("Creating Execution Logs (History)...")
+        logs = [
+            ExecutionLog(
+                id="log-1",
+                action_type="automation_run",
+                target_name="Security Perimeter Active",
+                status="success",
+                triggered_by="automation",
+                user_id="test-user-id",
+                response_payload={
+                    "description": "Triggered by: Geofence exit detected. All ground-floor smart locks engaged.",
+                    "systemContext": "User has departed primary residence radius. Executing Lockdown protocol."
+                }
+            ),
+            ExecutionLog(
+                id="log-2",
+                action_type="function_call",
+                target_name="Scene Change: Deep Focus",
+                status="success",
+                triggered_by="user",
+                user_id="test-user-id"
+            ),
+            ExecutionLog(
+                id="log-3",
+                action_type="mcp_suggestion",
+                target_name="Grocery List Synced",
+                status="pending",
+                triggered_by="mcp",
+                user_id="test-user-id"
+            )
+        ]
+        for l in logs:
+            existing = await db.get(ExecutionLog, l.id)
+            if not existing:
+                db.add(l)
 
         await db.commit()
         print("Database Seeded Successfully!")

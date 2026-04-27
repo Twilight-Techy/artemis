@@ -23,7 +23,7 @@ export type RootStackParamList = {
   MainTabs: undefined;
   Settings: undefined;
   History: undefined;
-  AALEditor: undefined;
+  AALEditor: { mode?: 'add' | 'edit'; automationId?: string } | undefined;
   MCPOverlay: undefined;
   AddDevice: undefined;
   EditDevice: { deviceId: string; deviceName: string; roomId: string; deviceType: string };

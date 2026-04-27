@@ -309,5 +309,119 @@ export const artemisApi = {
             console.error("Execute Function error:", error);
             throw error;
         }
+    },
+
+    // ──────────────────────────────
+    // Automations API
+    // ──────────────────────────────
+    getAutomations: async () => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/automations/`, {
+                headers: { 'Authorization': 'Bearer placeholder-artemis-mcp-token' }
+            });
+            if (!response.ok) throw new Error("Failed to fetch automations");
+            return await response.json();
+        } catch (error) {
+            console.error("Get Automations error:", error);
+            throw error;
+        }
+    },
+
+    parseAALText: async (text: string) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/automations/parse`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                },
+                body: JSON.stringify({ text })
+            });
+            if (!response.ok) throw new Error("Failed to parse AAL text");
+            return await response.json();
+        } catch (error) {
+            console.error("Parse AAL error:", error);
+            throw error;
+        }
+    },
+
+    // ──────────────────────────────
+    // History API
+    // ──────────────────────────────
+    getHistory: async () => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/logs/`, {
+                headers: { 'Authorization': 'Bearer placeholder-artemis-mcp-token' }
+            });
+            if (!response.ok) throw new Error("Failed to fetch history logs");
+            return await response.json();
+        } catch (error) {
+            console.error("Get History error:", error);
+            throw error;
+        }
+    },
+
+    createAutomation: async (payload: { name: string, automation_type: string, trigger: string, condition?: string, action: string, fallback?: string, is_enabled?: boolean }) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/automations/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error("Failed to create automation");
+            return await response.json();
+        } catch (error) {
+            console.error("Create Automation error:", error);
+            throw error;
+        }
+    },
+
+    updateAutomation: async (id: string, payload: { name: string, automation_type: string, trigger: string, condition?: string, action: string, fallback?: string, is_enabled?: boolean }) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/automations/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error("Failed to update automation");
+            return await response.json();
+        } catch (error) {
+            console.error("Update Automation error:", error);
+            throw error;
+        }
+    },
+
+    toggleAutomation: async (id: string) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/automations/${id}/toggle`, {
+                method: 'PATCH',
+                headers: { 'Authorization': 'Bearer placeholder-artemis-mcp-token' }
+            });
+            if (!response.ok) throw new Error("Failed to toggle automation");
+            return await response.json();
+        } catch (error) {
+            console.error("Toggle Automation error:", error);
+            throw error;
+        }
+    },
+
+    deleteAutomation: async (id: string) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/automations/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer placeholder-artemis-mcp-token' }
+            });
+            if (!response.ok) throw new Error("Failed to delete automation");
+            return true;
+        } catch (error) {
+            console.error("Delete Automation error:", error);
+            throw error;
+        }
     }
 };

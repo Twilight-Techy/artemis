@@ -14,11 +14,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
+import { artemisApi } from '../api/artemisClient';
+
+type AALEditorRouteParams = {
+  AALEditor: {
+    mode?: 'add' | 'edit';
+    automationId?: string;
+  };
+};
 
 export default function AALEditorScreen() {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<AALEditorRouteParams, 'AALEditor'>>();
+
+  const { mode = 'add', automationId } = route.params || {};
+  const isEdit = mode === 'edit';
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -26,6 +40,91 @@ export default function AALEditorScreen() {
   const [logicAAL, setLogicAAL] = useState('WHEN \nIF \nTHEN ');
   const [logicPython, setLogicPython] = useState('def evaluate(sensor_data):\n    # Write advanced automation script here\n    pass');
   const [requireApproval, setRequireApproval] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (isEdit && automationId) {
+      const fetchAuto = async () => {
+        try {
+          const autos = await artemisApi.getAutomations();
+          const target = autos.find((a: any) => a.id === automationId);
+          if (target) {
+            setName(target.name);
+            setRequireApproval(target.action?.indexOf('silently ') === -1);
+            if (target.automation_type.toLowerCase() === 'python') {
+              setEngine('PYTHON');
+              setLogicPython(target.action);
+            } else {
+              setEngine('AAL');
+              let reconstructed = `WHEN ${target.trigger}`;
+              if (target.condition && target.condition !== 'true') reconstructed += `\nIF ${target.condition}`;
+              reconstructed += `\nTHEN ${target.action}`;
+              if (target.fallback) reconstructed += `\nELSE ${target.fallback}`;
+              setLogicAAL(reconstructed);
+            }
+          }
+        } catch (e) {
+          console.warn('Failed to fetch automation', e);
+        }
+      };
+      fetchAuto();
+    }
+  }, [isEdit, automationId]);
+
+  const handleSave = async () => {
+    if (!name.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      let payload: any = {
+        name: name.trim(),
+        is_enabled: true,
+      };
+
+      if (engine === 'AAL') {
+        const parsed = await artemisApi.parseAALText(logicAAL);
+        let actionStr = parsed.action || 'silently do nothing';
+
+        if (!requireApproval && !actionStr.toLowerCase().startsWith('silently')) {
+             actionStr = 'silently ' + actionStr;
+        }
+
+        payload.automation_type = 'aal';
+        payload.trigger = parsed.trigger || 'manual';
+        payload.condition = parsed.condition;
+        payload.action = actionStr;
+        payload.fallback = parsed.fallback;
+      } else {
+        payload.automation_type = 'python';
+        payload.trigger = 'manual';
+        payload.action = logicPython.trim();
+      }
+
+      if (isEdit && automationId) {
+        await artemisApi.updateAutomation(automationId, payload);
+      } else {
+        await artemisApi.createAutomation(payload);
+      }
+      navigation.goBack();
+    } catch (e) {
+      console.warn('Failed to save automation', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+     if (!automationId) return;
+     setIsLoading(true);
+     try {
+       await artemisApi.deleteAutomation(automationId);
+       navigation.goBack();
+     } catch (e) {
+       console.warn('Failed to delete', e);
+     } finally {
+       setIsLoading(false);
+     }
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -164,10 +263,17 @@ export default function AALEditorScreen() {
 
           {/* ═══ Actions ═══ */}
           <View style={styles.actionsSection}>
-            <TouchableOpacity style={styles.saveBtn} activeOpacity={0.8} onPress={() => navigation.goBack()}>
+            <TouchableOpacity style={styles.saveBtn} activeOpacity={0.8} onPress={handleSave} disabled={isLoading}>
               <Ionicons name="save-outline" size={20} color={Colors.onPrimary} />
-              <Text style={styles.saveBtnText}>SAVE AUTOMATION</Text>
+              <Text style={styles.saveBtnText}>{isEdit ? 'SAVE AUTOMATION' : 'CREATE AUTOMATION'}</Text>
             </TouchableOpacity>
+
+            {isEdit && (
+              <TouchableOpacity style={styles.deleteBtn} activeOpacity={0.8} onPress={handleDelete} disabled={isLoading}>
+                <Ionicons name="trash-outline" size={20} color={Colors.error} />
+                <Text style={styles.deleteBtnText}>DELETE AUTOMATION</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
         </ScrollView>
@@ -230,6 +336,25 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.labelMd,
     fontWeight: Typography.weights.bold,
     color: Colors.onPrimary,
+    letterSpacing: 2,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: Radii.full,
+    paddingVertical: Spacing.lg + 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 71, 87, 0.2)',
+    marginTop: Spacing.md,
+  },
+  deleteBtnText: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.labelMd,
+    fontWeight: Typography.weights.bold,
+    color: Colors.error,
     letterSpacing: 2,
   },
   scrollContent: {

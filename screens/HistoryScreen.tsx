@@ -8,8 +8,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
+import { artemisApi } from '../api/artemisClient';
 
 type HistoryCategory = 'All' | 'Command' | 'Suggestion' | 'Automation';
 const CATEGORIES: HistoryCategory[] = ['All', 'Command', 'Suggestion', 'Automation'];
@@ -25,55 +26,73 @@ type HistoryEntry = {
   systemContext?: string;
 };
 
-const MOCK_HISTORY: HistoryEntry[] = [
-  {
-    id: '1',
-    title: 'Security Perimeter Active',
-    time: '14:22',
-    category: 'Automation',
-    icon: 'flash',
-    color: Colors.primary,
-    description:
-      'Triggered by: Geofence exit detected. All ground-floor smart locks engaged and surveillance cameras switched to \'Away\' mode.',
-    systemContext:
-      '"User has departed primary residence radius. Executing \'Lockdown\' protocol as per routine 4. Atmospheric light transition initiated."',
-  },
-  {
-    id: '2',
-    title: 'Scene Change: Deep Focus',
-    time: '12:05',
-    category: 'Command',
-    icon: 'bulb-outline',
-    color: Colors.secondary,
-  },
-  {
-    id: '3',
-    title: 'Grocery List Synced',
-    time: '09:15',
-    category: 'Suggestion',
-    icon: 'chatbubble-outline',
-    color: Colors.tertiary,
-  },
-  {
-    id: '4',
-    title: 'Climate Adjusted',
-    time: '07:30',
-    category: 'Automation',
-    icon: 'thermometer-outline',
-    color: Colors.primary,
-  },
-];
-
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [activeFilter, setActiveFilter] = useState<HistoryCategory>('All');
-  const [expandedId, setExpandedId] = useState<string | null>('1');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  
+  const [historyLogs, setHistoryLogs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchHistory();
+    }, [])
+  );
+
+  const fetchHistory = async () => {
+    setIsLoading(true);
+    try {
+      const data = await artemisApi.getHistory();
+      setHistoryLogs(data);
+    } catch (e) {
+      console.warn("Failed to fetch history logs", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formattedLogs = historyLogs.map(log => {
+      let mappedCategory = 'Command';
+      let icon = 'flash';
+      let color: string = Colors.primary;
+      
+      if (log.action_type === 'automation_run') {
+          mappedCategory = 'Automation';
+          icon = 'flash';
+      } else if (log.action_type === 'mcp_suggestion') {
+          mappedCategory = 'Suggestion';
+          icon = 'chatbubble-outline';
+          color = Colors.tertiary;
+      } else {
+          mappedCategory = 'Command';
+          icon = 'bulb-outline';
+          color = Colors.secondary;
+      }
+
+      let timeStr = 'Now';
+      if (log.executed_at) {
+          const dt = new Date(log.executed_at + 'Z');
+          timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+
+      return {
+          id: log.id,
+          title: log.target_name || 'System Action',
+          time: timeStr,
+          category: mappedCategory,
+          icon,
+          color,
+          description: log.response_payload?.description,
+          systemContext: log.response_payload?.systemContext
+      };
+  });
 
   const filteredEntries =
     activeFilter === 'All'
-      ? MOCK_HISTORY
-      : MOCK_HISTORY.filter(e => e.category === activeFilter);
+      ? formattedLogs
+      : formattedLogs.filter(e => e.category === activeFilter);
 
   const toggleExpand = (id: string) => {
     setExpandedId(prev => (prev === id ? null : id));
