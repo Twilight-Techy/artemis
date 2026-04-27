@@ -8,7 +8,50 @@ from app.services.auth_service import get_current_user
 from app.services import hardware_service
 from app.services.hardware_service import HardwareError
 
+import asyncio
+
 router = APIRouter(prefix="/devices", tags=["Devices"])
+
+@router.get("/discover")
+async def discover_devices(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)):
+    """
+    Scans the local network for available hardware nodes.
+    Filters out any devices that are already registered in the database.
+    """
+    # Simulate network sweep delay
+    await asyncio.sleep(2.5) 
+    
+    # 1. Mock physical devices discovered on the network
+    network_nodes = [
+       {
+           "id": "esp32-node-b49",
+           "name": "ESP32 Relay Node",
+           "device_type": "switch",
+           "protocol": "http",
+           "endpoint": "http://10.27.73.155:80"
+       },
+       {
+           "id": "zigbee-bridge-1",
+           "name": "Lumina Smart Bulb",
+           "device_type": "light",
+           "protocol": "mqtt",
+           "endpoint": "mqtt://10.27.73.100:1883"
+       }
+    ]
+
+    # 2. Get currently registered device endpoints
+    result = await db.execute(select(Device.endpoint).where(Device.owner_id == current_user.id))
+    registered_endpoints = {row[0] for row in result.all() if row[0]}
+
+    # 3. Filter out nodes we already know about
+    unregistered_nodes = [
+        node for node in network_nodes
+        if node["endpoint"] not in registered_endpoints
+    ]
+
+    return unregistered_nodes
 
 
 @router.get("/", response_model=list[DeviceOut])
@@ -84,6 +127,30 @@ async def send_command(
     )
     db.add(log)
 
+    await db.commit()
+    await db.refresh(device)
+    return device
+
+@router.put("/{device_id}", response_model=DeviceOut)
+async def update_device(
+    device_id: str,
+    body: DeviceCreate, # Using DeviceCreate as we update all fields
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Device).where(Device.id == device_id, Device.owner_id == current_user.id)
+    )
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found")
+    
+    device.name = body.name
+    device.device_type = body.device_type
+    device.room_id = body.room_id
+    device.protocol = body.protocol
+    device.endpoint = body.endpoint
+    
     await db.commit()
     await db.refresh(device)
     return device

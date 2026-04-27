@@ -27,6 +27,7 @@ import ChatBubble, { ChatMessage } from '../components/chat/ChatBubble';
 import MCPActionModal from '../components/MCPActionModal';
 import { useNetwork } from '../contexts/NetworkContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { artemisApi } from '../api/artemisClient';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -73,29 +74,85 @@ export default function HomeScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
   const [showMCPModal, setShowMCPModal] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const [isSending, setIsSending] = useState(false);
+  const [pendingAction, setPendingAction] = useState<any>(null);
 
-  const handleExecuteLogic = () => {
+  const handleExecuteLogic = async () => {
+    if (!pendingAction) return;
+
     setShowMCPModal(false);
     setMode('chat');
     
+    try {
+      const response = await artemisApi.approveAction(pendingAction.action_id);
+      
+      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setMessages(prev => [
+        ...prev, 
+        {
+          id: Date.now().toString() + '_sys',
+          role: 'system',
+          text: `Action Completed: ${pendingAction.target_name} -> ${pendingAction.payload?.action || 'auto'}`,
+          timestamp
+        }
+      ]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPendingAction(null);
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 250);
+    }
+  };
+
+  const declineAction = async () => {
+    if (!pendingAction) return;
+    setShowMCPModal(false);
+    
+    try {
+      await artemisApi.declineAction(pendingAction.action_id);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const handleSendMessage = async (text: string) => {
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     
     setMessages(prev => [
-      ...prev, 
-      {
-        id: Date.now().toString() + '_sys',
-        role: 'system',
-        text: "Action Executed: Studio Fan — Power ON",
-        timestamp
-      },
-      {
-        id: Date.now().toString() + '_ai',
-        role: 'assistant',
-        text: "I've turned on the studio fan for you. The room should start cooling down shortly.",
-        timestamp
-      }
+      ...prev,
+      { id: Date.now().toString() + '_u', role: 'user', text, timestamp }
     ]);
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 250);
+    
+    // Switch to chat mode automatically upon message
+    setMode('chat');
+    setIsSending(true);
+    
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+
+    try {
+      const response = await artemisApi.chat(text);
+      
+      setMessages(prev => [
+        ...prev,
+        { id: Date.now().toString() + '_a', role: 'assistant', text: response.reply, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+      ]);
+      
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+
+      if (response.requires_approval && response.proactive_action) {
+        setPendingAction(response.proactive_action);
+        setShowMCPModal(true);
+      }
+    } catch (e) {
+      setMessages(prev => [
+        ...prev,
+        { id: Date.now().toString() + '_e', role: 'system', text: "Error connecting to Artemis MCP Core.", timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+      ]);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const keyboardShift = useRef(new Animated.Value(0)).current;
@@ -270,7 +327,7 @@ export default function HomeScreen() {
             paddingTop: 16, 
             paddingBottom: mode === 'dashboard' ? Math.max(insets.bottom + 90, 110) : Math.max(insets.bottom + 64, 80) 
           }}>
-            <CommandBar />
+            <CommandBar onSend={handleSendMessage} isSending={isSending} />
           </View>
         </View>
       </Animated.View>
@@ -278,7 +335,7 @@ export default function HomeScreen() {
       {/* ═══ MCP Proactive Overlay Modal ═══ */}
       <MCPActionModal 
         visible={showMCPModal} 
-        onClose={() => setShowMCPModal(false)}
+        onClose={declineAction}
         onExecute={handleExecuteLogic}
       />
     </View>

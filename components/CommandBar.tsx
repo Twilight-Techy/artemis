@@ -4,7 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Radii } from '../constants/theme';
 
-export default function CommandBar() {
+interface CommandBarProps {
+  onSend?: (message: string) => void;
+  isSending?: boolean;
+}
+
+export default function CommandBar({ onSend, isSending }: CommandBarProps) {
   const [text, setText] = useState('');
 
   return (
@@ -19,12 +24,16 @@ export default function CommandBar() {
         value={text}
         onChangeText={setText}
         selectionColor={Colors.primary}
+        editable={!isSending}
       />
       <Pressable
-        style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] }]}
+        style={({ pressed }) => [pressed && { opacity: 0.85, transform: [{ scale: 0.96 }] }, isSending && { opacity: 0.5 }]}
+        disabled={isSending || !text.trim()}
         onPress={() => {
-          // TODO: Send command
-          setText('');
+          if (text.trim() && onSend) {
+            onSend(text.trim());
+            setText('');
+          }
         }}
       >
         <LinearGradient

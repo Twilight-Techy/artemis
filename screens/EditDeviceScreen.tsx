@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -14,29 +16,22 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { DeviceType } from '../components/devices/types';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { artemisApi } from '../api/artemisClient';
 
 // ── Types ──
 type EditDeviceRouteParams = {
   EditDevice: {
-    deviceId: string;
-    deviceName: string;
-    roomId: string;
-    deviceType: DeviceType;
+    deviceId?: string; // Optional for create mode
+    deviceName?: string;
+    roomId?: string;
+    deviceType?: DeviceType;
   };
 };
 
 type RoomOption = {
   id: string;
-  label: string;
-  icon: keyof typeof Ionicons.glyphMap;
+  name: string;
 };
-
-const ROOMS: RoomOption[] = [
-  { id: 'living_room', label: 'LIVING ROOM', icon: 'tv-outline' },
-  { id: 'kitchen', label: 'KITCHEN', icon: 'restaurant-outline' },
-  { id: 'bedroom', label: 'BED ROOM', icon: 'bed-outline' },
-  { id: 'studio', label: 'STUDIO', icon: 'mic-outline' },
-];
 
 const DEVICE_TYPES: { id: DeviceType; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
   { id: 'light', label: 'Light', icon: 'lightbulb-outline' },
@@ -47,22 +42,97 @@ const DEVICE_TYPES: { id: DeviceType; label: string; icon: keyof typeof Material
   { id: 'sensor', label: 'Sensor', icon: 'sensors' },
 ];
 
-type Protocol = 'mqtt' | 'http';
-
 export default function EditDeviceScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<EditDeviceRouteParams, 'EditDevice'>>();
 
-  const { deviceName: initialName, roomId: initialRoom, deviceType: initialType } = route.params;
+  const { deviceId, deviceName: initialName, roomId: initialRoom, deviceType: initialType } = route.params || {};
+  const isEditing = !!deviceId;
 
-  const [deviceName, setDeviceName] = useState(initialName || 'Studio Fan');
+  const [deviceName, setDeviceName] = useState(initialName || '');
   const [deviceType, setDeviceType] = useState<DeviceType>(initialType || 'appliance');
-  const [selectedRoom, setSelectedRoom] = useState(initialRoom || 'studio');
-  const [protocol, setProtocol] = useState<Protocol>('mqtt');
-  const [brokerAddress, setBrokerAddress] = useState('mqtt://192.168.1.100:1883');
-  const [topic, setTopic] = useState('home/studio/fan/set');
-  const [pinConfig, setPinConfig] = useState('D4');
+  const [selectedRoom, setSelectedRoom] = useState(initialRoom || '');
+  const [protocol, setProtocol] = useState<'mqtt' | 'http'>('http');
+  const [brokerAddress, setBrokerAddress] = useState('http://192.168...');
+  const [topic, setTopic] = useState('');
+  const [pinConfig, setPinConfig] = useState('');
+
+  const [rooms, setRooms] = useState<RoomOption[]>([]);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const fetchedRooms = await artemisApi.getRooms();
+        setRooms(fetchedRooms.map((r: any) => ({ id: r.id, name: r.name })));
+        if (!initialRoom && fetchedRooms.length > 0) {
+            setSelectedRoom(fetchedRooms[0].id);
+        }
+      } catch (error) {
+        console.error("Failed to fetch rooms:", error);
+      } finally {
+        setIsLoadingRooms(false);
+      }
+    };
+    fetchRooms();
+  }, []);
+
+  const handleSave = async () => {
+    if (!deviceName || !selectedRoom) {
+      Alert.alert("Error", "Please fill out the name and select a room.");
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const payload = {
+        name: deviceName,
+        device_type: deviceType,
+        room_id: selectedRoom,
+        protocol: protocol,
+        endpoint: brokerAddress // Saving broker as endpoint for HTTP/MQTT
+      };
+
+      if (isEditing) {
+        await artemisApi.updateDevice(deviceId, payload);
+      } else {
+        await artemisApi.createDevice(payload);
+      }
+      navigation.goBack();
+    } catch (e) {
+      Alert.alert("Error", "Failed to save the device configuration.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Confirm Delete",
+      "Are you sure you want to delete this device? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive", 
+          onPress: async () => {
+            if (!isEditing) return;
+            setIsDeleting(true);
+            try {
+              await artemisApi.deleteDevice(deviceId);
+              navigation.goBack();
+            } catch (error) {
+              Alert.alert("Error", "Failed to delete the device");
+              setIsDeleting(false);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -75,7 +145,7 @@ export default function EditDeviceScreen() {
         >
           <Ionicons name="arrow-back" size={22} color="rgba(255,255,255,0.5)" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>EDIT DEVICE</Text>
+        <Text style={styles.headerTitle}>{isEditing ? 'EDIT DEVICE' : 'ADD DEVICE'}</Text>
         <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}>
           <Ionicons name="ellipsis-vertical" size={20} color="rgba(255,255,255,0.5)" />
         </TouchableOpacity>
@@ -140,7 +210,9 @@ export default function EditDeviceScreen() {
             <Text style={styles.sectionHeading}>Location</Text>
           </View>
           <View style={styles.roomGrid}>
-            {ROOMS.map((room) => {
+            {isLoadingRooms ? (
+              <ActivityIndicator color={Colors.primary} />
+            ) : rooms.map((room) => {
               const isSelected = selectedRoom === room.id;
               return (
                 <TouchableOpacity
@@ -153,7 +225,7 @@ export default function EditDeviceScreen() {
                   onPress={() => setSelectedRoom(room.id)}
                 >
                   <Ionicons
-                    name={room.icon}
+                    name="tv-outline" // Default icon, could use real map like before
                     size={24}
                     color={isSelected ? Colors.primary : Colors.onSurfaceVariant}
                   />
@@ -163,7 +235,7 @@ export default function EditDeviceScreen() {
                       isSelected && styles.roomLabelSelected,
                     ]}
                   >
-                    {room.label}
+                    {room.name.toUpperCase()}
                   </Text>
                 </TouchableOpacity>
               );
@@ -238,46 +310,60 @@ export default function EditDeviceScreen() {
             <View style={styles.techDivider} />
 
             {/* Broker Address */}
-            <Text style={styles.fieldLabel}>BROKER ADDRESS</Text>
+            <Text style={styles.fieldLabel}>BROKER / ENDPOINT</Text>
             <TextInput
               style={styles.monoInput}
               value={brokerAddress}
               onChangeText={setBrokerAddress}
               placeholderTextColor="rgba(173,170,173,0.5)"
-              placeholder="mqtt://..."
+              placeholder="http://..."
             />
 
-            {/* Topic */}
-            <Text style={styles.fieldLabel}>TOPIC</Text>
+            {/* Topic (optional if MQTT) */}
+            <Text style={styles.fieldLabel}>TOPIC (Optional)</Text>
             <TextInput
               style={[styles.monoInput, { color: Colors.secondaryFixed }]}
               value={topic}
               onChangeText={setTopic}
-            />
-
-            {/* Pin Config */}
-            <Text style={styles.fieldLabel}>PIN CONFIGURATION</Text>
-            <TextInput
-              style={styles.monoInput}
-              value={pinConfig}
-              onChangeText={setPinConfig}
-              placeholder="e.g., GPIO4"
-              placeholderTextColor="rgba(173,170,173,0.5)"
             />
           </View>
         </View>
 
         {/* ═══ Action Buttons ═══ */}
         <View style={styles.actionsSection}>
-          <TouchableOpacity style={styles.saveBtn} activeOpacity={0.8}>
-            <Ionicons name="save" size={20} color={Colors.onSurface} />
-            <Text style={styles.saveBtnText}>SAVE CONFIGURATION</Text>
+          <TouchableOpacity 
+            style={styles.saveBtn} 
+            activeOpacity={0.8}
+            onPress={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <ActivityIndicator color={Colors.onPrimary} />
+            ) : (
+              <>
+                <Ionicons name="save" size={20} color={Colors.onSurface} />
+                <Text style={styles.saveBtnText}>SAVE CONFIGURATION</Text>
+              </>
+            )}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.deleteBtn} activeOpacity={0.8}>
-            <Ionicons name="trash-outline" size={20} color={Colors.error} />
-            <Text style={styles.deleteBtnText}>DELETE DEVICE</Text>
-          </TouchableOpacity>
+          {isEditing && (
+            <TouchableOpacity 
+              style={styles.deleteBtn} 
+              activeOpacity={0.8}
+              onPress={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <ActivityIndicator color={Colors.error} />
+              ) : (
+                <>
+                  <Ionicons name="trash-outline" size={20} color={Colors.error} />
+                  <Text style={styles.deleteBtnText}>DELETE DEVICE</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </View>

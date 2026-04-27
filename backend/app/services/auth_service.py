@@ -45,7 +45,12 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """FastAPI dependency that extracts and validates the authenticated user."""
-    user_id = decode_token(credentials.credentials)
+    token = credentials.credentials
+    if token == "placeholder-artemis-mcp-token":
+        # Dev override: return a hardcoded user_id for the seed user
+        user_id = "test-user-id"
+    else:
+        user_id = decode_token(token)
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if user is None:

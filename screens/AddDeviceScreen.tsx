@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,38 +7,42 @@ import {
   TouchableOpacity,
   TextInput,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
+import { artemisApi } from '../api/artemisClient';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 const { width } = Dimensions.get('window');
-
-// ── Mock discovered devices ──
-const DISCOVERED_DEVICES = [
-  {
-    id: '1',
-    name: 'Lumina Bulb A1',
-    protocol: 'Zigbee Protocol',
-    icon: 'bulb-outline' as const,
-    accentColor: Colors.primary,
-  },
-  {
-    id: '2',
-    name: 'Nest Temp Sensor',
-    protocol: 'Matter Network',
-    icon: 'thermometer-outline' as const,
-    accentColor: Colors.primary,
-  },
-];
 
 const PROTOCOL_CHIPS = ['ZIGBEE', 'MATTER', 'WIFI'];
 
 export default function AddDeviceScreen() {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [manualAddress, setManualAddress] = useState('');
+  
+  const [isScanning, setIsScanning] = useState(true);
+  const [discoveredDevices, setDiscoveredDevices] = useState<any[]>([]);
+
+  useEffect(() => {
+    const runScan = async () => {
+      try {
+        setIsScanning(true);
+        const results = await artemisApi.discoverDevices();
+        setDiscoveredDevices(results);
+      } catch (e) {
+        console.warn("Scan failed", e);
+      } finally {
+        setIsScanning(false);
+      }
+    };
+    runScan();
+  }, []);
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -93,26 +97,52 @@ export default function AddDeviceScreen() {
         {/* ═══ Discovered Devices ═══ */}
         <Text style={styles.sectionTitle}>Discovered</Text>
         <View style={styles.discoveredList}>
-          {DISCOVERED_DEVICES.map((device) => (
-            <View key={device.id} style={styles.discoveredCard}>
-              {/* Left accent bar */}
-              <View style={styles.cardAccentBar} />
-              <View style={styles.cardContent}>
-                <View style={styles.cardLeft}>
-                  <View style={styles.cardIconCircle}>
-                    <Ionicons name={device.icon} size={22} color={Colors.primary} />
+          {isScanning ? (
+            <ActivityIndicator size="large" color={Colors.primary} style={{ marginVertical: Spacing['2xl'] }} />
+          ) : discoveredDevices.length === 0 ? (
+            <Text style={{ textAlign: 'center', color: Colors.onSurfaceVariant, marginVertical: Spacing.xl }}>
+              No new devices found.
+            </Text>
+          ) : discoveredDevices.map((device) => {
+            const getIcon = (type: string) => {
+              if (type === 'light') return 'bulb-outline';
+              if (type === 'climate') return 'thermometer-outline';
+              return 'hardware-chip-outline';
+            };
+
+            return (
+              <View key={device.id} style={styles.discoveredCard}>
+                {/* Left accent bar */}
+                <View style={styles.cardAccentBar} />
+                <View style={styles.cardContent}>
+                  <View style={styles.cardLeft}>
+                    <View style={styles.cardIconCircle}>
+                      <Ionicons name={getIcon(device.device_type)} size={22} color={Colors.primary} />
+                    </View>
+                    <View style={styles.cardInfo}>
+                      <Text style={styles.cardName}>{device.name}</Text>
+                      <Text style={styles.cardProtocol}>{device.protocol.toUpperCase()} - {device.endpoint}</Text>
+                    </View>
                   </View>
-                  <View style={styles.cardInfo}>
-                    <Text style={styles.cardName}>{device.name}</Text>
-                    <Text style={styles.cardProtocol}>{device.protocol}</Text>
-                  </View>
+                  <TouchableOpacity 
+                    style={styles.connectBtn} 
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      navigation.navigate('EditDevice', {
+                        deviceName: device.name,
+                        deviceType: device.device_type,
+                        // Could also pass protocol and endpoint if EditDeviceScreen expects them via params, 
+                        // but right now EditDevice acts as a "Create from scratch" or "Edit".
+                        // By passing name/type, we pre-fill the form!
+                      } as never);
+                    }}
+                  >
+                    <Text style={styles.connectBtnText}>CONNECT</Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.connectBtn} activeOpacity={0.8}>
-                  <Text style={styles.connectBtnText}>CONNECT</Text>
-                </TouchableOpacity>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* ═══ Manual Setup ═══ */}
@@ -139,7 +169,11 @@ export default function AddDeviceScreen() {
               style={styles.inputIcon}
             />
           </View>
-          <TouchableOpacity style={styles.addManuallyBtn} activeOpacity={0.8}>
+          <TouchableOpacity 
+            style={styles.addManuallyBtn} 
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('EditDevice' as never)}
+          >
             <Ionicons name="link-outline" size={18} color={Colors.onSurface} />
             <Text style={styles.addManuallyText}>ADD MANUALLY</Text>
           </TouchableOpacity>

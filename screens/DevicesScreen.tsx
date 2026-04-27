@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing } from '../constants/theme';
@@ -11,44 +11,96 @@ import { DeviceFilterBar, FilterCategory } from '../components/devices/DeviceFil
 import { RoomSection } from '../components/devices/RoomSection';
 import { DeviceDetailModal } from '../components/devices/DeviceDetailModal';
 import { RootStackParamList } from '../navigation/AppNavigator';
-
-const MOCK_DEVICES: Device[] = [
-  {
-    id: '1', roomId: 'Living Room', name: 'Main Lights', type: 'light', isOn: true, intensity: 80, color: '#74B1FF'
-  },
-  {
-    id: '2', roomId: 'Living Room', name: 'AC Unit', type: 'climate', isOn: true, temperature: 22
-  },
-  {
-    id: '3', roomId: 'Bedroom', name: 'Bedside Lamp', type: 'light', isOn: false, intensity: 40, color: '#FF716C'
-  },
-  {
-    id: '4', roomId: 'Bedroom', name: 'Smart Blinds', type: 'shade', isOn: true, position: 20
-  },
-  {
-    id: '5', roomId: 'Kitchen', name: 'Coffee Maker', type: 'appliance', isOn: false, statusText: 'Ready'
-  },
-  {
-    id: '6', roomId: 'Living Room', name: 'Temp Sensor', type: 'sensor', isOn: true, statusText: '22.5°C'
-  }
-];
+import { artemisApi } from '../api/artemisClient';
 
 export default function DevicesScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('All');
-  const [devices, setDevices] = useState<Device[]>(MOCK_DEVICES);
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [roomsDict, setRoomsDict] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(true);
   
   // Modal state
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
 
-  const handleDeviceToggle = (id: string, newState: boolean) => {
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [])
+  );
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [fetchedRooms, fetchedDevices] = await Promise.all([
+        artemisApi.getRooms(),
+        artemisApi.getDevices()
+      ]);
+
+      // Map rooms id -> room name
+      const rDict: Record<string, string> = {};
+      fetchedRooms.forEach((r: any) => {
+        rDict[r.id] = r.name;
+      });
+      setRoomsDict(rDict);
+
+      // Map Backend DeviceOut to Frontend Device
+      const mappedDevices: Device[] = fetchedDevices.map((d: any) => {
+        let typeStr = d.device_type.toLowerCase();
+        
+        // Normalize backend device types to frontend UI allowed types ('light' | 'climate' | 'appliance' | 'media' | 'shade' | 'sensor')
+        const typeMapping: Record<string, DeviceType> = {
+          'fan': 'climate',
+          'ac': 'climate',
+          'lights': 'light',
+          'light': 'light',
+          'switch': 'appliance',
+          'sensor': 'sensor',
+          'shades': 'shade',
+          'blinds': 'shade'
+        };
+
+        const resolvedType: DeviceType = typeMapping[typeStr] || 'appliance'; // default fallback
+        
+        const val = parseFloat(d.current_value);
+        return {
+          id: d.id,
+          roomId: rDict[d.room_id] || "Unknown",
+          name: d.name,
+          type: resolvedType,
+          isOn: Boolean(d.is_active),
+          intensity: resolvedType === 'light' && !isNaN(val) ? val : undefined,
+          temperature: resolvedType === 'climate' && !isNaN(val) ? val : undefined,
+          statusText: d.current_value,
+        };
+      });
+
+      setDevices(mappedDevices);
+    } catch (e) {
+      console.warn("Failed to fetch devices/rooms", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeviceToggle = async (id: string, newState: boolean) => {
+    // Optimistic UI update
     setDevices(prev => prev.map(dev => dev.id === id ? { ...dev, isOn: newState } : dev));
-    
-    // Update selected device if it's currently open
     if (selectedDevice?.id === id) {
       setSelectedDevice(prev => prev ? { ...prev, isOn: newState } : null);
+    }
+
+    try {
+      await artemisApi.controlDevice(id, newState ? "on" : "off");
+    } catch (e) {
+      console.warn("Failed to toggle device", e);
+      // Revert on failure
+      setDevices(prev => prev.map(dev => dev.id === id ? { ...dev, isOn: !newState } : dev));
+      if (selectedDevice?.id === id) {
+        setSelectedDevice(prev => prev ? { ...prev, isOn: !newState } : null);
+      }
     }
   };
 
@@ -56,16 +108,29 @@ export default function DevicesScreen() {
     setSelectedDevice(device);
   };
 
-  const handleUpdateDeviceValue = (updates: Partial<Device>) => {
+  const handleUpdateDeviceValue = async (updates: Partial<Device>) => {
     if (!selectedDevice) return;
     
-    // Update local state
+    // Optimistic Update local state
     setDevices(prev => prev.map(dev => 
       dev.id === selectedDevice.id ? { ...dev, ...updates } : dev
     ));
-    
-    // Update currently selected
     setSelectedDevice(prev => prev ? { ...prev, ...updates } : null);
+
+    try {
+      // Find what exactly is changing, usually it's intensity, temperature, or position
+      let valueToSend = null;
+      if (updates.intensity !== undefined) valueToSend = updates.intensity;
+      else if (updates.temperature !== undefined) valueToSend = updates.temperature;
+      else if (updates.position !== undefined) valueToSend = updates.position;
+
+      if (valueToSend !== null) {
+        await artemisApi.controlDevice(selectedDevice.id, "set", String(valueToSend));
+      }
+    } catch (e) {
+      console.warn("Failed to set device value", e);
+      // We could revert here, but for slider debouncing it might be better to just re-fetch or let user retry
+    }
   };
 
   const handleDeviceLongPress = (device: Device) => {
@@ -119,16 +184,20 @@ export default function DevicesScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {Object.keys(rooms).map(roomName => (
-          <RoomSection
-            key={roomName}
-            roomName={roomName}
-            devices={rooms[roomName]}
-            onDevicePress={handleDevicePress}
-            onDeviceToggle={handleDeviceToggle}
-            onDeviceLongPress={handleDeviceLongPress}
-          />
-        ))}
+        {isLoading ? (
+          <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
+        ) : (
+          Object.keys(rooms).map(roomName => (
+            <RoomSection
+              key={roomName}
+              roomName={roomName}
+              devices={rooms[roomName]}
+              onDevicePress={handleDevicePress}
+              onDeviceToggle={handleDeviceToggle}
+              onDeviceLongPress={handleDeviceLongPress}
+            />
+          ))
+        )}
       </ScrollView>
 
       <DeviceDetailModal
