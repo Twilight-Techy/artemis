@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,14 @@ import {
   TextInput,
   Modal,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
+import { artemisApi } from '../api/artemisClient';
 
 // ── Types ──
 type RoomIcon = keyof typeof Ionicons.glyphMap;
@@ -40,24 +42,53 @@ const AVAILABLE_ICONS: { icon: RoomIcon; label: string }[] = [
   { icon: 'cafe-outline', label: 'Lounge' },
 ];
 
-const INITIAL_ROOMS: Room[] = [
-  { id: '1', name: 'Living Room', icon: 'tv-outline', deviceCount: 3 },
-  { id: '2', name: 'Kitchen', icon: 'restaurant-outline', deviceCount: 1 },
-  { id: '3', name: 'Bedroom', icon: 'bed-outline', deviceCount: 2 },
-  { id: '4', name: 'Studio', icon: 'mic-outline', deviceCount: 0 },
-];
-
 export default function ManageRoomsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
-  const [rooms, setRooms] = useState<Room[]>(INITIAL_ROOMS);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [roomName, setRoomName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState<RoomIcon>('tv-outline');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchRoomsAndDevices();
+    }, [])
+  );
+
+  const fetchRoomsAndDevices = async () => {
+    setIsLoading(true);
+    try {
+      const [fetchedRooms, fetchedDevices] = await Promise.all([
+        artemisApi.getRooms(),
+        artemisApi.getDevices()
+      ]);
+
+      const mappedRooms: Room[] = fetchedRooms.map((r: any) => {
+        // Count how many devices belong to this room
+        const count = fetchedDevices.filter((d: any) => d.room_id === r.id).length;
+        return {
+          id: r.id,
+          name: r.name,
+          icon: (r.icon as RoomIcon) || 'tv-outline', // fallback
+          deviceCount: count,
+        };
+      });
+
+      setRooms(mappedRooms);
+    } catch (e) {
+      console.warn("Error fetching rooms or devices", e);
+      Alert.alert("Error", "Could not load rooms");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const openAddModal = () => {
     setEditingRoom(null);
@@ -73,29 +104,29 @@ export default function ManageRoomsScreen() {
     setModalVisible(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!roomName.trim()) return;
+    setIsSaving(true);
 
-    if (editingRoom) {
-      // Update existing
-      setRooms(prev =>
-        prev.map(r =>
-          r.id === editingRoom.id
-            ? { ...r, name: roomName.trim(), icon: selectedIcon }
-            : r
-        )
-      );
-    } else {
-      // Add new
-      const newRoom: Room = {
-        id: Date.now().toString(),
+    try {
+      const payload = {
         name: roomName.trim(),
         icon: selectedIcon,
-        deviceCount: 0,
       };
-      setRooms(prev => [...prev, newRoom]);
+
+      if (editingRoom) {
+        await artemisApi.updateRoom(editingRoom.id, payload);
+      } else {
+        await artemisApi.createRoom(payload);
+      }
+      
+      setModalVisible(false);
+      fetchRoomsAndDevices();
+    } catch (e) {
+      Alert.alert("Error", "Failed to save the room");
+    } finally {
+      setIsSaving(false);
     }
-    setModalVisible(false);
   };
 
   const handleDelete = (room: Room) => {
@@ -115,7 +146,16 @@ export default function ManageRoomsScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => setRooms(prev => prev.filter(r => r.id !== room.id)),
+          onPress: async () => {
+            try {
+              setIsLoading(true);
+              await artemisApi.deleteRoom(room.id);
+              fetchRoomsAndDevices();
+            } catch (error) {
+              Alert.alert("Error", "Failed to delete the room.");
+              setIsLoading(false);
+            }
+          },
         },
       ]
     );
@@ -149,30 +189,34 @@ export default function ManageRoomsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* ═══ Room Cards ═══ */}
-        {rooms.map((room) => (
-          <TouchableOpacity
-            key={room.id}
-            style={styles.roomCard}
-            activeOpacity={0.8}
-            onPress={() => openEditModal(room)}
-            onLongPress={() => handleDelete(room)}
-          >
-            <View style={styles.roomCardLeft}>
-              <View style={styles.roomIconCircle}>
-                <Ionicons name={room.icon} size={24} color={Colors.primary} />
+        {isLoading ? (
+          <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
+        ) : (
+          rooms.map((room) => (
+            <TouchableOpacity
+              key={room.id}
+              style={styles.roomCard}
+              activeOpacity={0.8}
+              onPress={() => openEditModal(room)}
+              onLongPress={() => handleDelete(room)}
+            >
+              <View style={styles.roomCardLeft}>
+                <View style={styles.roomIconCircle}>
+                  <Ionicons name={room.icon} size={24} color={Colors.primary} />
+                </View>
+                <View style={styles.roomInfo}>
+                  <Text style={styles.roomName}>{room.name}</Text>
+                  <Text style={styles.roomDeviceCount}>
+                    {room.deviceCount} {room.deviceCount === 1 ? 'device' : 'devices'}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.roomInfo}>
-                <Text style={styles.roomName}>{room.name}</Text>
-                <Text style={styles.roomDeviceCount}>
-                  {room.deviceCount} {room.deviceCount === 1 ? 'device' : 'devices'}
-                </Text>
+              <View style={styles.roomCardRight}>
+                <Ionicons name="chevron-forward" size={18} color={Colors.onSurfaceVariant} />
               </View>
-            </View>
-            <View style={styles.roomCardRight}>
-              <Ionicons name="chevron-forward" size={18} color={Colors.onSurfaceVariant} />
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          ))
+        )}
 
         {/* ═══ Add Room Card ═══ */}
         <TouchableOpacity
@@ -242,15 +286,21 @@ export default function ManageRoomsScreen() {
 
             {/* Save Button */}
             <TouchableOpacity
-              style={[styles.saveBtn, !roomName.trim() && styles.saveBtnDisabled]}
+              style={[styles.saveBtn, (!roomName.trim() || isSaving) && styles.saveBtnDisabled]}
               activeOpacity={0.8}
               onPress={handleSave}
-              disabled={!roomName.trim()}
+              disabled={!roomName.trim() || isSaving}
             >
-              <Ionicons name="checkmark" size={20} color={Colors.onPrimary} />
-              <Text style={styles.saveBtnText}>
-                {editingRoom ? 'SAVE CHANGES' : 'CREATE ROOM'}
-              </Text>
+              {isSaving ? (
+                <ActivityIndicator color={Colors.onPrimary} />
+              ) : (
+                <>
+                  <Ionicons name="checkmark" size={20} color={Colors.onPrimary} />
+                  <Text style={styles.saveBtnText}>
+                    {editingRoom ? 'SAVE CHANGES' : 'CREATE ROOM'}
+                  </Text>
+                </>
+              )}
             </TouchableOpacity>
 
             {/* Delete (only in edit mode) */}

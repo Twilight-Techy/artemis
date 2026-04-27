@@ -31,6 +31,29 @@ async def create_room(
     return room
 
 
+@router.put("/{room_id}", response_model=RoomOut)
+async def update_room(
+    room_id: str,
+    body: RoomCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Room).where(Room.id == room_id, Room.owner_id == current_user.id))
+    room = result.scalar_one_or_none()
+    if not room:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found")
+    
+    room.name = body.name
+    if body.icon is not None:
+        room.icon = body.icon
+    if body.color is not None:
+        room.color = body.color
+        
+    await db.commit()
+    await db.refresh(room)
+    return room
+
+
 @router.delete("/{room_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_room(
     room_id: str,

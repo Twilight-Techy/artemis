@@ -170,5 +170,60 @@ export const artemisApi = {
             console.error("Discover Devices API error:", error);
             throw error;
         }
+    },
+
+    // ──────────────────────────────
+    // Rooms API
+    // ──────────────────────────────
+    createRoom: async (payload: { name: string, icon?: string, color?: string }) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/rooms/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error("Failed to create room");
+            return await response.json();
+        } catch (error) {
+            console.error("Create Room API error:", error);
+            throw error;
+        }
+    },
+
+    updateRoom: async (roomId: string, payload: { name: string, icon?: string, color?: string }) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/rooms/${roomId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error("Failed to update room");
+            return await response.json();
+        } catch (error) {
+            console.error("Update Room API error:", error);
+            throw error;
+        }
+    },
+
+    deleteRoom: async (roomId: string) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/rooms/${roomId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                }
+            });
+            if (!response.ok) throw new Error("Failed to delete room");
+            return true;
+        } catch (error) {
+            console.error("Delete Room API error:", error);
+            throw error;
+        }
     }
 };
