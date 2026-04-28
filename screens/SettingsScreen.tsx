@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { useNetwork } from '../contexts/NetworkContext';
+import { useAuth } from '../contexts/AuthContext';
 
 type SettingsItem = {
   icon: string;
@@ -110,6 +111,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { isOffline, toggleOfflineSimulation } = useNetwork();
+  const { logout } = useAuth();
   
   const [toggleStates, setToggleStates] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -336,6 +338,15 @@ export default function SettingsScreen() {
         </View>
 
         {/* Bottom spacer */}
+        <View style={{ marginBottom: Spacing['4xl'] }}>
+          <TouchableOpacity 
+            style={[styles.saveBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: Colors.error }]} 
+            activeOpacity={0.7}
+            onPress={logout}
+          >
+            <Text style={[styles.saveBtnText, { color: Colors.error }]}>DISCONNECT (LOGOUT)</Text>
+          </TouchableOpacity>
+        </View>
         <View style={{ height: 60 }} />
       </ScrollView>
     </View>
@@ -484,6 +495,23 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.labelSm,
     fontWeight: Typography.weights.bold,
     color: Colors.primary,
+  },
+  saveBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: Radii.full,
+    paddingVertical: Spacing.lg,
+    alignItems: 'center',
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  saveBtnText: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.labelMd,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onPrimary,
+    letterSpacing: 2,
   },
   sliderSection: {
     marginBottom: Spacing['2xl'],

@@ -50,3 +50,24 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
 async def get_me(current_user: User = Depends(get_current_user)):
     """Return the authenticated user's profile."""
     return current_user
+
+from pydantic import BaseModel
+class UpdateProfileRequest(BaseModel):
+    display_name: str | None = None
+    email: str | None = None
+
+@router.patch("/me", response_model=UserOut)
+async def update_me(
+    body: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Update profile information."""
+    if body.display_name is not None:
+        current_user.display_name = body.display_name
+    if body.email is not None:
+        current_user.email = body.email
+    
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user

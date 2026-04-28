@@ -1,14 +1,48 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, Text, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { artemisApi } from '../api/artemisClient';
 
 export default function ProfileSettingsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const data = await artemisApi.getMe();
+      setDisplayName(data.display_name || data.username || '');
+      setEmail(data.email || '');
+    } catch (e) {
+      console.warn("Failed to load profile", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await artemisApi.updateMe({ display_name: displayName, email });
+      Alert.alert('Success', 'Profile updated successfully.');
+    } catch (e) {
+      Alert.alert('Error', 'Failed to update profile.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -35,25 +69,31 @@ export default function ProfileSettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.formSection}>
-          <Text style={styles.fieldLabel}>DISPLAY NAME</Text>
-          <TextInput
-            style={styles.textInput}
-            defaultValue="Alex"
-            placeholderTextColor="rgba(255,255,255,0.3)"
-          />
+        {isLoading ? (
+           <ActivityIndicator size="large" color={Colors.primary} />
+        ) : (
+          <View style={styles.formSection}>
+            <Text style={styles.fieldLabel}>DISPLAY NAME</Text>
+            <TextInput
+              style={styles.textInput}
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholderTextColor="rgba(255,255,255,0.3)"
+            />
 
-          <Text style={[styles.fieldLabel, { marginTop: Spacing.xl }]}>EMAIL ADDRESS</Text>
-          <TextInput
-            style={styles.textInput}
-            defaultValue="alex@artemis.local"
-            keyboardType="email-address"
-            placeholderTextColor="rgba(255,255,255,0.3)"
-          />
-        </View>
+            <Text style={[styles.fieldLabel, { marginTop: Spacing.xl }]}>EMAIL ADDRESS</Text>
+            <TextInput
+              style={styles.textInput}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              placeholderTextColor="rgba(255,255,255,0.3)"
+            />
+          </View>
+        )}
 
-        <TouchableOpacity style={styles.saveBtn} activeOpacity={0.8}>
-          <Text style={styles.saveBtnText}>UPDATE PROFILE</Text>
+        <TouchableOpacity style={styles.saveBtn} activeOpacity={0.8} onPress={handleSave} disabled={isSaving || isLoading}>
+          <Text style={styles.saveBtnText}>{isSaving ? 'SAVING...' : 'UPDATE PROFILE'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>

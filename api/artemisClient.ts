@@ -6,6 +6,30 @@ import { Platform } from 'react-native';
 export const BACKEND_URL = 'http://10.27.73.226:8000/api/v1';
 
 export const artemisApi = {
+    _token: null as string | null,
+    setToken: (token: string | null) => { artemisApi._token = token; },
+    getAuthHeader: () => (artemisApi._token ? { Authorization: `Bearer ${artemisApi._token}` } : {}),
+
+    login: async (payload: any) => {
+        const res = await fetch(`${BACKEND_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('Login failed');
+        return await res.json();
+    },
+
+    register: async (payload: any) => {
+        const res = await fetch(`${BACKEND_URL}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('Registration failed');
+        return await res.json();
+    },
+
     chat: async (message: string) => {
         try {
             const response = await fetch(`${BACKEND_URL}/mcp/chat`, {
@@ -13,7 +37,7 @@ export const artemisApi = {
                 headers: {
                     'Content-Type': 'application/json',
                     // Note: Auth token should be injected here if we were using real auth
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 },
                 body: JSON.stringify({ message })
             });
@@ -34,7 +58,7 @@ export const artemisApi = {
             const response = await fetch(`${BACKEND_URL}/mcp/approve/${actionId}`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 }
             });
             return await response.json();
@@ -49,7 +73,7 @@ export const artemisApi = {
             const response = await fetch(`${BACKEND_URL}/mcp/decline/${actionId}`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 }
             });
             return await response.json();
@@ -63,7 +87,7 @@ export const artemisApi = {
         try {
             const response = await fetch(`${BACKEND_URL}/rooms/`, {
                 headers: {
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 }
             });
             return await response.json();
@@ -77,7 +101,7 @@ export const artemisApi = {
         try {
             const response = await fetch(`${BACKEND_URL}/devices/`, {
                 headers: {
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 }
             });
             return await response.json();
@@ -93,7 +117,7 @@ export const artemisApi = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 },
                 body: JSON.stringify({ action, value })
             });
@@ -110,7 +134,7 @@ export const artemisApi = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 },
                 body: JSON.stringify(payload)
             });
@@ -127,7 +151,7 @@ export const artemisApi = {
             const response = await fetch(`${BACKEND_URL}/devices/${deviceId}`, {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 }
             });
             if (!response.ok) throw new Error("Failed to delete device");
@@ -144,7 +168,7 @@ export const artemisApi = {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 },
                 body: JSON.stringify(payload)
             });
@@ -161,7 +185,7 @@ export const artemisApi = {
             const response = await fetch(`${BACKEND_URL}/devices/discover`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 }
             });
             if (!response.ok) throw new Error("Failed to discover devices");
@@ -181,7 +205,7 @@ export const artemisApi = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 },
                 body: JSON.stringify(payload)
             });
@@ -199,7 +223,7 @@ export const artemisApi = {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 },
                 body: JSON.stringify(payload)
             });
@@ -216,7 +240,7 @@ export const artemisApi = {
             const response = await fetch(`${BACKEND_URL}/rooms/${roomId}`, {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 }
             });
             if (!response.ok) throw new Error("Failed to delete room");
@@ -233,7 +257,7 @@ export const artemisApi = {
     getFunctions: async () => {
         try {
             const response = await fetch(`${BACKEND_URL}/functions/`, {
-                headers: { 'Authorization': 'Bearer placeholder-artemis-mcp-token' }
+                headers: { ...artemisApi.getAuthHeader() }
             });
             if (!response.ok) throw new Error("Failed to fetch functions");
             return await response.json();
@@ -249,7 +273,7 @@ export const artemisApi = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 },
                 body: JSON.stringify(payload)
             });
@@ -267,7 +291,7 @@ export const artemisApi = {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 },
                 body: JSON.stringify(payload)
             });
@@ -283,7 +307,7 @@ export const artemisApi = {
         try {
             const response = await fetch(`${BACKEND_URL}/functions/${id}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': 'Bearer placeholder-artemis-mcp-token' }
+                headers: { ...artemisApi.getAuthHeader() }
             });
             if (!response.ok) throw new Error("Failed to delete function");
             return true;
@@ -299,7 +323,7 @@ export const artemisApi = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 },
                 body: JSON.stringify(params) // Send params if needed
             });
@@ -317,7 +341,7 @@ export const artemisApi = {
     getAutomations: async () => {
         try {
             const response = await fetch(`${BACKEND_URL}/automations/`, {
-                headers: { 'Authorization': 'Bearer placeholder-artemis-mcp-token' }
+                headers: { ...artemisApi.getAuthHeader() }
             });
             if (!response.ok) throw new Error("Failed to fetch automations");
             return await response.json();
@@ -333,7 +357,7 @@ export const artemisApi = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 },
                 body: JSON.stringify({ text })
             });
@@ -351,7 +375,7 @@ export const artemisApi = {
     getHistory: async () => {
         try {
             const response = await fetch(`${BACKEND_URL}/logs/`, {
-                headers: { 'Authorization': 'Bearer placeholder-artemis-mcp-token' }
+                headers: { ...artemisApi.getAuthHeader() }
             });
             if (!response.ok) throw new Error("Failed to fetch history logs");
             return await response.json();
@@ -367,7 +391,7 @@ export const artemisApi = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 },
                 body: JSON.stringify(payload)
             });
@@ -385,7 +409,7 @@ export const artemisApi = {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer placeholder-artemis-mcp-token',
+                    ...artemisApi.getAuthHeader(),
                 },
                 body: JSON.stringify(payload)
             });
@@ -401,7 +425,7 @@ export const artemisApi = {
         try {
             const response = await fetch(`${BACKEND_URL}/automations/${id}/toggle`, {
                 method: 'PATCH',
-                headers: { 'Authorization': 'Bearer placeholder-artemis-mcp-token' }
+                headers: { ...artemisApi.getAuthHeader() }
             });
             if (!response.ok) throw new Error("Failed to toggle automation");
             return await response.json();
@@ -415,12 +439,45 @@ export const artemisApi = {
         try {
             const response = await fetch(`${BACKEND_URL}/automations/${id}`, {
                 method: 'DELETE',
-                headers: { 'Authorization': 'Bearer placeholder-artemis-mcp-token' }
+                headers: { ...artemisApi.getAuthHeader() }
             });
             if (!response.ok) throw new Error("Failed to delete automation");
             return true;
         } catch (error) {
             console.error("Delete Automation error:", error);
+            throw error;
+        }
+    },
+
+    // ──────────────────────────────
+    // Profile API
+    // ──────────────────────────────
+    getMe: async () => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/auth/me`, {
+                headers: { ...artemisApi.getAuthHeader() }
+            });
+            if (!response.ok) throw new Error("Failed to fetch profile");
+            return await response.json();
+        } catch (error) {
+            console.error("Get Profile error:", error);
+            throw error;
+        }
+    },
+    updateMe: async (payload: { display_name?: string; email?: string }) => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/auth/me`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...artemisApi.getAuthHeader(),
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error("Failed to update profile");
+            return await response.json();
+        } catch (error) {
+            console.error("Update Profile error:", error);
             throw error;
         }
     }

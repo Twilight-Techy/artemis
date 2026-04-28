@@ -22,8 +22,14 @@ import ProfileSettingsScreen from '../screens/ProfileSettingsScreen';
 import ThemeSettingsScreen from '../screens/ThemeSettingsScreen';
 import SecuritySettingsScreen from '../screens/SecuritySettingsScreen';
 import PersonaSettingsScreen from '../screens/PersonaSettingsScreen';
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import { useAuth } from '../contexts/AuthContext';
+import { ActivityIndicator } from 'react-native';
 
 export type RootStackParamList = {
+  Login: undefined;
+  Register: undefined;
   MainTabs: undefined;
   Settings: undefined;
   History: undefined;
@@ -129,6 +135,16 @@ function MainTabs() {
 }
 
 export default function AppNavigator() {
+  const { token, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -137,18 +153,27 @@ export default function AppNavigator() {
         contentStyle: { backgroundColor: Colors.background },
       }}
     >
-      <Stack.Screen name="MainTabs" component={MainTabs} />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
-      <Stack.Screen name="History" component={HistoryScreen} />
-      <Stack.Screen name="AALEditor" component={AALEditorScreen} />
-      <Stack.Screen name="AddDevice" component={AddDeviceScreen} />
-      <Stack.Screen name="EditDevice" component={EditDeviceScreen} />
-      <Stack.Screen name="ManageRooms" component={ManageRoomsScreen} />
-      <Stack.Screen name="AddEditFunction" component={AddEditFunctionScreen} />
-      <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
-      <Stack.Screen name="ThemeSettings" component={ThemeSettingsScreen} />
-      <Stack.Screen name="SecuritySettings" component={SecuritySettingsScreen} />
-      <Stack.Screen name="PersonaSettings" component={PersonaSettingsScreen} />
+      {!token ? (
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+        </>
+      ) : (
+        <>
+          <Stack.Screen name="MainTabs" component={MainTabs} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="History" component={HistoryScreen} />
+          <Stack.Screen name="AALEditor" component={AALEditorScreen} />
+          <Stack.Screen name="AddDevice" component={AddDeviceScreen} />
+          <Stack.Screen name="EditDevice" component={EditDeviceScreen} />
+          <Stack.Screen name="ManageRooms" component={ManageRoomsScreen} />
+          <Stack.Screen name="AddEditFunction" component={AddEditFunctionScreen} />
+          <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
+          <Stack.Screen name="ThemeSettings" component={ThemeSettingsScreen} />
+          <Stack.Screen name="SecuritySettings" component={SecuritySettingsScreen} />
+          <Stack.Screen name="PersonaSettings" component={PersonaSettingsScreen} />
+        </>
+      )}
     </Stack.Navigator>
   );
 }
