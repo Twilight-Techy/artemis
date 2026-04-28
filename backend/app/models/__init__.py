@@ -1,9 +1,10 @@
-from .models import User, Room, Device, SensorReading, Function, Automation, ChatMessage, ExecutionLog
+from .models import User, Room, Device, DeviceType, SensorReading, Function, Automation, ChatMessage, ExecutionLog
 
 __all__ = [
     "User",
     "Room",
     "Device",
+    "DeviceType",
     "SensorReading",
     "Function",
     "Automation",

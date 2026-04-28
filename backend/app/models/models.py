@@ -1,6 +1,7 @@
 import uuid
+import enum
 from datetime import datetime
-from sqlalchemy import String, Text, Boolean, Float, DateTime, ForeignKey, JSON
+from sqlalchemy import String, Text, Boolean, Float, DateTime, ForeignKey, JSON, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -50,17 +51,27 @@ class Room(Base):
 # ═══════════════════════════════════════════════
 # Device
 # ═══════════════════════════════════════════════
+class DeviceType(str, enum.Enum):
+    LIGHT = "light"
+    CLIMATE = "climate"
+    SECURITY = "security"
+    SENSOR = "sensor"
+    FAN = "fan"
+    MEDIA = "media"
+    SWITCH = "switch"
+    OTHER = "other"
+
 class Device(Base):
     __tablename__ = "devices"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    device_type: Mapped[str] = mapped_column(String(50), nullable=False)  # light, climate, security, sensor
+    device_type: Mapped[DeviceType] = mapped_column(Enum(DeviceType), nullable=False)
     protocol: Mapped[str] = mapped_column(String(30), default="http")  # http, mqtt, ble
     endpoint: Mapped[str | None] = mapped_column(String(512))  # e.g., /api/v1/relays/fan/state
     is_online: Mapped[bool] = mapped_column(Boolean, default=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=False)  # current on/off state
-    current_value: Mapped[str | None] = mapped_column(String(100))  # e.g., "75" for brightness
+    capabilities: Mapped[dict | None] = mapped_column(JSON) # e.g. {"brightness": True, "color": True, "steps": 3}
+    state: Mapped[dict | None] = mapped_column(JSON) # e.g. {"is_on": True, "brightness": 75, "color": "#FF0000"}
     room_id: Mapped[str] = mapped_column(ForeignKey("rooms.id"), nullable=False)
     owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

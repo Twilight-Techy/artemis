@@ -8,7 +8,7 @@ export const BACKEND_URL = 'http://10.27.73.226:8000/api/v1';
 export const artemisApi = {
     _token: null as string | null,
     setToken: (token: string | null) => { artemisApi._token = token; },
-    getAuthHeader: () => (artemisApi._token ? { Authorization: `Bearer ${artemisApi._token}` } : {}),
+    getAuthHeader: (): Record<string, string> => (artemisApi._token ? { Authorization: `Bearer ${artemisApi._token}` } : {}),
 
     login: async (payload: any) => {
         const res = await fetch(`${BACKEND_URL}/auth/login`, {
@@ -111,7 +111,7 @@ export const artemisApi = {
         }
     },
 
-    controlDevice: async (deviceId: string, action: string, value?: any) => {
+    controlDevice: async (deviceId: string, action: string, payload?: any) => {
         try {
             const response = await fetch(`${BACKEND_URL}/devices/${deviceId}/command`, {
                 method: 'POST',
@@ -119,7 +119,7 @@ export const artemisApi = {
                     'Content-Type': 'application/json',
                     ...artemisApi.getAuthHeader(),
                 },
-                body: JSON.stringify({ action, value })
+                body: JSON.stringify({ action, payload })
             });
             return await response.json();
         } catch (error) {

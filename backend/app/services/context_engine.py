@@ -33,9 +33,9 @@ async def gather_context(db: AsyncSession, user_id: str) -> str:
     devices = devices_result.scalars().all()
     if devices:
         for d in devices:
-            state = "ON" if d.is_active else "OFF"
-            val = f" (Value: {d.current_value})" if d.current_value else ""
-            context_lines.append(f"{d.name} ({d.device_type}): {state}{val} - Online: {d.is_online}")
+            safe_type = getattr(d.device_type, "value", d.device_type)
+            state_str = str(d.state) if d.state else "OFF"
+            context_lines.append(f"{d.name} ({safe_type}): State={state_str} - Online: {d.is_online}")
     else:
         context_lines.append("No devices registered.")
 

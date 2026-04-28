@@ -101,18 +101,27 @@ async def send_command(
     # Dispatch to ESP32 hardware bridge
     hw_response = None
     try:
-        hw_response = await hardware_service.send_command(device.name, body.action, body.value)
+        # In a real scenario, this would pass the entire payload or map it properly.
+        # For our ESP32 bridge, we just extract simple string values for now, but local state tracks full object.
+        hw_response = await hardware_service.send_command(device.name, body.action, str(body.payload.get("value")) if body.payload else None)
     except HardwareError as e:
         # Log the failed attempt, but still update local state as fallback
         hw_response = {"error": e.message}
 
     # Update local DB state
+    if not device.state:
+        device.state = {}
+        
+    device_state_copy = device.state.copy()
     if body.action in ("on", "activate"):
-        device.is_active = True
+        device_state_copy["is_on"] = True
     elif body.action in ("off", "deactivate"):
-        device.is_active = False
-    elif body.action == "set":
-        device.current_value = body.value
+        device_state_copy["is_on"] = False
+    elif body.action in ("set", "set_color", "set_brightness", "set_speed"):
+        if body.payload:
+            device_state_copy.update(body.payload)
+            
+    device.state = device_state_copy
 
     # Log execution
     log = ExecutionLog(
@@ -120,7 +129,7 @@ async def send_command(
         target_id=device.id,
         target_name=device.name,
         status="success" if hw_response and "error" not in hw_response else "failed",
-        request_payload={"action": body.action, "value": body.value},
+        request_payload={"action": body.action, "payload": body.payload},
         response_payload=hw_response,
         triggered_by="user",
         user_id=current_user.id,
@@ -150,6 +159,10 @@ async def update_device(
     device.room_id = body.room_id
     device.protocol = body.protocol
     device.endpoint = body.endpoint
+    if body.capabilities is not None:
+        device.capabilities = body.capabilities
+    if body.state is not None:
+        device.state = body.state
     
     await db.commit()
     await db.refresh(device)

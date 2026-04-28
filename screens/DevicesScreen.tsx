@@ -50,30 +50,34 @@ export default function DevicesScreen() {
       const mappedDevices: Device[] = fetchedDevices.map((d: any) => {
         let typeStr = d.device_type.toLowerCase();
         
-        // Normalize backend device types to frontend UI allowed types ('light' | 'climate' | 'appliance' | 'media' | 'shade' | 'sensor')
         const typeMapping: Record<string, DeviceType> = {
           'fan': 'climate',
-          'ac': 'climate',
-          'lights': 'light',
+          'climate': 'climate',
           'light': 'light',
           'switch': 'appliance',
+          'media': 'media',
           'sensor': 'sensor',
-          'shades': 'shade',
-          'blinds': 'shade'
+          'security': 'appliance',
+          'other': 'appliance'
         };
 
-        const resolvedType: DeviceType = typeMapping[typeStr] || 'appliance'; // default fallback
+        const resolvedType: DeviceType = typeMapping[typeStr] || 'appliance'; 
         
-        const val = parseFloat(d.current_value);
+        // Extract data from new JSON structure
+        const state = d.state || {};
+        const isOnline = Boolean(d.is_online);
+        const isOn = Boolean(state.is_on);
+
         return {
           id: d.id,
           roomId: rDict[d.room_id] || "Unknown",
           name: d.name,
           type: resolvedType,
-          isOn: Boolean(d.is_active),
-          intensity: resolvedType === 'light' && !isNaN(val) ? val : undefined,
-          temperature: resolvedType === 'climate' && !isNaN(val) ? val : undefined,
-          statusText: d.current_value,
+          isOn: isOn,
+          intensity: state.brightness,
+          temperature: state.temperature,
+          color: state.color,
+          statusText: isOnline ? (isOn ? 'Active' : 'Off') : 'Offline',
         };
       });
 
@@ -118,14 +122,15 @@ export default function DevicesScreen() {
     setSelectedDevice(prev => prev ? { ...prev, ...updates } : null);
 
     try {
-      // Find what exactly is changing, usually it's intensity, temperature, or position
-      let valueToSend = null;
-      if (updates.intensity !== undefined) valueToSend = updates.intensity;
-      else if (updates.temperature !== undefined) valueToSend = updates.temperature;
-      else if (updates.position !== undefined) valueToSend = updates.position;
+      let payloadToSend: Record<string, any> = {};
+      
+      if (updates.intensity !== undefined) payloadToSend.brightness = updates.intensity;
+      if (updates.temperature !== undefined) payloadToSend.temperature = updates.temperature;
+      if (updates.position !== undefined) payloadToSend.position = updates.position;
+      if (updates.color !== undefined) payloadToSend.color = updates.color;
 
-      if (valueToSend !== null) {
-        await artemisApi.controlDevice(selectedDevice.id, "set", String(valueToSend));
+      if (Object.keys(payloadToSend).length > 0) {
+        await artemisApi.controlDevice(selectedDevice.id, "set", payloadToSend);
       }
     } catch (e) {
       console.warn("Failed to set device value", e);

@@ -1,5 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
+from app.models.models import DeviceType
 
 
 # ═══════════════════════════════════════════════
@@ -47,21 +48,23 @@ class RoomOut(BaseModel):
 # ═══════════════════════════════════════════════
 class DeviceCreate(BaseModel):
     name: str = Field(..., max_length=100)
-    device_type: str = Field(..., max_length=50)
+    device_type: DeviceType
     protocol: str = "http"
     endpoint: str | None = None
     room_id: str
+    capabilities: dict | None = None
+    state: dict | None = None
 
 
 class DeviceOut(BaseModel):
     id: str
     name: str
-    device_type: str
+    device_type: DeviceType
     protocol: str
     endpoint: str | None
     is_online: bool
-    is_active: bool
-    current_value: str | None
+    capabilities: dict | None
+    state: dict | None
     room_id: str
     created_at: datetime
     updated_at: datetime
@@ -71,9 +74,9 @@ class DeviceOut(BaseModel):
 
 
 class DeviceCommand(BaseModel):
-    """Payload for controlling a device (toggle, set value)."""
-    action: str  # "on", "off", "set"
-    value: str | None = None  # e.g., "75" for brightness
+    """Payload for controlling a device."""
+    action: str  # "on", "off", "set_color", "set_brightness"
+    payload: dict | None = None  # Arbitrary payload mapping to capabilities
 
 
 # ═══════════════════════════════════════════════

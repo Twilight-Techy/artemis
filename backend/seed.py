@@ -1,14 +1,15 @@
 import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import AsyncSessionLocal, engine, Base
-from app.models import User, Room, Device, Automation
+from app.models import User, Room, Device, Automation, DeviceType
 from app.services.auth_service import hash_password
 
 async def seed_database():
     print("Initializing Database...")
     
-    # Ensure tables exist
+    # Ensure tables exist (drop and recreate for dev schema changes)
     async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
     async with AsyncSessionLocal() as db:
@@ -40,9 +41,21 @@ async def seed_database():
         # 3. Create Devices matching ESP32 Channels
         devices = [
             # ID mappings correspond to hardware_service.DEVICE_PIN_MAP or typical naming
-            Device(id="test-device-fan", name="Studio Fan", device_type="fan", room_id="test-room-id", owner_id="test-user-id"),
-            Device(id="test-device-led", name="Ambient LED Strip", device_type="lights", room_id="test-room-id", owner_id="test-user-id"),
-            Device(id="test-device-spare", name="Spare Relay", device_type="switch", room_id="test-room-id", owner_id="test-user-id"),
+            Device(
+                id="test-device-fan", name="Studio Fan", device_type=DeviceType.FAN, room_id="test-room-id", owner_id="test-user-id",
+                capabilities={"power": True, "speed_steps": 3},
+                state={"is_on": False, "speed": 1}
+            ),
+            Device(
+                id="test-device-led", name="Ambient LED Strip", device_type=DeviceType.LIGHT, room_id="test-room-id", owner_id="test-user-id",
+                capabilities={"power": True, "brightness": True, "rgb_color": True, "color_temp": True},
+                state={"is_on": True, "brightness": 75, "color": "#74b1ff"}
+            ),
+            Device(
+                id="test-device-spare", name="Spare Relay", device_type=DeviceType.SWITCH, room_id="test-room-id", owner_id="test-user-id",
+                capabilities={"power": True},
+                state={"is_on": False}
+            ),
         ]
         
         for d in devices:
