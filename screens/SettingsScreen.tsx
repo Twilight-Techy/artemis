@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Switch,
   Platform,
+  PanResponder,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -23,6 +24,7 @@ type SettingsItem = {
   color: string;
   glowColor: string;
   type: 'navigate' | 'toggle';
+  target?: string;
   defaultValue?: boolean;
 };
 
@@ -38,6 +40,7 @@ const SECTIONS: { title: string; items: SettingsItem[] }[] = [
         color: Colors.primary,
         glowColor: 'rgba(116, 177, 255, 0.15)',
         type: 'navigate',
+        target: 'ProfileSettings',
       },
       {
         icon: 'cloud-done-outline',
@@ -62,6 +65,7 @@ const SECTIONS: { title: string; items: SettingsItem[] }[] = [
         color: Colors.tertiary,
         glowColor: 'rgba(129, 236, 255, 0.15)',
         type: 'navigate',
+        target: 'ThemeSettings',
       },
       {
         icon: 'notifications-outline',
@@ -86,6 +90,7 @@ const SECTIONS: { title: string; items: SettingsItem[] }[] = [
         color: Colors.primary,
         glowColor: 'rgba(116, 177, 255, 0.15)',
         type: 'navigate',
+        target: 'SecuritySettings',
       },
       {
         icon: 'eye-off-outline',
@@ -122,6 +127,41 @@ export default function SettingsScreen() {
     setToggleStates(prev => ({ ...prev, [label]: !prev[label] }));
   };
 
+  const [pitchValue, setPitchValue] = useState(0.6); // 0 to 1
+  const pitchValueRef = React.useRef(0.6);
+  const startPitchRef = React.useRef(0.6);
+  const trackWidthRef = React.useRef(1);
+
+  const panResponder = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        // We do NOT snap to locationX, we just lock the current reference
+        startPitchRef.current = pitchValueRef.current;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        // Smooth scaling entirely via delta X from screen touch
+        const deltaPercentage = gestureState.dx / trackWidthRef.current;
+        const newValue = Math.min(Math.max(startPitchRef.current + deltaPercentage, 0), 1);
+        setPitchValue(newValue);
+        pitchValueRef.current = newValue;
+      },
+      onPanResponderRelease: () => {},
+    })
+  ).current;
+
+  // Determine label based on pitch
+  let pitchLabel = 'Optimal';
+  let pitchColor: string = Colors.secondary;
+  if (pitchValue < 0.3) {
+    pitchLabel = 'Deep / Bass';
+    pitchColor = Colors.primary;
+  } else if (pitchValue > 0.7) {
+    pitchLabel = 'High / Crisp';
+    pitchColor = Colors.tertiary;
+  }
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* ═══ Header ═══ */}
@@ -151,7 +191,7 @@ export default function SettingsScreen() {
                   key={item.label}
                   style={styles.settingRow}
                   activeOpacity={item.type === 'navigate' ? 0.7 : 1}
-                  onPress={item.type === 'navigate' ? () => {} : undefined}
+                  onPress={item.type === 'navigate' && item.target ? () => (navigation as any).navigate(item.target) : undefined}
                 >
                   <View style={styles.settingRowLeft}>
                     <View
@@ -212,12 +252,12 @@ export default function SettingsScreen() {
                     <Ionicons name="mic" size={20} color={Colors.secondary} />
                   </View>
                 </LinearGradient>
-                <View>
+                <View style={{ flex: 1, paddingRight: Spacing.md }}>
                   <Text style={styles.personaName}>AI Persona: Artemis</Text>
-                  <Text style={styles.personaStyle}>Balanced & Professional</Text>
+                  <Text style={styles.personaStyle} numberOfLines={1} ellipsizeMode="tail">Balanced & Professional</Text>
                 </View>
               </View>
-              <TouchableOpacity style={styles.changeButton} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.changeButton} activeOpacity={0.7} onPress={() => (navigation as any).navigate('PersonaSettings')}>
                 <Text style={styles.changeButtonText}>CHANGE</Text>
               </TouchableOpacity>
             </View>
@@ -226,18 +266,33 @@ export default function SettingsScreen() {
             <View style={styles.sliderSection}>
               <View style={styles.sliderLabelRow}>
                 <Text style={styles.sliderLabel}>Voice Pitch</Text>
-                <Text style={[styles.sliderLabel, { color: Colors.secondary }]}>
-                  Optimal
+                <Text style={[styles.sliderLabel, { color: pitchColor }]}>
+                  {pitchLabel}
                 </Text>
               </View>
-              <View style={styles.sliderTrack}>
+              <View 
+                style={styles.sliderTrack} 
+                onLayout={(e) => { trackWidthRef.current = e.nativeEvent.layout.width || 1; }}
+              >
                 <LinearGradient
+                  pointerEvents="none"
                   colors={[Colors.primary, Colors.secondary]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
-                  style={[styles.sliderFill, { width: '60%' }]}
+                  style={[styles.sliderFill, { width: `${pitchValue * 100}%` }]}
                 />
-                <View style={[styles.sliderThumb, { left: '57%' }]} />
+                <View 
+                  pointerEvents="none"
+                  style={[
+                    styles.sliderThumb, 
+                    { left: `${pitchValue * 100}%`, transform: [{ translateX: -8 }] }
+                  ]} 
+                />
+                {/* Touch Overlay */}
+                <View 
+                  style={{ position: 'absolute', top: -20, bottom: -20, left: 0, right: 0 }}
+                  {...panResponder.panHandlers}
+                />
               </View>
             </View>
 
@@ -389,6 +444,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.lg,
+    flex: 1,
   },
   personaOrbOuter: {
     width: 48,

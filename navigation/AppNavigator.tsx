@@ -18,6 +18,10 @@ import AddDeviceScreen from '../screens/AddDeviceScreen';
 import EditDeviceScreen from '../screens/EditDeviceScreen';
 import ManageRoomsScreen from '../screens/ManageRoomsScreen';
 import AddEditFunctionScreen from '../screens/AddEditFunctionScreen';
+import ProfileSettingsScreen from '../screens/ProfileSettingsScreen';
+import ThemeSettingsScreen from '../screens/ThemeSettingsScreen';
+import SecuritySettingsScreen from '../screens/SecuritySettingsScreen';
+import PersonaSettingsScreen from '../screens/PersonaSettingsScreen';
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -29,6 +33,10 @@ export type RootStackParamList = {
   EditDevice: { deviceId: string; deviceName: string; roomId: string; deviceType: string };
   ManageRooms: undefined;
   AddEditFunction: { mode: 'add' | 'edit'; functionName?: string; functionCategory?: string; functionDescription?: string };
+  ProfileSettings: undefined;
+  ThemeSettings: undefined;
+  SecuritySettings: undefined;
+  PersonaSettings: undefined;
 };
 
 const Tab = createMaterialTopTabNavigator();
@@ -108,7 +116,6 @@ function MainTabs() {
     <Tab.Navigator
       tabBar={(props) => <CustomTabBar {...props} insets={insets} />}
       tabBarPosition="bottom"
-      swipeEnabled={true}
       screenOptions={{
         lazy: true,
       }}
@@ -124,7 +131,6 @@ function MainTabs() {
 export default function AppNavigator() {
   return (
     <Stack.Navigator
-      detachInactiveScreens={Platform.OS === 'android' ? false : true}
       screenOptions={{
         headerShown: false,
         animation: 'simple_push',
@@ -139,6 +145,10 @@ export default function AppNavigator() {
       <Stack.Screen name="EditDevice" component={EditDeviceScreen} />
       <Stack.Screen name="ManageRooms" component={ManageRoomsScreen} />
       <Stack.Screen name="AddEditFunction" component={AddEditFunctionScreen} />
+      <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
+      <Stack.Screen name="ThemeSettings" component={ThemeSettingsScreen} />
+      <Stack.Screen name="SecuritySettings" component={SecuritySettingsScreen} />
+      <Stack.Screen name="PersonaSettings" component={PersonaSettingsScreen} />
     </Stack.Navigator>
   );
 }
