@@ -35,24 +35,42 @@ def get_tools_definition():
         function_declarations=[
             types.FunctionDeclaration(
                 name="control_device",
-                description="Turn a specific smart home device on or off, or set its value.",
+                description="Turn a specific smart home device on or off, or set its attributes like color and brightness.",
                 parameters=types.Schema(
                     type=types.Type.OBJECT,
                     properties={
                         "device_name": types.Schema(
                             type=types.Type.STRING,
-                            description="The generic or specific name of the device (e.g., 'fan', 'lights', 'studio fan')."
+                            description="The plain English name of the device (e.g., 'fan', 'lights', 'studio fan')."
                         ),
                         "action": types.Schema(
                             type=types.Type.STRING,
-                            description="The action to perform. Typically 'on', 'off', or 'set'."
+                            description="The action: 'on', 'off', or 'set'."
                         ),
-                        "value": types.Schema(
-                            type=types.Type.STRING,
-                            description="Optional value to set, e.g. for brightness."
+                        "payload": types.Schema(
+                            type=types.Type.OBJECT,
+                            description="Required if action is 'set'. A dictionary of capabilities to update. e.g. {'brightness': 75, 'color': '#FF0000'}."
                         )
                     },
                     required=["device_name", "action"]
+                )
+            ),
+            types.FunctionDeclaration(
+                name="execute_function",
+                description="Execute a predefined software or hardware function/macro.",
+                parameters=types.Schema(
+                    type=types.Type.OBJECT,
+                    properties={
+                        "function_name": types.Schema(
+                            type=types.Type.STRING,
+                            description="The name of the function to execute (e.g., 'Morning Summary Email', 'Deep Shield')."
+                        ),
+                        "parameters": types.Schema(
+                            type=types.Type.OBJECT,
+                            description="A JSON object containing any necessary parameters for the function."
+                        )
+                    },
+                    required=["function_name"]
                 )
             ),
             types.FunctionDeclaration(

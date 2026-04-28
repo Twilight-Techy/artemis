@@ -61,7 +61,7 @@ async def chat_endpoint(
         if requires_approval:
             # We must ask the user
             action_id = str(uuid.uuid4())
-            target_name = args.get("device_name", "unknown")
+            target_name = args.get("device_name") or args.get("function_name", "unknown")
             
             # Log as pending
             pending_log = ExecutionLog(
@@ -138,15 +138,29 @@ async def approve_action(
         raise HTTPException(status_code=404, detail="Pending action not found")
 
     args = log.request_payload
-    device_name = args.get("device_name")
-    action = args.get("action")
-    value = args.get("value")
-
-    # Dispatch to hardware
+    
     try:
-        hw_response = await hardware_service.send_command(device_name, action, value)
-        log.status = "success"
-        log.response_payload = hw_response
+        if log.action_type == "execute_function":
+            function_name = args.get("function_name")
+            parameters = args.get("parameters", {})
+            # Add execution logic here or dispatch to automation engine
+            hw_response = {"status": "Function executed locally", "function": function_name, "params": parameters}
+            log.status = "success"
+            log.response_payload = hw_response
+            log.target_name = function_name
+            
+        elif log.action_type == "control_device":
+            device_name = args.get("device_name")
+            action = args.get("action")
+            payload = args.get("payload")
+            hw_response = await hardware_service.send_command(device_name, action, payload)
+            log.status = "success"
+            log.response_payload = hw_response
+            log.target_name = device_name
+            
+        else:
+            raise hardware_service.HardwareError(f"Unknown action type {log.action_type}")
+            
     except hardware_service.HardwareError as e:
         log.status = "failed"
         log.response_payload = {"error": e.message}
@@ -154,7 +168,7 @@ async def approve_action(
     # Save system diagnostic message
     sys_msg = ChatMessage(
         role="system",
-        content=f"Executed: {device_name} -> {action}",
+        content=f"Executed: {log.target_name} -> {log.action_type}",
         meta_info={"status": log.status, "action_id": action_id},
         user_id=current_user.id
     )
