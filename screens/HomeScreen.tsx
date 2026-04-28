@@ -19,7 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import TopNavBar from '../components/TopNavBar';
-import OrbEntity from '../components/OrbEntity';
+import OrbEntity, { OrbState } from '../components/OrbEntity';
 import StatChip from '../components/StatChip';
 import QuickActionCard from '../components/QuickActionCard';
 import CommandBar from '../components/CommandBar';
@@ -76,6 +76,21 @@ export default function HomeScreen() {
   const flatListRef = useRef<FlatList>(null);
   const [isSending, setIsSending] = useState(false);
   const [pendingAction, setPendingAction] = useState<any>(null);
+  const [orbState, setOrbState] = useState<OrbState>('idle');
+
+  const handleMicPressIn = () => {
+    setOrbState('listening');
+  };
+
+  const handleMicPressOut = () => {
+    setOrbState('processing');
+    // Simulate transcribing voice logic...
+    setTimeout(() => {
+      const simulatedTranscript = "Turn on the living room lights";
+      handleSendMessage(simulatedTranscript);
+      setOrbState('idle');
+    }, 1200);
+  };
 
   const handleExecuteLogic = async () => {
     if (!pendingAction) return;
@@ -203,7 +218,7 @@ export default function HomeScreen() {
           )}
           <View style={styles.atmosphericGlow} />
           <TouchableOpacity activeOpacity={0.9} onPress={() => setShowMCPModal(true)}>
-            <OrbEntity />
+            <OrbEntity state={orbState} />
           </TouchableOpacity>
           <View style={styles.climateChip}>
             <StatChip
@@ -327,7 +342,13 @@ export default function HomeScreen() {
             paddingTop: 16, 
             paddingBottom: mode === 'dashboard' ? Math.max(insets.bottom + 90, 110) : Math.max(insets.bottom + 64, 80) 
           }}>
-            <CommandBar onSend={handleSendMessage} isSending={isSending} />
+            <CommandBar 
+              onSend={handleSendMessage} 
+              isSending={isSending} 
+              isListening={orbState === 'listening'}
+              onMicPressIn={handleMicPressIn}
+              onMicPressOut={handleMicPressOut}
+            />
           </View>
         </View>
       </Animated.View>

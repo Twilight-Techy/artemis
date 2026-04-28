@@ -7,19 +7,26 @@ import { Colors, Typography, Radii } from '../constants/theme';
 interface CommandBarProps {
   onSend?: (message: string) => void;
   isSending?: boolean;
+  onMicPressIn?: () => void;
+  onMicPressOut?: () => void;
+  isListening?: boolean;
 }
 
-export default function CommandBar({ onSend, isSending }: CommandBarProps) {
+export default function CommandBar({ onSend, isSending, onMicPressIn, onMicPressOut, isListening }: CommandBarProps) {
   const [text, setText] = useState('');
 
   return (
     <View style={styles.container}>
-      <View style={styles.micWrapper}>
-        <Ionicons name="mic-outline" size={24} color={Colors.primary} />
-      </View>
+      <Pressable 
+        style={styles.micWrapper}
+        onPressIn={onMicPressIn}
+        onPressOut={onMicPressOut}
+      >
+        <Ionicons name="mic-outline" size={24} color={isListening ? Colors.tertiary : Colors.primary} />
+      </Pressable>
       <TextInput
         style={styles.input}
-        placeholder="Ask Artemis..."
+        placeholder={isListening ? "Listening..." : "Ask Artemis..."}
         placeholderTextColor="rgba(173, 170, 173, 0.4)"
         value={text}
         onChangeText={setText}

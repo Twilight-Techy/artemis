@@ -9,28 +9,41 @@ const INNER_RING = 150;
 const CORE_SIZE = 125;
 const GLOW_SIZE = 285;
 
-export default function OrbEntity() {
+export type OrbState = 'idle' | 'listening' | 'processing';
+
+interface OrbEntityProps {
+  state?: OrbState;
+}
+
+export default function OrbEntity({ state = 'idle' }: OrbEntityProps) {
   const { isOffline } = useNetwork();
   const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.loop(
+    let duration = 3000;
+    if (isOffline) duration = 6000;
+    else if (state === 'listening') duration = 800; // Fast energetic pulse
+    else if (state === 'processing') duration = 400; // Ultra fast processing flutter
+
+    const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, {
           toValue: 1,
-          duration: isOffline ? 6000 : 3000,
+          duration: duration,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
         Animated.timing(pulse, {
           toValue: 0,
-          duration: isOffline ? 6000 : 3000,
+          duration: duration,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
       ])
-    ).start();
-  }, [isOffline]);
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [isOffline, state]);
 
   // Ambient glow – scale & opacity
   const glowScale = pulse.interpolate({
@@ -54,7 +67,23 @@ export default function OrbEntity() {
     outputRange: isOffline ? [0.2, 0.4] : [0.4, 0.9],
   });
 
-  const activeColor = isOffline ? 'rgba(150, 150, 160, 0.3)' : Colors.primary;
+  let activeColor: string = Colors.primary;
+  let gradientColors: [string, string, string] = ['rgba(116, 177, 255, 0.25)', 'rgba(116, 177, 255, 0.08)', 'transparent'];
+  let innerRingColors: [string, string, string] = [Colors.primary, Colors.primaryDim, Colors.onPrimaryContainer];
+  
+  if (isOffline) {
+    activeColor = 'rgba(150, 150, 160, 0.3)';
+    gradientColors = ['rgba(150, 150, 160, 0.15)', 'rgba(150, 150, 160, 0.05)', 'transparent'];
+    innerRingColors = ['#3a3a3a', '#2a2a2a', '#1a1a1a'];
+  } else if (state === 'listening') {
+    activeColor = Colors.tertiary; // Cyan
+    gradientColors = ['rgba(129, 236, 255, 0.35)', 'rgba(129, 236, 255, 0.10)', 'transparent'];
+    innerRingColors = [Colors.tertiary, '#4abccf', '#1c7180'];
+  } else if (state === 'processing') {
+    activeColor = Colors.secondary; // Violet
+    gradientColors = ['rgba(184, 132, 255, 0.35)', 'rgba(184, 132, 255, 0.10)', 'transparent'];
+    innerRingColors = [Colors.secondary, '#8855cc', '#452277'];
+  }
 
   return (
     <View style={styles.container}>
@@ -66,10 +95,7 @@ export default function OrbEntity() {
         ]}
       >
         <LinearGradient
-          colors={isOffline 
-            ? ['rgba(150, 150, 160, 0.15)', 'rgba(150, 150, 160, 0.05)', 'transparent']
-            : ['rgba(116, 177, 255, 0.25)', 'rgba(116, 177, 255, 0.08)', 'transparent']
-          }
+          colors={gradientColors}
           style={styles.glowGradient}
           start={{ x: 0.5, y: 0.5 }}
           end={{ x: 1, y: 1 }}
@@ -86,7 +112,7 @@ export default function OrbEntity() {
           ]}
         >
           <LinearGradient
-            colors={isOffline ? ['#3a3a3a', '#2a2a2a', '#1a1a1a'] : [Colors.primary, Colors.primaryDim, Colors.onPrimaryContainer]}
+            colors={innerRingColors}
             style={styles.middleRing}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -95,8 +121,8 @@ export default function OrbEntity() {
             <View style={styles.core}>
               {/* Core icon dot */}
               <Animated.View style={[styles.coreIconOuter, { opacity: coreOpacity }]}>
-                <View style={[styles.coreIconRing, isOffline && { borderColor: activeColor, shadowOpacity: 0 }]}>
-                  <View style={[styles.coreIconCenter, isOffline && { backgroundColor: activeColor, shadowOpacity: 0 }]} />
+                <View style={[styles.coreIconRing, { borderColor: activeColor }, isOffline && { shadowOpacity: 0 }]}>
+                  <View style={[styles.coreIconCenter, { backgroundColor: activeColor }, isOffline && { shadowOpacity: 0 }]} />
                 </View>
               </Animated.View>
             </View>
