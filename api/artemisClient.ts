@@ -53,6 +53,46 @@ export const artemisApi = {
         }
     },
 
+    getChatHistory: async () => {
+        try {
+            const response = await fetch(`${BACKEND_URL}/mcp/history`, {
+                headers: artemisApi.getAuthHeader()
+            });
+            if (!response.ok) throw new Error('Failed to fetch chat history');
+            return await response.json();
+        } catch (error) {
+            console.error("Chat History error:", error);
+            throw error;
+        }
+    },
+
+    transcribeAudio: async (audioUri: string, mimeType: string = 'audio/m4a') => {
+        try {
+            const formData = new FormData();
+            // In React Native, we can pass an object with uri, name, and type
+            formData.append('audio', {
+                uri: Platform.OS === 'ios' ? audioUri.replace('file://', '') : audioUri,
+                name: 'recording.m4a',
+                type: mimeType,
+            } as any);
+
+            const headers = artemisApi.getAuthHeader();
+            // Do NOT set Content-Type to multipart/form-data manually, fetch will set it with the correct boundary
+            
+            const response = await fetch(`${BACKEND_URL}/mcp/transcribe`, {
+                method: 'POST',
+                headers,
+                body: formData,
+            });
+
+            if (!response.ok) throw new Error(`Transcription failed: ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error("Transcription API error:", error);
+            throw error;
+        }
+    },
+
     approveAction: async (actionId: string) => {
         try {
             const response = await fetch(`${BACKEND_URL}/mcp/approve/${actionId}`, {

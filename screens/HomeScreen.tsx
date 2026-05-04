@@ -12,6 +12,7 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
+import { Audio } from 'expo-av';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -77,19 +78,68 @@ export default function HomeScreen() {
   const [isSending, setIsSending] = useState(false);
   const [pendingAction, setPendingAction] = useState<any>(null);
   const [orbState, setOrbState] = useState<OrbState>('idle');
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
 
-  const handleMicPressIn = () => {
-    setOrbState('listening');
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const data = await artemisApi.getChatHistory();
+        if (data.messages && data.messages.length > 0) {
+          setMessages(data.messages);
+        }
+      } catch (err) {
+        console.error("Failed to load history:", err);
+      }
+    };
+    loadHistory();
+  }, []);
+
+  const handleMicPressIn = async () => {
+    try {
+      setOrbState('listening');
+      const permission = await Audio.requestPermissionsAsync();
+      if (permission.status === 'granted') {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+        });
+        const { recording: newRecording } = await Audio.Recording.createAsync(
+          Audio.RecordingOptionsPresets.HIGH_QUALITY
+        );
+        setRecording(newRecording);
+      }
+    } catch (err) {
+      console.error('Failed to start recording', err);
+      setOrbState('idle');
+    }
   };
 
-  const handleMicPressOut = () => {
+  const handleMicPressOut = async () => {
     setOrbState('processing');
-    // Simulate transcribing voice logic...
-    setTimeout(() => {
-      const simulatedTranscript = "Turn on the living room lights";
-      handleSendMessage(simulatedTranscript);
+    if (!recording) {
       setOrbState('idle');
-    }, 1200);
+      return;
+    }
+    
+    try {
+      await recording.stopAndUnloadAsync();
+      const uri = recording.getURI();
+      setRecording(null);
+      
+      if (uri) {
+        const { transcript } = await artemisApi.transcribeAudio(uri);
+        if (transcript) {
+          handleSendMessage(transcript);
+        } else {
+          setOrbState('idle');
+        }
+      } else {
+        setOrbState('idle');
+      }
+    } catch (err) {
+      console.error('Failed to stop recording or transcribe', err);
+      setOrbState('idle');
+    }
   };
 
   const handleExecuteLogic = async () => {

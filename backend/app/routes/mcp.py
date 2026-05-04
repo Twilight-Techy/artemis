@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 import uuid
@@ -24,6 +24,51 @@ class ChatResponse(BaseModel):
     reply: str
     requires_approval: bool = False
     proactive_action: ProactiveActionResponse | None = None
+
+@router.post("/transcribe")
+async def transcribe_endpoint(
+    audio: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Transcribe audio upload using Gemini API."""
+    try:
+        audio_bytes = await audio.read()
+        mime_type = audio.content_type or "audio/mp4"
+        transcript = await gemini_service.transcribe_audio(audio_bytes, mime_type)
+        if not transcript:
+            raise HTTPException(status_code=500, detail="Transcription returned empty or failed.")
+        return {"transcript": transcript}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/history")
+async def get_history(
+    limit: int = 50,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Retrieve chat history for the current user."""
+    from sqlalchemy import select
+    query = await db.execute(
+        select(ChatMessage)
+        .where(ChatMessage.user_id == current_user.id)
+        .order_by(ChatMessage.created_at.asc())
+        .limit(limit)
+    )
+    messages = query.scalars().all()
+    
+    formatted_msgs = []
+    for m in messages:
+        # Convert UTC to local timestamp roughly, or just pass ISO
+        ts = m.created_at.strftime("%I:%M %p").lstrip("0")
+        formatted_msgs.append({
+            "id": m.id,
+            "role": m.role,
+            "text": m.content,
+            "timestamp": ts,
+            "meta_info": m.meta_info
+        })
+    return {"messages": formatted_msgs}
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(

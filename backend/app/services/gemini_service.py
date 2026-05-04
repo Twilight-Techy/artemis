@@ -128,3 +128,22 @@ async def chat_with_artemis(user_message: str, context_str: str, history: list[d
     )
     return response
 
+async def transcribe_audio(audio_bytes: bytes, mime_type: str = "audio/mp4") -> str | None:
+    """
+    Transcribes audio bytes using Gemini 2.0.
+    """
+    if not client:
+        return None
+
+    prompt = "Transcribe the speech in this audio exactly. Do not add any extra text, markdown, or conversational formatting. If you hear silence, return an empty string."
+    
+    response = client.models.generate_content(
+        model=settings.gemini_model,
+        contents=[
+            prompt,
+            types.Part.from_bytes(data=audio_bytes, mime_type=mime_type)
+        ]
+    )
+    return response.text.strip() if response.text else None
+
+
