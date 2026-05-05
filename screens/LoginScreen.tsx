@@ -7,6 +7,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { artemisApi } from '../api/artemisClient';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -16,6 +18,40 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [hasBiometric, setHasBiometric] = useState(false);
+
+  React.useEffect(() => {
+    checkBiometrics();
+  }, []);
+
+  const checkBiometrics = async () => {
+    const token = await SecureStore.getItemAsync('biometric_token');
+    if (token) {
+      setHasBiometric(true);
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    const biometricToken = await SecureStore.getItemAsync('biometric_token');
+    if (!biometricToken) return;
+
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: 'Authenticate to log in',
+      fallbackLabel: 'Use Password',
+      disableDeviceFallback: true,
+    });
+
+    if (result.success) {
+      setIsLoading(true);
+      try {
+        await login(biometricToken);
+      } catch (error) {
+        Alert.alert('Error', 'Failed to login with biometrics.');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -92,6 +128,18 @@ export default function LoginScreen() {
           )}
         </TouchableOpacity>
 
+        {hasBiometric && (
+          <TouchableOpacity 
+            style={styles.biometricBtn} 
+            activeOpacity={0.8} 
+            disabled={isLoading}
+            onPress={handleBiometricLogin}
+          >
+            <Ionicons name="finger-print" size={24} color={Colors.primary} />
+            <Text style={styles.biometricBtnText}>LOG IN WITH FINGERPRINT</Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity style={styles.registerLink} onPress={() => navigation.navigate('Register')}>
           <Text style={styles.registerText}>UNREGISTERED? INITIALIZE NEW ID</Text>
         </TouchableOpacity>
@@ -112,8 +160,48 @@ const styles = StyleSheet.create({
   formContainer: { marginBottom: Spacing['3xl'] },
   fieldLabel: { fontFamily: Typography.families.label, fontSize: Typography.sizes.labelSm, fontWeight: Typography.weights.bold, color: Colors.onSurfaceVariant, letterSpacing: 2, marginBottom: Spacing.sm },
   textInput: { backgroundColor: Colors.surfaceContainerLow, borderRadius: Radii.lg, padding: Spacing.xl, fontFamily: Typography.families.body, fontSize: Typography.sizes.bodyLg, color: Colors.onSurface, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-  loginBtn: { backgroundColor: Colors.primary, borderRadius: Radii.full, paddingVertical: Spacing.lg, alignItems: 'center', shadowColor: Colors.primary, shadowOpacity: 0.3, shadowRadius: 20, elevation: 6 },
-  loginBtnText: { fontFamily: Typography.families.headline, fontSize: Typography.sizes.labelMd, fontWeight: Typography.weights.bold, color: Colors.onPrimary, letterSpacing: 2 },
-  registerLink: { marginTop: Spacing['2xl'], alignItems: 'center' },
-  registerText: { fontFamily: Typography.families.label, fontSize: Typography.sizes.labelSm, color: Colors.onSurfaceVariant, letterSpacing: 2 }
+  loginBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: Radii.full,
+    paddingVertical: Spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginBtnText: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.labelMd,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onPrimary,
+    letterSpacing: 2,
+  },
+  biometricBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(116, 177, 255, 0.1)',
+    borderRadius: Radii.full,
+    paddingVertical: Spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(116, 177, 255, 0.3)',
+    marginTop: Spacing.lg,
+    gap: Spacing.sm,
+  },
+  biometricBtnText: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.labelMd,
+    fontWeight: Typography.weights.bold,
+    color: Colors.primary,
+    letterSpacing: 1,
+  },
+  registerLink: {
+    marginTop: Spacing['2xl'],
+    alignItems: 'center',
+  },
+  registerText: {
+    fontFamily: Typography.families.label,
+    fontSize: Typography.sizes.labelSm,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onSurfaceVariant,
+    letterSpacing: 1,
+  },
 });

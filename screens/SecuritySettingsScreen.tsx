@@ -5,11 +5,51 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
+import { useAuth } from '../contexts/AuthContext';
+
 export default function SecuritySettingsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const [faceId, setFaceId] = useState(true);
-  const [passcode, setPasscode] = useState(false);
+  const { token } = useAuth();
+  const [fingerprintEnabled, setFingerprintEnabled] = useState(false);
+
+  React.useEffect(() => {
+    checkBiometricStatus();
+  }, []);
+
+  const checkBiometricStatus = async () => {
+    const savedToken = await SecureStore.getItemAsync('biometric_token');
+    setFingerprintEnabled(!!savedToken);
+  };
+
+  const toggleFingerprint = async (value: boolean) => {
+    if (value) {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware || !isEnrolled) {
+        // Here you would normally show a modal if no biometrics are set up
+        console.warn("Biometrics not available or not enrolled");
+        return;
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Authenticate to enable Fingerprint Lock',
+        fallbackLabel: 'Use Passcode',
+        disableDeviceFallback: true,
+      });
+
+      if (result.success && token) {
+        await SecureStore.setItemAsync('biometric_token', token);
+        setFingerprintEnabled(true);
+      }
+    } else {
+      await SecureStore.deleteItemAsync('biometric_token');
+      setFingerprintEnabled(false);
+    }
+  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -23,7 +63,7 @@ export default function SecuritySettingsScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.iconHeader}>
-          <Ionicons name="lock-closed" size={64} color={Colors.primary} />
+          <Ionicons name="finger-print" size={64} color={Colors.primary} />
           <Text style={styles.headline}>Biometric Lock</Text>
           <Text style={styles.subtitle}>Protect local access to your smart home controls.</Text>
         </View>
@@ -31,23 +71,11 @@ export default function SecuritySettingsScreen() {
         <View style={styles.settingsGroup}>
           <View style={styles.row}>
             <View>
-              <Text style={styles.rowTitle}>Require Face ID</Text>
+              <Text style={styles.rowTitle}>Require Fingerprint</Text>
               <Text style={styles.rowDesc}>Unlock Artemis upon opening</Text>
             </View>
             <Switch
-              value={faceId} onValueChange={setFaceId}
-              trackColor={{ false: Colors.surfaceContainerHighest, true: Colors.primary }}
-              thumbColor={Colors.onSurface}
-            />
-          </View>
-          <View style={styles.divider} />
-          <View style={styles.row}>
-            <View>
-              <Text style={styles.rowTitle}>Require Passcode</Text>
-              <Text style={styles.rowDesc}>Fallback authentication</Text>
-            </View>
-            <Switch
-              value={passcode} onValueChange={setPasscode}
+              value={fingerprintEnabled} onValueChange={toggleFingerprint}
               trackColor={{ false: Colors.surfaceContainerHighest, true: Colors.primary }}
               thumbColor={Colors.onSurface}
             />
