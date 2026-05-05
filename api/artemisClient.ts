@@ -7,8 +7,22 @@ export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localh
 
 export const artemisApi = {
     _token: null as string | null,
+    _onUnauthorized: null as (() => void) | null,
+
     setToken: (token: string | null) => { artemisApi._token = token; },
     getAuthHeader: (): Record<string, string> => (artemisApi._token ? { Authorization: `Bearer ${artemisApi._token}` } : {}),
+
+    /** Register a callback (e.g. logout) to fire on any 401 response */
+    onUnauthorized: (cb: () => void) => { artemisApi._onUnauthorized = cb; },
+
+    /** Check response for 401 and auto-logout if so */
+    _handleResponse: async (res: Response) => {
+        if (res.status === 401) {
+            artemisApi._onUnauthorized?.();
+            throw new Error('Session expired');
+        }
+        return res;
+    },
 
     login: async (payload: any) => {
         const res = await fetch(`${BACKEND_URL}/auth/login`, {
@@ -32,15 +46,14 @@ export const artemisApi = {
 
     chat: async (message: string) => {
         try {
-            const response = await fetch(`${BACKEND_URL}/mcp/chat`, {
+            const response = await artemisApi._handleResponse(await fetch(`${BACKEND_URL}/mcp/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // Note: Auth token should be injected here if we were using real auth
                     ...artemisApi.getAuthHeader(),
                 },
                 body: JSON.stringify({ message })
-            });
+            }));
 
             if (!response.ok) {
                 throw new Error(`API returned ${response.status}`);
@@ -55,9 +68,9 @@ export const artemisApi = {
 
     getChatHistory: async () => {
         try {
-            const response = await fetch(`${BACKEND_URL}/mcp/history`, {
+            const response = await artemisApi._handleResponse(await fetch(`${BACKEND_URL}/mcp/history`, {
                 headers: artemisApi.getAuthHeader()
-            });
+            }));
             if (!response.ok) throw new Error('Failed to fetch chat history');
             return await response.json();
         } catch (error) {
@@ -125,11 +138,11 @@ export const artemisApi = {
 
     getRooms: async () => {
         try {
-            const response = await fetch(`${BACKEND_URL}/rooms/`, {
+            const response = await artemisApi._handleResponse(await fetch(`${BACKEND_URL}/rooms/`, {
                 headers: {
                     ...artemisApi.getAuthHeader(),
                 }
-            });
+            }));
             return await response.json();
         } catch (error) {
             console.error("Get Rooms API error:", error);
@@ -139,11 +152,11 @@ export const artemisApi = {
 
     getDevices: async () => {
         try {
-            const response = await fetch(`${BACKEND_URL}/devices/`, {
+            const response = await artemisApi._handleResponse(await fetch(`${BACKEND_URL}/devices/`, {
                 headers: {
                     ...artemisApi.getAuthHeader(),
                 }
-            });
+            }));
             return await response.json();
         } catch (error) {
             console.error("Get Devices API error:", error);

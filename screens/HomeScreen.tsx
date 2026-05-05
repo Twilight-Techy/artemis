@@ -34,45 +34,12 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type HomeMode = 'dashboard' | 'chat';
 
-const INITIAL_MESSAGES: ChatMessage[] = [
-  {
-    id: '1',
-    role: 'assistant',
-    text: "Good evening, Alex. All systems are nominal. Your home is currently at 72°F with 3 active devices.",
-    timestamp: '9:38 PM',
-  },
-  {
-    id: '2',
-    role: 'user',
-    text: "It's getting late, turn off the lights.",
-    timestamp: '9:40 PM',
-  },
-  {
-    id: '3',
-    role: 'assistant',
-    text: "Certainly. I'm turning off the Living Room lights. Would you also like me to set the alarm for 7:00 AM?",
-    timestamp: '9:40 PM',
-  },
-  {
-    id: '4',
-    role: 'user',
-    text: 'Yes please!',
-    timestamp: '9:40 PM',
-  },
-  {
-    id: '5',
-    role: 'assistant',
-    text: "Done. Living Room lights are off, and your alarm is set for 7:00 AM tomorrow.",
-    timestamp: '9:41 PM',
-  },
-];
-
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isOffline } = useNetwork();
   const [mode, setMode] = useState<HomeMode>('dashboard');
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showMCPModal, setShowMCPModal] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const [isSending, setIsSending] = useState(false);
@@ -84,7 +51,7 @@ export default function HomeScreen() {
     const loadHistory = async () => {
       try {
         const data = await artemisApi.getChatHistory();
-        if (data.messages && data.messages.length > 0) {
+        if (data.messages) {
           setMessages(data.messages);
         }
       } catch (err) {
@@ -366,10 +333,21 @@ export default function HomeScreen() {
               data={messages}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => <ChatBubble message={item} />}
-              contentContainerStyle={styles.chatContent}
+              contentContainerStyle={[styles.chatContent, messages.length === 0 && { flex: 1, justifyContent: 'center' }]}
               showsVerticalScrollIndicator={false}
               onContentSizeChange={() =>
                 flatListRef.current?.scrollToEnd({ animated: true })
+              }
+              ListEmptyComponent={
+                <View style={{ alignItems: 'center', paddingHorizontal: 32 }}>
+                  <Ionicons name="chatbubble-ellipses-outline" size={48} color="rgba(116, 177, 255, 0.3)" />
+                  <Text style={{ fontFamily: Typography.families.headline, fontSize: Typography.sizes.headlineSm, color: Colors.onSurfaceVariant, marginTop: 16, textAlign: 'center' }}>
+                    No conversation yet
+                  </Text>
+                  <Text style={{ fontFamily: Typography.families.body, fontSize: Typography.sizes.bodySm, color: 'rgba(255,255,255,0.35)', marginTop: 8, textAlign: 'center' }}>
+                    Tap the mic or type a message to begin speaking with Artemis.
+                  </Text>
+                </View>
               }
             />
           )}

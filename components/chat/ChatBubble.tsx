@@ -6,9 +6,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 export type ChatMessage = {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'action';
   text: string;
   timestamp: string;
+  meta_info?: {
+    action_type?: string;
+    status?: string;
+    triggered_by?: string;
+    description?: string;
+    action_id?: string;
+  };
 };
 
 type Props = {
@@ -16,6 +23,44 @@ type Props = {
 };
 
 export default function ChatBubble({ message }: Props) {
+  // ── Action Execution Log ──
+  if (message.role === 'action') {
+    const status = message.meta_info?.status || 'unknown';
+    const triggeredBy = message.meta_info?.triggered_by || 'system';
+    const description = message.meta_info?.description;
+    const statusColor = status === 'success' ? '#00e3fd' : status === 'failed' ? '#ff716c' : '#b884ff';
+
+    return (
+      <View style={styles.actionWrapper}>
+        <LinearGradient
+          colors={[`${statusColor}18`, `${statusColor}08`]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.actionPill, { borderColor: `${statusColor}40` }]}
+        >
+          <View style={styles.actionIconRow}>
+            <Ionicons
+              name={status === 'success' ? 'checkmark-circle' : status === 'failed' ? 'close-circle' : 'time'}
+              size={14}
+              color={statusColor}
+            />
+            <Text style={[styles.actionTitle, { color: statusColor }]}>{message.text}</Text>
+          </View>
+          {description ? (
+            <Text style={styles.actionDesc}>{description}</Text>
+          ) : null}
+          <View style={styles.actionMeta}>
+            <Text style={styles.actionMetaText}>
+              {triggeredBy === 'automation' ? '⚙ AUTOMATION' : triggeredBy === 'mcp' ? '🧠 MCP' : '👤 USER'}
+            </Text>
+          </View>
+        </LinearGradient>
+        <Text style={styles.systemTimestamp}>{message.timestamp}</Text>
+      </View>
+    );
+  }
+
+  // ── System Message ──
   if (message.role === 'system') {
     return (
       <View style={styles.systemWrapper}>
@@ -195,5 +240,50 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: 'rgba(255, 255, 255, 0.3)',
     marginTop: 6,
+  },
+
+  /* ── Action Execution Log Styling ── */
+  actionWrapper: {
+    alignItems: 'center',
+    marginVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+  },
+  actionPill: {
+    width: '100%',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: Radii.lg,
+    borderWidth: 1,
+    gap: 6,
+  },
+  actionIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  actionTitle: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.labelSm,
+    fontWeight: Typography.weights.bold,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    flexShrink: 1,
+  },
+  actionDesc: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.labelSm,
+    color: 'rgba(255, 255, 255, 0.5)',
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  actionMeta: {
+    marginTop: 4,
+  },
+  actionMetaText: {
+    fontFamily: Typography.families.label,
+    fontSize: 9,
+    color: 'rgba(255, 255, 255, 0.35)',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
 });

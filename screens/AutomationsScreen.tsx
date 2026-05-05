@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Switch, Dimensions, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
@@ -18,10 +18,12 @@ export default function AutomationsScreen() {
 
   const [automations, setAutomations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  const hasLoaded = useRef(false);
   useFocusEffect(
     useCallback(() => {
-      fetchAutomations();
+      if (!hasLoaded.current) {
+        fetchAutomations();
+      }
     }, [])
   );
 
@@ -30,6 +32,7 @@ export default function AutomationsScreen() {
     try {
       const data = await artemisApi.getAutomations();
       setAutomations(data);
+      hasLoaded.current = true;
     } catch (error) {
       console.warn('Failed to fetch automations:', error);
     } finally {
@@ -90,72 +93,86 @@ export default function AutomationsScreen() {
           {isLoading ? (
             <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
           ) : (
-            automations.map((auto) => {
-              // We'll deterministically set icon and color based on ID length or just generic for now
-              const isEco = auto.name.toLowerCase().includes('eco') || auto.name.toLowerCase().includes('cooling');
-              const isSecurity = auto.name.toLowerCase().includes('guard') || auto.name.toLowerCase().includes('security');
-              
-              let color: string = Colors.tertiary;
-              let iconName: string = 'auto-awesome';
-              let tagLabel: string = 'AUTOMATION';
-              let bg: string = 'rgba(129, 236, 255, 0.1)';
-
-              if (isEco) {
-                 color = Colors.primary;
-                 iconName = 'eco';
-                 tagLabel = 'EFFICIENCY';
-                 bg = 'rgba(116, 177, 255, 0.1)';
-              } else if (isSecurity) {
-                 color = Colors.secondary;
-                 iconName = 'security';
-                 tagLabel = 'SECURITY';
-                 bg = 'rgba(184, 132, 255, 0.1)';
+            (() => {
+              if (automations.length === 0) {
+                return (
+                  <View style={styles.emptyState}>
+                    <Ionicons name="git-network-outline" size={48} color="rgba(116, 177, 255, 0.25)" />
+                    <Text style={styles.emptyTitle}>No Automations</Text>
+                    <Text style={styles.emptySubtitle}>
+                      Create an automation to orchestrate your smart environment.
+                    </Text>
+                  </View>
+                );
               }
 
-              return (
-                <TouchableOpacity 
-                  key={auto.id}
-                  style={[styles.card, !auto.is_enabled ? { opacity: 0.7 } : {}]} 
-                  activeOpacity={0.8} 
-                  onLongPress={() => navigation.navigate('AALEditor', { mode: 'edit', automationId: auto.id })}
-                >
-                  <View style={styles.cardHeader}>
-                    <View style={styles.tagContainer}>
-                      <View style={[styles.iconWrapper, { backgroundColor: bg }]}>
-                        <MaterialIcons name={iconName as any} size={16} color={color} />
+              return automations.map((auto) => {
+                // We'll deterministically set icon and color based on ID length or just generic for now
+                const isEco = auto.name.toLowerCase().includes('eco') || auto.name.toLowerCase().includes('cooling');
+                const isSecurity = auto.name.toLowerCase().includes('guard') || auto.name.toLowerCase().includes('security');
+                
+                let color: string = Colors.tertiary;
+                let iconName: string = 'auto-awesome';
+                let tagLabel: string = 'AUTOMATION';
+                let bg: string = 'rgba(129, 236, 255, 0.1)';
+
+                if (isEco) {
+                   color = Colors.primary;
+                   iconName = 'eco';
+                   tagLabel = 'EFFICIENCY';
+                   bg = 'rgba(116, 177, 255, 0.1)';
+                } else if (isSecurity) {
+                   color = Colors.secondary;
+                   iconName = 'security';
+                   tagLabel = 'SECURITY';
+                   bg = 'rgba(184, 132, 255, 0.1)';
+                }
+
+                return (
+                  <TouchableOpacity 
+                    key={auto.id}
+                    style={[styles.card, !auto.is_enabled ? { opacity: 0.7 } : {}]} 
+                    activeOpacity={0.8} 
+                    onLongPress={() => navigation.navigate('AALEditor', { mode: 'edit', automationId: auto.id })}
+                  >
+                    <View style={styles.cardHeader}>
+                      <View style={styles.tagContainer}>
+                        <View style={[styles.iconWrapper, { backgroundColor: bg }]}>
+                          <MaterialIcons name={iconName as any} size={16} color={color} />
+                        </View>
+                        <Text style={[styles.tagText, { color: color }]}>{tagLabel}</Text>
                       </View>
-                      <Text style={[styles.tagText, { color: color }]}>{tagLabel}</Text>
+                      <Switch
+                        trackColor={{ false: Colors.surfaceContainerHighest, true: color }}
+                        thumbColor={Colors.onSurface}
+                        ios_backgroundColor={Colors.surfaceContainerHighest}
+                        onValueChange={() => handleToggle(auto.id, auto.is_enabled)}
+                        value={auto.is_enabled}
+                        style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+                      />
                     </View>
-                    <Switch
-                      trackColor={{ false: Colors.surfaceContainerHighest, true: color }}
-                      thumbColor={Colors.onSurface}
-                      ios_backgroundColor={Colors.surfaceContainerHighest}
-                      onValueChange={() => handleToggle(auto.id, auto.is_enabled)}
-                      value={auto.is_enabled}
-                      style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
-                    />
-                  </View>
-                  <Text style={styles.cardTitle}>{auto.name}</Text>
-                  
-                  <View style={styles.ruleContainer}>
-                    <View style={styles.ruleRow}>
-                      <MaterialIcons name="schedule" size={16} color={Colors.onSurfaceVariant} />
-                      <Text style={styles.ruleText}>WHEN <Text style={styles.ruleHighlight}>{auto.trigger}</Text></Text>
-                    </View>
-                    {auto.condition && auto.condition !== 'true' && (
+                    <Text style={styles.cardTitle}>{auto.name}</Text>
+                    
+                    <View style={styles.ruleContainer}>
                       <View style={styles.ruleRow}>
-                        <MaterialIcons name="fact-check" size={16} color={Colors.onSurfaceVariant} />
-                        <Text style={styles.ruleText}>IF <Text style={styles.ruleHighlight}>{auto.condition}</Text></Text>
+                        <MaterialIcons name="schedule" size={16} color={Colors.onSurfaceVariant} />
+                        <Text style={styles.ruleText}>WHEN <Text style={styles.ruleHighlight}>{auto.trigger}</Text></Text>
                       </View>
-                    )}
-                    <View style={styles.ruleRow}>
-                      <Ionicons name="flash-outline" size={16} color={Colors.onSurfaceVariant} />
-                      <Text style={styles.ruleText}>THEN <Text style={styles.ruleHighlight}>{auto.action}</Text></Text>
+                      {auto.condition && auto.condition !== 'true' && (
+                        <View style={styles.ruleRow}>
+                          <MaterialIcons name="fact-check" size={16} color={Colors.onSurfaceVariant} />
+                          <Text style={styles.ruleText}>IF <Text style={styles.ruleHighlight}>{auto.condition}</Text></Text>
+                        </View>
+                      )}
+                      <View style={styles.ruleRow}>
+                        <Ionicons name="flash-outline" size={16} color={Colors.onSurfaceVariant} />
+                        <Text style={styles.ruleText}>THEN <Text style={styles.ruleHighlight}>{auto.action}</Text></Text>
+                      </View>
                     </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })
+                  </TouchableOpacity>
+                );
+              });
+            })()
           )}
         </View>
 
@@ -174,7 +191,7 @@ const styles = StyleSheet.create({
     left: '-50%',
   },
   scrollContent: {
-    paddingBottom: Spacing['5xl'] * 2,
+    paddingBottom: 140, // Ensure content isn't hidden by bottom nav
   },
   headerSection: {
     paddingHorizontal: Spacing['2xl'],
@@ -312,5 +329,28 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     fontStyle: 'italic',
     marginTop: Spacing.xl,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: Spacing['2xl'],
+    gap: Spacing.md,
+  },
+  emptyTitle: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.titleLg,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onSurface,
+    marginTop: Spacing.sm,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.bodyMd,
+    color: Colors.onSurfaceVariant,
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: '80%',
   },
 });

@@ -26,6 +26,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadToken();
   }, []);
 
+  // Wire 401 interceptor — auto-logout on expired/invalid tokens
+  useEffect(() => {
+    artemisApi.onUnauthorized(() => {
+      logout();
+    });
+  }, []);
+
   const loadToken = async () => {
     try {
       const storedToken = await AsyncStorage.getItem('@artemis_token');

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, TextInput, Animated, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -22,6 +22,7 @@ export default function FunctionsScreen() {
   
   const [functionsList, setFunctionsList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const hasLoaded = useRef(false);
 
   const [selectedFunctionId, setSelectedFunctionId] = useState<string | null>(null);
   const [confirmExecuteId, setConfirmExecuteId] = useState<string | null>(null);
@@ -33,7 +34,9 @@ export default function FunctionsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchFunctions();
+      if (!hasLoaded.current) {
+        fetchFunctions();
+      }
     }, [])
   );
 
@@ -42,6 +45,7 @@ export default function FunctionsScreen() {
     try {
       const data = await artemisApi.getFunctions();
       setFunctionsList(data);
+      hasLoaded.current = true;
     } catch (e) {
       console.warn("Failed to fetch functions", e);
     } finally {
@@ -151,17 +155,34 @@ export default function FunctionsScreen() {
           })}
         </ScrollView>
 
-        {/* ΓòÉΓòÉΓòÉ Functions List ΓòÉΓòÉΓòÉ */}
+        {/* Functions List */}
         <View style={styles.functionsList}>
           {isLoading ? (
             <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
           ) : (
-            functionsList
-              .filter(f => {
+            (() => {
+              const filtered = functionsList.filter(f => {
                 if (activeFilter === 'All Functions') return true;
                 return f.function_type.toLowerCase() === activeFilter.toLowerCase();
-              })
-              .map((fn) => {
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <View style={styles.emptyState}>
+                    <Ionicons name="cube-outline" size={48} color="rgba(116, 177, 255, 0.25)" />
+                    <Text style={styles.emptyTitle}>
+                      {functionsList.length === 0 ? 'No functions yet' : `No ${activeFilter.toLowerCase()} functions`}
+                    </Text>
+                    <Text style={styles.emptySubtitle}>
+                      {functionsList.length === 0
+                        ? 'Create your first custom function to begin orchestrating your environment.'
+                        : 'Try a different filter or create a new function.'}
+                    </Text>
+                  </View>
+                );
+              }
+
+              return filtered.map((fn) => {
                 
                 // Determine styling based on type
                 let icon: string = 'hardware-chip-outline';
@@ -218,18 +239,11 @@ export default function FunctionsScreen() {
                     </View>
                   </TouchableOpacity>
                 );
-              })
+              });
+            })()
           )}
 
 
-          {/* ΓòÉΓòÉΓòÉ Neural Core Footer Graphic ΓòÉΓòÉΓòÉ */}
-          <View style={styles.neuralCoreContainer}>
-            <View style={[styles.neuralRing, styles.neuralRingOuter]}>
-              <View style={[styles.neuralRing, styles.neuralRingInner]}>
-                <MaterialCommunityIcons name="brain" size={56} color={Colors.tertiary} style={{ shadowColor: Colors.tertiary, shadowOpacity: 0.8, shadowRadius: 20, shadowOffset: { width: 0, height: 0 } }} />
-              </View>
-            </View>
-          </View>
 
         </View>
       </ScrollView>
@@ -381,7 +395,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   scrollContent: {
-    paddingBottom: Spacing['4xl'],
+    paddingBottom: 140, // Ensure content isn't hidden by bottom nav
   },
   headerSection: {
     paddingHorizontal: Spacing['2xl'],
@@ -679,5 +693,28 @@ const styles = StyleSheet.create({
     fontFamily: Typography.families.label,
     fontSize: Typography.sizes.labelLg,
     color: Colors.onSurface,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: Spacing['2xl'],
+    gap: Spacing.md,
+  },
+  emptyTitle: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.titleLg,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onSurface,
+    marginTop: Spacing.sm,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.bodyMd,
+    color: Colors.onSurfaceVariant,
+    textAlign: 'center',
+    lineHeight: 20,
+    maxWidth: '80%',
   },
 });

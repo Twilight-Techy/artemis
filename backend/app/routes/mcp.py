@@ -47,28 +47,78 @@ async def get_history(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Retrieve chat history for the current user."""
+    """Retrieve chat history + execution logs as a merged timeline."""
     from sqlalchemy import select
-    query = await db.execute(
+
+    # 1. Fetch chat messages
+    chat_query = await db.execute(
         select(ChatMessage)
         .where(ChatMessage.user_id == current_user.id)
         .order_by(ChatMessage.created_at.asc())
         .limit(limit)
     )
-    messages = query.scalars().all()
-    
-    formatted_msgs = []
-    for m in messages:
-        # Convert UTC to local timestamp roughly, or just pass ISO
+    chat_msgs = chat_query.scalars().all()
+
+    # 2. Fetch execution logs
+    log_query = await db.execute(
+        select(ExecutionLog)
+        .where(ExecutionLog.user_id == current_user.id)
+        .order_by(ExecutionLog.executed_at.asc())
+        .limit(limit)
+    )
+    exec_logs = log_query.scalars().all()
+
+    # 3. Build a unified timeline
+    timeline = []
+
+    for m in chat_msgs:
         ts = m.created_at.strftime("%I:%M %p").lstrip("0")
-        formatted_msgs.append({
+        timeline.append({
             "id": m.id,
             "role": m.role,
             "text": m.content,
             "timestamp": ts,
-            "meta_info": m.meta_info
+            "meta_info": m.meta_info,
+            "sort_key": m.created_at.isoformat(),
         })
-    return {"messages": formatted_msgs}
+
+    # Track which action IDs are already represented by system chat messages
+    existing_action_ids = set()
+    for m in chat_msgs:
+        if m.role == "system" and m.meta_info and m.meta_info.get("action_id"):
+            existing_action_ids.add(m.meta_info["action_id"])
+
+    # Add execution logs that don't already have a matching system message
+    for log in exec_logs:
+        if log.id in existing_action_ids:
+            continue
+
+        ts = log.executed_at.strftime("%I:%M %p").lstrip("0")
+        description = log.response_payload.get("description", "") if log.response_payload else ""
+        status_emoji = "✓" if log.status == "success" else ("✗" if log.status == "failed" else "⏳")
+
+        timeline.append({
+            "id": f"action-{log.id}",
+            "role": "action",
+            "text": f"{status_emoji} {log.target_name or log.action_type}",
+            "timestamp": ts,
+            "meta_info": {
+                "action_type": log.action_type,
+                "status": log.status,
+                "triggered_by": log.triggered_by,
+                "description": description,
+            },
+            "sort_key": log.executed_at.isoformat(),
+        })
+
+    # 4. Sort by time
+    timeline.sort(key=lambda x: x["sort_key"])
+
+    # Remove sort_key before sending to client
+    for item in timeline:
+        item.pop("sort_key", None)
+
+    return {"messages": timeline}
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(

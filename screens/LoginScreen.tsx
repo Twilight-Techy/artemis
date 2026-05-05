@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
@@ -37,8 +37,15 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
-      <View style={styles.content}>
+    <KeyboardAvoidingView 
+      style={[styles.root, { paddingTop: insets.top }]} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView 
+        contentContainerStyle={styles.contentContainer} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.headerBox}>
           <LinearGradient colors={[Colors.primary, Colors.secondary]} style={styles.orb}>
             <View style={styles.orbInner}>
@@ -88,14 +95,15 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.registerLink} onPress={() => navigation.navigate('Register')}>
           <Text style={styles.registerText}>UNREGISTERED? INITIALIZE NEW ID</Text>
         </TouchableOpacity>
-      </View>
-    </View>
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: Colors.background, paddingHorizontal: Spacing['2xl'] },
-  content: { flex: 1, justifyContent: 'center' },
+  root: { flex: 1, backgroundColor: Colors.background },
+  contentContainer: { paddingHorizontal: Spacing['2xl'], flexGrow: 1, justifyContent: 'center' },
   headerBox: { alignItems: 'center', marginBottom: Spacing['4xl'] },
   orb: { width: 90, height: 90, borderRadius: 45, padding: 3, marginBottom: Spacing.xl },
   orbInner: { flex: 1, backgroundColor: Colors.background, borderRadius: 45, justifyContent: 'center', alignItems: 'center' },
