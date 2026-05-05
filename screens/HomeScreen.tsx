@@ -98,9 +98,9 @@ export default function HomeScreen() {
   };
 
   const handleExecuteLogic = async () => {
+    setShowMCPModal(false);
     if (!pendingAction) return;
 
-    setShowMCPModal(false);
     setMode('chat');
     
     try {
@@ -125,8 +125,8 @@ export default function HomeScreen() {
   };
 
   const declineAction = async () => {
-    if (!pendingAction) return;
     setShowMCPModal(false);
+    if (!pendingAction) return;
     
     try {
       await artemisApi.declineAction(pendingAction.action_id);
