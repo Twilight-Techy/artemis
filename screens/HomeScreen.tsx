@@ -12,7 +12,7 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
-import { Audio } from 'expo-av';
+import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -78,7 +78,7 @@ export default function HomeScreen() {
   const [isSending, setIsSending] = useState(false);
   const [pendingAction, setPendingAction] = useState<any>(null);
   const [orbState, setOrbState] = useState<OrbState>('idle');
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -97,16 +97,9 @@ export default function HomeScreen() {
   const handleMicPressIn = async () => {
     try {
       setOrbState('listening');
-      const permission = await Audio.requestPermissionsAsync();
-      if (permission.status === 'granted') {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: true,
-          playsInSilentModeIOS: true,
-        });
-        const { recording: newRecording } = await Audio.Recording.createAsync(
-          Audio.RecordingOptionsPresets.HIGH_QUALITY
-        );
-        setRecording(newRecording);
+      const status = await AudioModule.requestRecordingPermissionsAsync();
+      if (status.granted) {
+        audioRecorder.record();
       }
     } catch (err) {
       console.error('Failed to start recording', err);
@@ -116,15 +109,10 @@ export default function HomeScreen() {
 
   const handleMicPressOut = async () => {
     setOrbState('processing');
-    if (!recording) {
-      setOrbState('idle');
-      return;
-    }
     
     try {
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
-      setRecording(null);
+      await audioRecorder.stop();
+      const uri = audioRecorder.uri;
       
       if (uri) {
         const { transcript } = await artemisApi.transcribeAudio(uri);

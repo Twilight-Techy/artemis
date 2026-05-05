@@ -1,54 +1,75 @@
-import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing } from '../constants/theme';
 import TopNavBar from '../components/TopNavBar';
-import { Device, DeviceType } from '../components/devices/types';
+import { Device, DeviceType, mapBackendDevice } from '../components/devices/types';
 import { DeviceFilterBar, FilterCategory } from '../components/devices/DeviceFilterBar';
 import { RoomSection } from '../components/devices/RoomSection';
 import { DeviceDetailModal } from '../components/devices/DeviceDetailModal';
 import { RootStackParamList } from '../navigation/AppNavigator';
-
-const MOCK_DEVICES: Device[] = [
-  {
-    id: '1', roomId: 'Living Room', name: 'Main Lights', type: 'light', isOn: true, intensity: 80, color: '#74B1FF'
-  },
-  {
-    id: '2', roomId: 'Living Room', name: 'AC Unit', type: 'climate', isOn: true, temperature: 22
-  },
-  {
-    id: '3', roomId: 'Bedroom', name: 'Bedside Lamp', type: 'light', isOn: false, intensity: 40, color: '#FF716C'
-  },
-  {
-    id: '4', roomId: 'Bedroom', name: 'Smart Blinds', type: 'shade', isOn: true, position: 20
-  },
-  {
-    id: '5', roomId: 'Kitchen', name: 'Coffee Maker', type: 'appliance', isOn: false, statusText: 'Ready'
-  },
-  {
-    id: '6', roomId: 'Living Room', name: 'Temp Sensor', type: 'sensor', isOn: true, statusText: '22.5┬░C'
-  }
-];
+import { artemisApi } from '../api/artemisClient';
 
 export default function DevicesScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('All');
-  const [devices, setDevices] = useState<Device[]>(MOCK_DEVICES);
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Modal state
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
 
-  const handleDeviceToggle = (id: string, newState: boolean) => {
+  // ── Fetch devices + rooms from backend ──
+  const loadDevices = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [devicesData, roomsData] = await Promise.all([
+        artemisApi.getDevices(),
+        artemisApi.getRooms(),
+      ]);
+
+      // Build a room ID → name lookup
+      const roomMap: Record<string, string> = {};
+      if (Array.isArray(roomsData)) {
+        roomsData.forEach((r: any) => { roomMap[r.id] = r.name; });
+      }
+
+      // Map backend devices to frontend Device type
+      const mapped: Device[] = (Array.isArray(devicesData) ? devicesData : []).map((raw: any) =>
+        mapBackendDevice(raw, roomMap[raw.room_id] ?? 'Unknown')
+      );
+
+      setDevices(mapped);
+    } catch (err) {
+      console.error('Failed to load devices:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDevices();
+  }, [loadDevices]);
+
+  // ── Device toggle (local + API) ──
+  const handleDeviceToggle = async (id: string, newState: boolean) => {
+    // Optimistic local update
     setDevices(prev => prev.map(dev => dev.id === id ? { ...dev, isOn: newState } : dev));
-    
-    // Update selected device if it's currently open
     if (selectedDevice?.id === id) {
       setSelectedDevice(prev => prev ? { ...prev, isOn: newState } : null);
+    }
+
+    // Send command to backend
+    try {
+      await artemisApi.controlDevice(id, newState ? 'on' : 'off');
+    } catch (err) {
+      console.error('Toggle failed, reverting:', err);
+      setDevices(prev => prev.map(dev => dev.id === id ? { ...dev, isOn: !newState } : dev));
     }
   };
 
@@ -56,40 +77,56 @@ export default function DevicesScreen() {
     setSelectedDevice(device);
   };
 
-  const handleUpdateDeviceValue = (updates: Partial<Device>) => {
+  // ── Update specific device values (brightness, speed, etc.) ──
+  const handleUpdateDeviceValue = async (updates: Partial<Device>) => {
     if (!selectedDevice) return;
     
-    // Update local state
+    // Optimistic local update
     setDevices(prev => prev.map(dev => 
       dev.id === selectedDevice.id ? { ...dev, ...updates } : dev
     ));
-    
-    // Update currently selected
     setSelectedDevice(prev => prev ? { ...prev, ...updates } : null);
+
+    // Build backend payload from the updates
+    const payload: Record<string, any> = {};
+    if (updates.intensity !== undefined) payload.brightness = updates.intensity;
+    if (updates.color !== undefined)     payload.color = updates.color;
+    if (updates.temperature !== undefined) payload.temperature = updates.temperature;
+    if (updates.speed !== undefined)      payload.speed = updates.speed;
+    if (updates.volume !== undefined)     payload.volume = updates.volume;
+
+    try {
+      await artemisApi.controlDevice(selectedDevice.id, 'set', payload);
+    } catch (err) {
+      console.error('Update value failed:', err);
+    }
   };
 
   const handleDeviceLongPress = (device: Device) => {
     navigation.navigate('EditDevice', {
       deviceId: device.id,
       deviceName: device.name,
-      roomId: device.roomId,
+      roomId: device.roomRawId,
       deviceType: device.type,
     });
   };
 
+  // ── Filtering ──
   const filteredDevices = useMemo(() => {
     if (activeFilter === 'All') return devices;
     
-    return devices.filter(dev => {
-      if (activeFilter === 'Lights' && dev.type === 'light') return true;
-      if (activeFilter === 'Climate' && dev.type === 'climate') return true;
-      if (activeFilter === 'Sensors' && dev.type === 'sensor') return true;
-      if (activeFilter === 'Security' && dev.type === 'sensor') return true; // Just reuse sensor for mockup
-      return false;
-    });
+    const typeMap: Record<string, DeviceType[]> = {
+      Lights:   ['light'],
+      Climate:  ['climate', 'fan'],
+      Sensors:  ['sensor'],
+      Security: ['security'],
+    };
+
+    const allowedTypes = typeMap[activeFilter] ?? [];
+    return devices.filter(dev => allowedTypes.includes(dev.type));
   }, [devices, activeFilter]);
 
-  // Group by room
+  // ── Group by room ──
   const rooms = useMemo(() => {
     const grouped: Record<string, Device[]> = {};
     filteredDevices.forEach(dev => {
@@ -103,7 +140,7 @@ export default function DevicesScreen() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <TopNavBar />
       
-      {/* ΓòÉΓòÉΓòÉ Greeting Section ΓòÉΓòÉΓòÉ */}
+      {/* ── Greeting Section ── */}
       <View style={styles.greetingSection}>
         <View style={styles.headlineRow}>
           <Text style={styles.headline}>Connected </Text>
@@ -118,18 +155,33 @@ export default function DevicesScreen() {
         <DeviceFilterBar activeFilter={activeFilter} onSelect={setActiveFilter} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {Object.keys(rooms).map(roomName => (
-          <RoomSection
-            key={roomName}
-            roomName={roomName}
-            devices={rooms[roomName]}
-            onDevicePress={handleDevicePress}
-            onDeviceToggle={handleDeviceToggle}
-            onDeviceLongPress={handleDeviceLongPress}
-          />
-        ))}
-      </ScrollView>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Syncing devices...</Text>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {Object.keys(rooms).length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="hardware-chip-outline" size={48} color={Colors.onSurfaceVariant} />
+              <Text style={styles.emptyText}>No devices found</Text>
+              <Text style={styles.emptySubText}>Add a device to get started</Text>
+            </View>
+          ) : (
+            Object.keys(rooms).map(roomName => (
+              <RoomSection
+                key={roomName}
+                roomName={roomName}
+                devices={rooms[roomName]}
+                onDevicePress={handleDevicePress}
+                onDeviceToggle={handleDeviceToggle}
+                onDeviceLongPress={handleDeviceLongPress}
+              />
+            ))
+          )}
+        </ScrollView>
+      )}
 
       <DeviceDetailModal
         visible={!!selectedDevice}
@@ -142,8 +194,8 @@ export default function DevicesScreen() {
         }}
         onUpdateValue={handleUpdateDeviceValue}
         onEdit={(device) => {
-          setSelectedDevice(null); // Close modal
-          handleDeviceLongPress(device); // Navigate to edit
+          setSelectedDevice(null);
+          handleDeviceLongPress(device);
         }}
       />
 
@@ -197,6 +249,34 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 120,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.md,
+    paddingTop: 60,
+  },
+  loadingText: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.bodyLg,
+    color: Colors.onSurfaceVariant,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 80,
+    gap: Spacing.sm,
+  },
+  emptyText: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.headlineMd,
+    color: Colors.onSurface,
+  },
+  emptySubText: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.bodyLg,
+    color: Colors.onSurfaceVariant,
   },
   fab: {
     position: 'absolute',

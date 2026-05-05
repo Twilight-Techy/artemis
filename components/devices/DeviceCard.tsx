@@ -17,10 +17,12 @@ export function DeviceCard({ device, onPress, onToggle, onLongPress }: Props) {
     switch (device.type) {
       case 'light': return 'lightbulb-outline';
       case 'climate': return 'ac-unit';
+      case 'fan': return 'air';
       case 'media': return 'speaker';
-      case 'shade': return 'blinds';
-      case 'appliance': return 'kitchen';
       case 'sensor': return 'sensors';
+      case 'security': return 'shield';
+      case 'switch': return 'power';
+      case 'other': return 'device-unknown';
       default: return 'device-unknown';
     }
   };
@@ -30,9 +32,11 @@ export function DeviceCard({ device, onPress, onToggle, onLongPress }: Props) {
     switch (device.type) {
       case 'light': return Colors.primary;
       case 'climate': return Colors.tertiary;
+      case 'fan': return Colors.tertiaryFixed;
       case 'media': return Colors.secondary;
-      case 'appliance': return Colors.tertiaryFixed;
       case 'sensor': return Colors.onSurface;
+      case 'security': return Colors.error;
+      case 'switch': return Colors.primary;
       default: return Colors.primary;
     }
   };

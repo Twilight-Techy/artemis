@@ -15,59 +15,132 @@ async def seed_database():
     async with AsyncSessionLocal() as db:
         print("Creating User...")
         # 1. Create User
-        user = await db.get(User, "test-user-id")
-        if not user:
-            user = User(
-                id="test-user-id",
-                username="alex",
-                email="alex@artemis.local",
-                hashed_password=hash_password("password123"),
-                display_name="Alex"
-            )
-            db.add(user)
+        user = User(
+            id="test-user-id",
+            username="alex",
+            email="alex@artemis.local",
+            hashed_password=hash_password("password123"),
+            display_name="Alex"
+        )
+        db.add(user)
+        await db.flush()  # Ensure user exists for FK references
 
         print("Creating Rooms...")
         # 2. Create Rooms
-        room = await db.get(Room, "test-room-id")
-        if not room:
-            room = Room(
-                id="test-room-id",
-                name="Living Room",
-                owner_id="test-user-id"
-            )
-            db.add(room)
+        rooms = [
+            Room(id="room-living",  name="Living Room",  icon="sofa-outline",   color="#74b1ff", owner_id="test-user-id"),
+            Room(id="room-bedroom", name="Bedroom",      icon="bed-outline",    color="#b884ff", owner_id="test-user-id"),
+            Room(id="room-kitchen", name="Kitchen",       icon="cafe-outline",   color="#81ecff", owner_id="test-user-id"),
+            Room(id="room-studio",  name="Studio",        icon="desktop-outline",color="#00e3fd", owner_id="test-user-id"),
+        ]
+        for r in rooms:
+            db.add(r)
+        await db.flush()  # Ensure rooms exist for device FK references
 
-        print("Creating ESP32 Devices...")
-        # 3. Create Devices matching ESP32 Channels
+        print("Creating Devices...")
+        # 3. Create Devices — diverse types with proper capabilities & state
         devices = [
-            # ID mappings correspond to hardware_service.DEVICE_PIN_MAP or typical naming
+            # ── Living Room ──────────────────────────────────
             Device(
-                id="test-device-fan", name="Studio Fan", device_type=DeviceType.FAN, room_id="test-room-id", owner_id="test-user-id",
+                id="dev-lr-ceiling", name="Ceiling Light",
+                device_type=DeviceType.LIGHT, room_id="room-living", owner_id="test-user-id",
+                capabilities={"power": True, "brightness": True, "color_temp": True},
+                state={"is_on": True, "brightness": 80, "color_temp": 4000}
+            ),
+            Device(
+                id="dev-lr-ledstrip", name="Ambient LED Strip",
+                device_type=DeviceType.LIGHT, room_id="room-living", owner_id="test-user-id",
+                capabilities={"power": True, "brightness": True, "rgb_color": True},
+                state={"is_on": True, "brightness": 60, "color": "#74b1ff"}
+            ),
+            Device(
+                id="dev-lr-ac", name="AC Unit",
+                device_type=DeviceType.CLIMATE, room_id="room-living", owner_id="test-user-id",
+                capabilities={"power": True, "temperature": True, "modes": ["cool", "heat", "auto"]},
+                state={"is_on": True, "temperature": 22, "mode": "cool"}
+            ),
+            Device(
+                id="dev-lr-tv", name="Smart TV",
+                device_type=DeviceType.MEDIA, room_id="room-living", owner_id="test-user-id",
+                capabilities={"power": True, "volume": True},
+                state={"is_on": False, "volume": 35}
+            ),
+            Device(
+                id="dev-lr-temp", name="Temp Sensor",
+                device_type=DeviceType.SENSOR, room_id="room-living", owner_id="test-user-id",
+                capabilities={"reading_types": ["temperature", "humidity"]},
+                state={"is_on": True, "reading": 22.5, "unit": "°C"}
+            ),
+
+            # ── Bedroom ──────────────────────────────────────
+            Device(
+                id="dev-bd-lamp", name="Bedside Lamp",
+                device_type=DeviceType.LIGHT, room_id="room-bedroom", owner_id="test-user-id",
+                capabilities={"power": True, "brightness": True, "rgb_color": True},
+                state={"is_on": False, "brightness": 40, "color": "#FF716C"}
+            ),
+            Device(
+                id="dev-bd-fan", name="Ceiling Fan",
+                device_type=DeviceType.FAN, room_id="room-bedroom", owner_id="test-user-id",
+                capabilities={"power": True, "speed_steps": 3},
+                state={"is_on": True, "speed": 2}
+            ),
+            Device(
+                id="dev-bd-cam", name="Security Camera",
+                device_type=DeviceType.SECURITY, room_id="room-bedroom", owner_id="test-user-id",
+                capabilities={"power": True, "motion_detection": True, "night_vision": True},
+                state={"is_on": True, "armed": True}
+            ),
+
+            # ── Kitchen ──────────────────────────────────────
+            Device(
+                id="dev-kt-light", name="Kitchen Downlights",
+                device_type=DeviceType.LIGHT, room_id="room-kitchen", owner_id="test-user-id",
+                capabilities={"power": True, "brightness": True},
+                state={"is_on": True, "brightness": 100}
+            ),
+            Device(
+                id="dev-kt-smoke", name="Smoke Detector",
+                device_type=DeviceType.SENSOR, room_id="room-kitchen", owner_id="test-user-id",
+                capabilities={"reading_types": ["smoke"]},
+                state={"is_on": True, "reading": 0, "unit": "ppm", "status": "Clear"}
+            ),
+            Device(
+                id="dev-kt-plug", name="Coffee Maker Plug",
+                device_type=DeviceType.SWITCH, room_id="room-kitchen", owner_id="test-user-id",
+                capabilities={"power": True},
+                state={"is_on": False}
+            ),
+
+            # ── Studio ───────────────────────────────────────
+            Device(
+                id="dev-st-fan", name="Studio Fan",
+                device_type=DeviceType.FAN, room_id="room-studio", owner_id="test-user-id",
                 capabilities={"power": True, "speed_steps": 3},
                 state={"is_on": False, "speed": 1}
             ),
             Device(
-                id="test-device-led", name="Ambient LED Strip", device_type=DeviceType.LIGHT, room_id="test-room-id", owner_id="test-user-id",
+                id="dev-st-led", name="Desk RGB Strip",
+                device_type=DeviceType.LIGHT, room_id="room-studio", owner_id="test-user-id",
                 capabilities={"power": True, "brightness": True, "rgb_color": True, "color_temp": True},
-                state={"is_on": True, "brightness": 75, "color": "#74b1ff"}
+                state={"is_on": True, "brightness": 75, "color": "#b884ff"}
             ),
             Device(
-                id="test-device-spare", name="Spare Relay", device_type=DeviceType.SWITCH, room_id="test-room-id", owner_id="test-user-id",
+                id="dev-st-relay", name="Spare Relay",
+                device_type=DeviceType.SWITCH, room_id="room-studio", owner_id="test-user-id",
                 capabilities={"power": True},
                 state={"is_on": False}
             ),
         ]
         
         for d in devices:
-            existing = await db.get(Device, d.id)
-            if not existing:
-                db.add(d)
+            db.add(d)
+        await db.flush()  # Ensure devices exist before logs
 
         print("Creating Core Automations...")
         # 4. Automations Example
-        auto = await db.get(Automation, "test-auto-id")
-        if not auto:
-            auto = Automation(
+        automations = [
+            Automation(
                 id="test-auto-id",
                 name="Auto Cooling",
                 automation_type="aal",
@@ -76,12 +149,8 @@ async def seed_database():
                 action="silently turn on fan",
                 is_enabled=True,
                 owner_id="test-user-id"
-            )
-            db.add(auto)
-
-        auto2 = await db.get(Automation, "test-auto-id-2")
-        if not auto2:
-            auto2 = Automation(
+            ),
+            Automation(
                 id="test-auto-id-2",
                 name="Morning Routine",
                 automation_type="aal",
@@ -90,8 +159,10 @@ async def seed_database():
                 action="suggest wake up living room",
                 is_enabled=True,
                 owner_id="test-user-id"
-            )
-            db.add(auto2)
+            ),
+        ]
+        for a in automations:
+            db.add(a)
 
         print("Creating Core Functions...")
         from app.models import Function, ExecutionLog
@@ -128,10 +199,8 @@ async def seed_database():
             )
         ]
 
-        for num, f in enumerate(functions):
-            existing = await db.get(Function, f.id)
-            if not existing:
-                db.add(f)
+        for f in functions:
+            db.add(f)
 
         print("Creating Execution Logs (History)...")
         logs = [
@@ -165,17 +234,16 @@ async def seed_database():
             )
         ]
         for l in logs:
-            existing = await db.get(ExecutionLog, l.id)
-            if not existing:
-                db.add(l)
+            db.add(l)
 
         await db.commit()
         print("Database Seeded Successfully!")
         print("-------------------------------")
-        print("Test User: alex@artemis.local")
-        print("Devices:")
+        print("Test User: alex@artemis.local / password123")
+        print(f"Rooms: {len(rooms)}")
+        print(f"Devices: {len(devices)}")
         for d in devices:
-             print(f" - {d.name} ({d.id})")
+             print(f"  [{d.device_type.value:8}] {d.name} -> {d.room_id}")
              
     await engine.dispose()
         

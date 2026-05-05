@@ -6,6 +6,7 @@ import { Device } from './types';
 import { SliderControl } from './controls/SliderControl';
 import { ClimateControl } from './controls/ClimateControl';
 import { ColorPickerControl } from './controls/ColorPickerControl';
+import { FanSpeedControl } from './controls/FanSpeedControl';
 import { BlurView } from 'expo-blur';
 
 interface Props {
@@ -50,6 +51,7 @@ export function DeviceDetailModal({ visible, device, onClose, onToggle, onUpdate
           </View>
 
           <View style={styles.controlsSection}>
+            {/* ── Light: Brightness ── */}
             {device.type === 'light' && device.intensity !== undefined && (
               <View style={styles.controlGroup}>
                 <Text style={styles.controlLabel}>Brightness</Text>
@@ -61,6 +63,7 @@ export function DeviceDetailModal({ visible, device, onClose, onToggle, onUpdate
               </View>
             )}
 
+            {/* ── Light: Color ── */}
             {device.type === 'light' && device.color !== undefined && (
               <View style={styles.controlGroup}>
                 <Text style={styles.controlLabel}>Color</Text>
@@ -72,6 +75,7 @@ export function DeviceDetailModal({ visible, device, onClose, onToggle, onUpdate
               </View>
             )}
 
+            {/* ── Climate: Temperature ── */}
             {device.type === 'climate' && device.temperature !== undefined && (
               <View style={styles.controlGroup}>
                 <Text style={styles.controlLabel}>Temperature target</Text>
@@ -84,30 +88,60 @@ export function DeviceDetailModal({ visible, device, onClose, onToggle, onUpdate
               </View>
             )}
 
-            {(device.type === 'media' || device.type === 'shade') && device.position !== undefined && (
+            {/* ── Fan: Speed Steps ── */}
+            {device.type === 'fan' && device.speed !== undefined && (
               <View style={styles.controlGroup}>
-                <Text style={styles.controlLabel}>
-                  {device.type === 'media' ? 'Volume' : 'Position'}
-                </Text>
-                <SliderControl 
-                  value={device.position} 
-                  onChange={(val) => onUpdateValue({ position: val })}
+                <Text style={styles.controlLabel}>Fan Speed</Text>
+                <FanSpeedControl
+                  speed={device.speed}
+                  maxSteps={device.speedSteps ?? 3}
+                  onChange={(speed) => onUpdateValue({ speed })}
                   disabled={!device.isOn}
                 />
               </View>
             )}
-            
-            {device.type === 'appliance' && device.statusText && (
+
+            {/* ── Media: Volume ── */}
+            {device.type === 'media' && device.volume !== undefined && (
               <View style={styles.controlGroup}>
-                <Text style={styles.controlLabel}>Status Indicator</Text>
-                <Text style={styles.infoText}>{device.statusText}</Text>
+                <Text style={styles.controlLabel}>Volume</Text>
+                <SliderControl 
+                  value={device.volume} 
+                  onChange={(val) => onUpdateValue({ volume: val })}
+                  disabled={!device.isOn}
+                />
+              </View>
+            )}
+
+            {/* ── Security: Status ── */}
+            {device.type === 'security' && (
+              <View style={styles.controlGroup}>
+                <Text style={styles.controlLabel}>Status</Text>
+                <Text style={styles.infoText}>{device.statusText ?? 'Unknown'}</Text>
               </View>
             )}
             
+            {/* ── Sensor: Reading ── */}
             {device.type === 'sensor' && device.statusText && (
               <View style={styles.controlGroup}>
                 <Text style={styles.controlLabel}>Reading</Text>
                 <Text style={styles.infoText}>{device.statusText}</Text>
+              </View>
+            )}
+
+            {/* ── Switch / Other: Simple status ── */}
+            {(device.type === 'switch' || device.type === 'other') && (
+              <View style={styles.controlGroup}>
+                <Text style={styles.controlLabel}>Power</Text>
+                <Text style={styles.infoText}>{device.isOn ? 'Powered On' : 'Powered Off'}</Text>
+              </View>
+            )}
+
+            {/* ── Online indicator ── */}
+            {!device.isOnline && (
+              <View style={styles.offlineBanner}>
+                <MaterialIcons name="cloud-off" size={16} color={Colors.error} />
+                <Text style={styles.offlineText}>Device Offline</Text>
               </View>
             )}
           </View>
@@ -127,7 +161,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: Radii.xl,
     borderTopRightRadius: Radii.xl,
     padding: Spacing['2xl'],
-    paddingBottom: Spacing['4xl'], // SafeArea padding roughly
+    paddingBottom: Spacing['4xl'],
     borderTopWidth: 1,
     borderColor: Colors.outlineVariant,
     shadowColor: Colors.background,
@@ -195,5 +229,19 @@ const styles = StyleSheet.create({
     fontSize: Typography.sizes.bodyLg,
     color: Colors.primary,
     fontWeight: Typography.weights.medium,
+  },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    backgroundColor: 'rgba(255, 113, 108, 0.1)',
+    borderRadius: Radii.md,
+  },
+  offlineText: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.labelMd,
+    color: Colors.error,
   },
 });
