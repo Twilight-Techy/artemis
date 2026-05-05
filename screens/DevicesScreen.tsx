@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   scrollContent: {
-    paddingBottom: 120,
+    paddingBottom: 220,
   },
   loadingContainer: {
     flex: 1,
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 140, // Increased to avoid falling behind the bottom nav
     right: 24,
     width: 56,
     height: 56,
