@@ -517,7 +517,7 @@ export const artemisApi = {
             throw error;
         }
     },
-    updateMe: async (payload: { display_name?: string; email?: string }) => {
+    updateMe: async (payload: { display_name?: string; email?: string; avatar_url?: string }) => {
         try {
             const response = await fetch(`${BACKEND_URL}/auth/me`, {
                 method: 'PATCH',

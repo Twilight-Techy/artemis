@@ -55,6 +55,7 @@ from pydantic import BaseModel
 class UpdateProfileRequest(BaseModel):
     display_name: str | None = None
     email: str | None = None
+    avatar_url: str | None = None
 
 @router.patch("/me", response_model=UserOut)
 async def update_me(
@@ -67,6 +68,8 @@ async def update_me(
         current_user.display_name = body.display_name
     if body.email is not None:
         current_user.email = body.email
+    if body.avatar_url is not None:
+        current_user.avatar_url = body.avatar_url
     
     await db.commit()
     await db.refresh(current_user)

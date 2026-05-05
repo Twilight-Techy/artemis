@@ -1,15 +1,33 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing } from '../constants/theme';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { artemisApi } from '../api/artemisClient';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function TopNavBar() {
   const navigation = useNavigation<NavProp>();
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchProfile = async () => {
+        try {
+          const data = await artemisApi.getMe();
+          if (data.avatar_url) {
+            setAvatarUrl(data.avatar_url);
+          }
+        } catch (error) {
+          // Silent fail for avatar
+        }
+      };
+      fetchProfile();
+    }, [])
+  );
 
   return (
     <View style={styles.topBar}>
@@ -29,10 +47,17 @@ export default function TopNavBar() {
           activeOpacity={0.7}
           style={styles.avatarRing}
         >
-          <Image
-            source={require('../assets/avatar.png')}
-            style={styles.avatar}
-          />
+          {avatarUrl ? (
+            <Image
+              source={{ uri: avatarUrl }}
+              style={styles.avatar}
+            />
+          ) : (
+            <Image
+              source={require('../assets/avatar.png')}
+              style={styles.avatar}
+            />
+          )}
         </TouchableOpacity>
       </View>
     </View>

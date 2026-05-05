@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TextInput, TouchableOpacity, ActivityIndicator, Image, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 import { artemisApi } from '../api/artemisClient';
 
 export default function ProfileSettingsScreen() {
@@ -14,7 +15,10 @@ export default function ProfileSettingsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{type: 'success' | 'error', title: string, message: string}>({ type: 'success', title: '', message: '' });
 
   useEffect(() => {
     fetchProfile();
@@ -25,6 +29,7 @@ export default function ProfileSettingsScreen() {
       const data = await artemisApi.getMe();
       setDisplayName(data.display_name || data.username || '');
       setEmail(data.email || '');
+      setAvatarUrl(data.avatar_url || null);
     } catch (e) {
       console.warn("Failed to load profile", e);
     } finally {
@@ -35,12 +40,38 @@ export default function ProfileSettingsScreen() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await artemisApi.updateMe({ display_name: displayName, email });
-      Alert.alert('Success', 'Profile updated successfully.');
+      await artemisApi.updateMe({ display_name: displayName, email, avatar_url: avatarUrl || undefined });
+      setModalConfig({ type: 'success', title: 'SUCCESS', message: 'Profile updated successfully.' });
+      setModalVisible(true);
     } catch (e) {
-      Alert.alert('Error', 'Failed to update profile.');
+      setModalConfig({ type: 'error', title: 'ERROR', message: 'Failed to update profile.' });
+      setModalVisible(true);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (permissionResult.granted === false) {
+      setModalConfig({ type: 'error', title: 'PERMISSION DENIED', message: 'Permission to access camera roll is required!' });
+      setModalVisible(true);
+      return;
+    }
+
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!pickerResult.canceled && pickerResult.assets[0].base64) {
+      // Use the base64 string for saving
+      const base64Image = `data:image/jpeg;base64,${pickerResult.assets[0].base64}`;
+      setAvatarUrl(base64Image);
     }
   };
 
@@ -61,10 +92,14 @@ export default function ProfileSettingsScreen() {
             style={styles.avatarGlow}
           >
             <View style={styles.avatarInner}>
-              <Ionicons name="person" size={48} color={Colors.surfaceContainer} />
+              {avatarUrl ? (
+                <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+              ) : (
+                <Ionicons name="person" size={48} color={Colors.surfaceContainer} />
+              )}
             </View>
           </LinearGradient>
-          <TouchableOpacity style={styles.editAvatarBtn}>
+          <TouchableOpacity style={styles.editAvatarBtn} onPress={handlePickImage}>
             <Text style={styles.editAvatarText}>CHANGE AVATAR</Text>
           </TouchableOpacity>
         </View>
@@ -96,6 +131,34 @@ export default function ProfileSettingsScreen() {
           <Text style={styles.saveBtnText}>{isSaving ? 'SAVING...' : 'UPDATE PROFILE'}</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Custom Alert Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Ionicons 
+              name={modalConfig.type === 'success' ? 'checkmark-circle' : 'close-circle'} 
+              size={56} 
+              color={modalConfig.type === 'success' ? Colors.primary : Colors.error} 
+              style={styles.modalIcon}
+            />
+            <Text style={styles.modalTitle}>{modalConfig.title}</Text>
+            <Text style={styles.modalMessage}>{modalConfig.message}</Text>
+            
+            <TouchableOpacity 
+              style={[styles.modalBtn, { backgroundColor: modalConfig.type === 'success' ? Colors.primary : Colors.error }]} 
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.modalBtnText}>DISMISS</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -119,7 +182,10 @@ const styles = StyleSheet.create({
   },
   avatarInner: {
     flex: 1, width: '100%', backgroundColor: Colors.onSurface, borderRadius: 60,
-    justifyContent: 'center', alignItems: 'center',
+    justifyContent: 'center', alignItems: 'center', overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%', height: '100%', borderRadius: 60,
   },
   editAvatarBtn: { marginTop: Spacing.xl, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.xl, borderRadius: Radii.full, backgroundColor: 'rgba(255,255,255,0.05)' },
   editAvatarText: { fontFamily: Typography.families.label, fontSize: Typography.sizes.labelSm, fontWeight: Typography.weights.bold, color: Colors.primary },
@@ -140,5 +206,57 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontFamily: Typography.families.headline, fontSize: Typography.sizes.labelMd, fontWeight: Typography.weights.bold,
     color: Colors.onPrimary, letterSpacing: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing['2xl'],
+  },
+  modalContent: {
+    backgroundColor: Colors.surfaceContainerHighest,
+    borderRadius: Radii.xl,
+    padding: Spacing['3xl'],
+    width: '100%',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  modalIcon: {
+    marginBottom: Spacing.xl,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 10,
+  },
+  modalTitle: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.titleMd,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onSurface,
+    letterSpacing: 2,
+    marginBottom: Spacing.md,
+    textAlign: 'center',
+  },
+  modalMessage: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.bodyLg,
+    color: Colors.onSurfaceVariant,
+    textAlign: 'center',
+    marginBottom: Spacing['3xl'],
+  },
+  modalBtn: {
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing['3xl'],
+    borderRadius: Radii.full,
+    width: '100%',
+    alignItems: 'center',
+  },
+  modalBtnText: {
+    fontFamily: Typography.families.label,
+    fontSize: Typography.sizes.labelMd,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onPrimary,
+    letterSpacing: 1,
   },
 });
