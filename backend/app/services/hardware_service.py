@@ -90,12 +90,32 @@ async def get_relays() -> dict:
 
 # Map device names / types to ESP32 relay pins
 DEVICE_PIN_MAP = {
-    "fan": 26,
-    "studio_fan": 26,
-    "led": 25,
-    "led_strip": 25,
-    "light": 25,
-    "spare": 33,
+    # Living Room
+    "ceiling light": 10,
+    "ambient led strip": 11,
+    "ac unit": 12,
+    "smart tv": 13,
+    
+    # Bedroom
+    "bedside lamp": 20,
+    "ceiling fan": 21,
+    "security camera": 22,
+    
+    # Kitchen
+    "kitchen downlights": 30,
+    "coffee maker plug": 31,
+    
+    # Studio
+    "studio fan": 40,
+    "desk rgb strip": 41,
+    "spare relay": 42,
+    
+    # Aliases
+    "fan": 40,
+    "led": 41,
+    "led_strip": 41,
+    "light": 10,
+    "spare": 42,
 }
 
 
@@ -122,7 +142,11 @@ async def send_command(device_name: str, action: str, value: str | None = None) 
     try:
         response = await _client.post(
             f"/api/relay/{pin}",
-            json={"state": state},
+            json={
+                "state": state,
+                "action": action,
+                "value": value
+            },
         )
         response.raise_for_status()
         return response.json()
