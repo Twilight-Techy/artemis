@@ -44,31 +44,31 @@ async def seed_database():
             # ── Living Room ──────────────────────────────────
             Device(
                 id="dev-lr-ceiling", name="Ceiling Light",
-                device_type=DeviceType.LIGHT, room_id="room-living", owner_id="test-user-id",
+                device_type=DeviceType.LIGHT, room_id="room-living", owner_id="test-user-id", pin=10,
                 capabilities={"power": True, "brightness": True, "color_temp": True},
                 state={"is_on": True, "brightness": 80, "color_temp": 4000}
             ),
             Device(
                 id="dev-lr-ledstrip", name="Ambient LED Strip",
-                device_type=DeviceType.LIGHT, room_id="room-living", owner_id="test-user-id",
+                device_type=DeviceType.LIGHT, room_id="room-living", owner_id="test-user-id", pin=11,
                 capabilities={"power": True, "brightness": True, "rgb_color": True},
                 state={"is_on": True, "brightness": 60, "color": "#74b1ff"}
             ),
             Device(
                 id="dev-lr-ac", name="AC Unit",
-                device_type=DeviceType.CLIMATE, room_id="room-living", owner_id="test-user-id",
+                device_type=DeviceType.CLIMATE, room_id="room-living", owner_id="test-user-id", pin=12,
                 capabilities={"power": True, "temperature": True, "modes": ["cool", "heat", "auto"]},
                 state={"is_on": True, "temperature": 22, "mode": "cool"}
             ),
             Device(
                 id="dev-lr-tv", name="Smart TV",
-                device_type=DeviceType.MEDIA, room_id="room-living", owner_id="test-user-id",
+                device_type=DeviceType.MEDIA, room_id="room-living", owner_id="test-user-id", pin=13,
                 capabilities={"power": True, "volume": True},
                 state={"is_on": False, "volume": 35}
             ),
             Device(
                 id="dev-lr-temp", name="Temp Sensor",
-                device_type=DeviceType.SENSOR, room_id="room-living", owner_id="test-user-id",
+                device_type=DeviceType.SENSOR, room_id="room-living", owner_id="test-user-id", pin=None,
                 capabilities={"reading_types": ["temperature", "humidity"]},
                 state={"is_on": True, "reading": 22.5, "unit": "°C"}
             ),
@@ -76,19 +76,19 @@ async def seed_database():
             # ── Bedroom ──────────────────────────────────────
             Device(
                 id="dev-bd-lamp", name="Bedside Lamp",
-                device_type=DeviceType.LIGHT, room_id="room-bedroom", owner_id="test-user-id",
+                device_type=DeviceType.LIGHT, room_id="room-bedroom", owner_id="test-user-id", pin=20,
                 capabilities={"power": True, "brightness": True, "rgb_color": True},
                 state={"is_on": False, "brightness": 40, "color": "#FF716C"}
             ),
             Device(
                 id="dev-bd-fan", name="Ceiling Fan",
-                device_type=DeviceType.FAN, room_id="room-bedroom", owner_id="test-user-id",
+                device_type=DeviceType.FAN, room_id="room-bedroom", owner_id="test-user-id", pin=21,
                 capabilities={"power": True, "speed_steps": 3},
                 state={"is_on": True, "speed": 2}
             ),
             Device(
                 id="dev-bd-cam", name="Security Camera",
-                device_type=DeviceType.SECURITY, room_id="room-bedroom", owner_id="test-user-id",
+                device_type=DeviceType.SECURITY, room_id="room-bedroom", owner_id="test-user-id", pin=22,
                 capabilities={"power": True, "motion_detection": True, "night_vision": True},
                 state={"is_on": True, "armed": True}
             ),
@@ -96,19 +96,19 @@ async def seed_database():
             # ── Kitchen ──────────────────────────────────────
             Device(
                 id="dev-kt-light", name="Kitchen Downlights",
-                device_type=DeviceType.LIGHT, room_id="room-kitchen", owner_id="test-user-id",
+                device_type=DeviceType.LIGHT, room_id="room-kitchen", owner_id="test-user-id", pin=30,
                 capabilities={"power": True, "brightness": True},
                 state={"is_on": True, "brightness": 100}
             ),
             Device(
                 id="dev-kt-smoke", name="Smoke Detector",
-                device_type=DeviceType.SENSOR, room_id="room-kitchen", owner_id="test-user-id",
+                device_type=DeviceType.SENSOR, room_id="room-kitchen", owner_id="test-user-id", pin=None,
                 capabilities={"reading_types": ["smoke"]},
                 state={"is_on": True, "reading": 0, "unit": "ppm", "status": "Clear"}
             ),
             Device(
                 id="dev-kt-plug", name="Coffee Maker Plug",
-                device_type=DeviceType.SWITCH, room_id="room-kitchen", owner_id="test-user-id",
+                device_type=DeviceType.SWITCH, room_id="room-kitchen", owner_id="test-user-id", pin=31,
                 capabilities={"power": True},
                 state={"is_on": False}
             ),
@@ -116,19 +116,19 @@ async def seed_database():
             # ── Studio ───────────────────────────────────────
             Device(
                 id="dev-st-fan", name="Studio Fan",
-                device_type=DeviceType.FAN, room_id="room-studio", owner_id="test-user-id",
+                device_type=DeviceType.FAN, room_id="room-studio", owner_id="test-user-id", pin=40,
                 capabilities={"power": True, "speed_steps": 3},
                 state={"is_on": False, "speed": 1}
             ),
             Device(
                 id="dev-st-led", name="Desk RGB Strip",
-                device_type=DeviceType.LIGHT, room_id="room-studio", owner_id="test-user-id",
+                device_type=DeviceType.LIGHT, room_id="room-studio", owner_id="test-user-id", pin=41,
                 capabilities={"power": True, "brightness": True, "rgb_color": True, "color_temp": True},
                 state={"is_on": True, "brightness": 75, "color": "#b884ff"}
             ),
             Device(
                 id="dev-st-relay", name="Spare Relay",
-                device_type=DeviceType.SWITCH, room_id="room-studio", owner_id="test-user-id",
+                device_type=DeviceType.SWITCH, room_id="room-studio", owner_id="test-user-id", pin=42,
                 capabilities={"power": True},
                 state={"is_on": False}
             ),

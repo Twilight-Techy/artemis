@@ -1,7 +1,7 @@
 import uuid
 import enum
 from datetime import datetime
-from sqlalchemy import String, Text, Boolean, Float, DateTime, ForeignKey, JSON, Enum
+from sqlalchemy import String, Text, Boolean, Float, DateTime, ForeignKey, JSON, Enum, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -67,6 +67,7 @@ class Device(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     device_type: Mapped[DeviceType] = mapped_column(Enum(DeviceType), nullable=False)
+    pin: Mapped[int | None] = mapped_column(Integer)
     protocol: Mapped[str] = mapped_column(String(30), default="http")  # http, mqtt, ble
     endpoint: Mapped[str | None] = mapped_column(String(512))  # e.g., /api/v1/relays/fan/state
     is_online: Mapped[bool] = mapped_column(Boolean, default=True)
