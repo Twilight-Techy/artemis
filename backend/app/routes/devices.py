@@ -7,6 +7,7 @@ from app.schemas import DeviceCreate, DeviceOut, DeviceCommand
 from app.services.auth_service import get_current_user
 from app.services import hardware_service
 from app.services.hardware_service import HardwareError
+from app.services import device_defaults
 
 import asyncio
 
@@ -70,13 +71,42 @@ async def list_devices(
     return result.scalars().all()
 
 
+@router.get("/{device_id}", response_model=DeviceOut)
+async def get_device(
+    device_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Device).where(Device.id == device_id, Device.owner_id == current_user.id)
+    )
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found")
+    return device
+
+
 @router.post("/", response_model=DeviceOut, status_code=status.HTTP_201_CREATED)
 async def create_device(
     body: DeviceCreate,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    device = Device(**body.model_dump(), owner_id=current_user.id)
+    data = body.model_dump()
+    caps = device_defaults.default_capabilities(body.device_type, data.get("capabilities"))
+    state = data.get("state")
+    if state is None:
+        state = device_defaults.default_state_for(body.device_type, caps)
+    device = Device(
+        name=data["name"],
+        device_type=data["device_type"],
+        protocol=data["protocol"],
+        endpoint=data.get("endpoint"),
+        room_id=data["room_id"],
+        capabilities=caps,
+        state=state,
+        owner_id=current_user.id,
+    )
     db.add(device)
     await db.commit()
     await db.refresh(device)
@@ -153,17 +183,29 @@ async def update_device(
     device = result.scalar_one_or_none()
     if not device:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Device not found")
-    
+
+    prev_type = device.device_type
+    prev_on = bool((device.state or {}).get("is_on"))
+    type_changed = prev_type != body.device_type
+
     device.name = body.name
     device.device_type = body.device_type
     device.room_id = body.room_id
     device.protocol = body.protocol
     device.endpoint = body.endpoint
+
     if body.capabilities is not None:
-        device.capabilities = body.capabilities
+        device.capabilities = device_defaults.default_capabilities(body.device_type, body.capabilities)
+    elif type_changed:
+        device.capabilities = device_defaults.default_capabilities(body.device_type, None)
+
     if body.state is not None:
         device.state = body.state
-    
+    elif type_changed:
+        st = device_defaults.default_state_for(body.device_type, device.capabilities or {})
+        st["is_on"] = prev_on
+        device.state = st
+
     await db.commit()
     await db.refresh(device)
     return device

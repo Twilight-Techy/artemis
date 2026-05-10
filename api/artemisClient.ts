@@ -164,6 +164,21 @@ export const artemisApi = {
         }
     },
 
+    getDevice: async (deviceId: string) => {
+        try {
+            const response = await artemisApi._handleResponse(await fetch(`${BACKEND_URL}/devices/${deviceId}`, {
+                headers: {
+                    ...artemisApi.getAuthHeader(),
+                }
+            }));
+            if (!response.ok) throw new Error('Failed to fetch device');
+            return await response.json();
+        } catch (error) {
+            console.error('Get Device API error:', error);
+            throw error;
+        }
+    },
+
     controlDevice: async (deviceId: string, action: string, payload?: any) => {
         try {
             const response = await fetch(`${BACKEND_URL}/devices/${deviceId}/command`, {
@@ -181,7 +196,15 @@ export const artemisApi = {
         }
     },
 
-    createDevice: async (payload: { name: string, device_type: string, room_id: string, protocol?: string, endpoint?: string }) => {
+    createDevice: async (payload: {
+        name: string;
+        device_type: string;
+        room_id: string;
+        protocol?: string;
+        endpoint?: string;
+        capabilities?: Record<string, unknown> | null;
+        state?: Record<string, unknown> | null;
+    }) => {
         try {
             const response = await fetch(`${BACKEND_URL}/devices/`, {
                 method: 'POST',
@@ -215,7 +238,15 @@ export const artemisApi = {
         }
     },
 
-    updateDevice: async (deviceId: string, payload: { name: string, device_type: string, room_id: string, protocol?: string, endpoint?: string }) => {
+    updateDevice: async (deviceId: string, payload: {
+        name: string;
+        device_type: string;
+        room_id: string;
+        protocol?: string;
+        endpoint?: string;
+        capabilities?: Record<string, unknown> | null;
+        state?: Record<string, unknown> | null;
+    }) => {
         try {
             const response = await fetch(`${BACKEND_URL}/devices/${deviceId}`, {
                 method: 'PUT',

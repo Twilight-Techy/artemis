@@ -3,7 +3,10 @@ import { View, StyleSheet, PanResponder, LayoutChangeEvent } from 'react-native'
 import { Colors, Radii } from '../../../constants/theme';
 
 interface Props {
-  value: number; // 0 to 100
+  value: number;
+  /** Inclusive range (defaults 0–100). */
+  min?: number;
+  max?: number;
   onChange?: (val: number) => void;
   trackColor?: string;
   fillColor?: string;
@@ -12,6 +15,8 @@ interface Props {
 
 export function SliderControl({ 
   value, 
+  min = 0,
+  max = 100,
   onChange, 
   trackColor = Colors.surfaceContainerHighest, 
   fillColor = Colors.primary,
@@ -37,7 +42,9 @@ export function SliderControl({
     setWidth(e.nativeEvent.layout.width);
   };
 
-  const fillWidth = `${Math.max(0, Math.min(100, value))}%`;
+  const span = max - min || 1;
+  const pct = ((value - min) / span) * 100;
+  const fillWidth = `${Math.max(0, Math.min(100, pct))}%`;
 
   return (
     <View style={styles.container} onLayout={handleLayout} {...panResponder.panHandlers}>

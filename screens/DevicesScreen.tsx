@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing } from '../constants/theme';
 import TopNavBar from '../components/TopNavBar';
 import { Device, DeviceType, mapBackendDevice } from '../components/devices/types';
+import { devicePartialToStatePayload } from '../components/devices/capabilities';
 import { DeviceFilterBar, FilterCategory } from '../components/devices/DeviceFilterBar';
 import { RoomSection } from '../components/devices/RoomSection';
 import { DeviceDetailModal } from '../components/devices/DeviceDetailModal';
@@ -87,13 +88,8 @@ export default function DevicesScreen() {
     ));
     setSelectedDevice(prev => prev ? { ...prev, ...updates } : null);
 
-    // Build backend payload from the updates
-    const payload: Record<string, any> = {};
-    if (updates.intensity !== undefined) payload.brightness = updates.intensity;
-    if (updates.color !== undefined)     payload.color = updates.color;
-    if (updates.temperature !== undefined) payload.temperature = updates.temperature;
-    if (updates.speed !== undefined)      payload.speed = updates.speed;
-    if (updates.volume !== undefined)     payload.volume = updates.volume;
+    const payload = devicePartialToStatePayload(updates);
+    if (Object.keys(payload).length === 0) return;
 
     try {
       await artemisApi.controlDevice(selectedDevice.id, 'set', payload);

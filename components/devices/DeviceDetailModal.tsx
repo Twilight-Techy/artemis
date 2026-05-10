@@ -51,77 +51,84 @@ export function DeviceDetailModal({ visible, device, onClose, onToggle, onUpdate
           </View>
 
           <View style={styles.controlsSection}>
-            {/* ── Light: Brightness ── */}
-            {device.type === 'light' && device.intensity !== undefined && (
-              <View style={styles.controlGroup}>
-                <Text style={styles.controlLabel}>Brightness</Text>
-                <SliderControl 
-                  value={device.intensity} 
-                  onChange={(val) => onUpdateValue({ intensity: val })}
-                  disabled={!device.isOn}
-                />
-              </View>
-            )}
+            {device.controls.map((c) => {
+              if (c.ui === 'slider') {
+                const v = device[c.field] as number | undefined;
+                if (v === undefined) return null;
+                return (
+                  <View key={c.id} style={styles.controlGroup}>
+                    <Text style={styles.controlLabel}>{c.label}</Text>
+                    <SliderControl
+                      value={v}
+                      min={c.min}
+                      max={c.max}
+                      onChange={(val) => onUpdateValue({ [c.field]: val } as Partial<Device>)}
+                      disabled={!device.isOn}
+                    />
+                  </View>
+                );
+              }
+              if (c.ui === 'steps') {
+                const v = device[c.field] as number | undefined;
+                if (v === undefined) return null;
+                return (
+                  <View key={c.id} style={styles.controlGroup}>
+                    <Text style={styles.controlLabel}>{c.label}</Text>
+                    <FanSpeedControl
+                      speed={v}
+                      maxSteps={c.stepCount}
+                      stepLabels={c.labels}
+                      onChange={(val) => onUpdateValue({ [c.field]: val } as Partial<Device>)}
+                      disabled={!device.isOn}
+                    />
+                  </View>
+                );
+              }
+              if (c.ui === 'color') {
+                const col = device[c.field] as string | undefined;
+                if (col === undefined) return null;
+                return (
+                  <View key={c.id} style={styles.controlGroup}>
+                    <Text style={styles.controlLabel}>{c.label}</Text>
+                    <ColorPickerControl
+                      activeColor={col}
+                      onSelect={(color) => onUpdateValue({ [c.field]: color } as Partial<Device>)}
+                      disabled={!device.isOn}
+                    />
+                  </View>
+                );
+              }
+              if (c.ui === 'thermostat') {
+                const t = device[c.field] as number | undefined;
+                if (t === undefined) return null;
+                return (
+                  <View key={c.id} style={styles.controlGroup}>
+                    <Text style={styles.controlLabel}>{c.label}</Text>
+                    <ClimateControl
+                      temperature={t}
+                      onIncrease={() => {
+                        if (!device.isOn) return;
+                        onUpdateValue({ [c.field]: Math.min(c.max, t + c.step) } as Partial<Device>);
+                      }}
+                      onDecrease={() => {
+                        if (!device.isOn) return;
+                        onUpdateValue({ [c.field]: Math.max(c.min, t - c.step) } as Partial<Device>);
+                      }}
+                      disabled={!device.isOn}
+                    />
+                  </View>
+                );
+              }
+              return null;
+            })}
 
-            {/* ── Light: Color ── */}
-            {device.type === 'light' && device.color !== undefined && (
-              <View style={styles.controlGroup}>
-                <Text style={styles.controlLabel}>Color</Text>
-                <ColorPickerControl 
-                  activeColor={device.color}
-                  onSelect={(color) => onUpdateValue({ color })}
-                  disabled={!device.isOn}
-                />
-              </View>
-            )}
-
-            {/* ── Climate: Temperature ── */}
-            {device.type === 'climate' && device.temperature !== undefined && (
-              <View style={styles.controlGroup}>
-                <Text style={styles.controlLabel}>Temperature target</Text>
-                <ClimateControl
-                  temperature={device.temperature}
-                  onIncrease={() => onUpdateValue({ temperature: device.temperature! + 1 })}
-                  onDecrease={() => onUpdateValue({ temperature: device.temperature! - 1 })}
-                  disabled={!device.isOn}
-                />
-              </View>
-            )}
-
-            {/* ── Fan: Speed Steps ── */}
-            {device.type === 'fan' && device.speed !== undefined && (
-              <View style={styles.controlGroup}>
-                <Text style={styles.controlLabel}>Fan Speed</Text>
-                <FanSpeedControl
-                  speed={device.speed}
-                  maxSteps={device.speedSteps ?? 3}
-                  onChange={(speed) => onUpdateValue({ speed })}
-                  disabled={!device.isOn}
-                />
-              </View>
-            )}
-
-            {/* ── Media: Volume ── */}
-            {device.type === 'media' && device.volume !== undefined && (
-              <View style={styles.controlGroup}>
-                <Text style={styles.controlLabel}>Volume</Text>
-                <SliderControl 
-                  value={device.volume} 
-                  onChange={(val) => onUpdateValue({ volume: val })}
-                  disabled={!device.isOn}
-                />
-              </View>
-            )}
-
-            {/* ── Security: Status ── */}
             {device.type === 'security' && (
               <View style={styles.controlGroup}>
                 <Text style={styles.controlLabel}>Status</Text>
                 <Text style={styles.infoText}>{device.statusText ?? 'Unknown'}</Text>
               </View>
             )}
-            
-            {/* ── Sensor: Reading ── */}
+
             {device.type === 'sensor' && device.statusText && (
               <View style={styles.controlGroup}>
                 <Text style={styles.controlLabel}>Reading</Text>
@@ -129,15 +136,13 @@ export function DeviceDetailModal({ visible, device, onClose, onToggle, onUpdate
               </View>
             )}
 
-            {/* ── Switch / Other: Simple status ── */}
-            {(device.type === 'switch' || device.type === 'other') && (
+            {(device.type === 'switch' || device.type === 'other') && device.controls.length === 0 && (
               <View style={styles.controlGroup}>
                 <Text style={styles.controlLabel}>Power</Text>
                 <Text style={styles.infoText}>{device.isOn ? 'Powered On' : 'Powered Off'}</Text>
               </View>
             )}
 
-            {/* ── Online indicator ── */}
             {!device.isOnline && (
               <View style={styles.offlineBanner}>
                 <MaterialIcons name="cloud-off" size={16} color={Colors.error} />

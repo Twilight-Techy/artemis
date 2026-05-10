@@ -97,8 +97,11 @@ async def seed_database():
             Device(
                 id="dev-kt-light", name="Kitchen Downlights",
                 device_type=DeviceType.LIGHT, room_id="room-kitchen", owner_id="test-user-id", pin=30,
-                capabilities={"power": True, "brightness": True},
-                state={"is_on": True, "brightness": 100}
+                capabilities={
+                    "power": True,
+                    "brightness": {"mode": "steps", "count": 3, "labels": ["Low", "Med", "High"]},
+                },
+                state={"is_on": True, "brightness": 2},
             ),
             Device(
                 id="dev-kt-smoke", name="Smoke Detector",
@@ -117,8 +120,8 @@ async def seed_database():
             Device(
                 id="dev-st-fan", name="Studio Fan",
                 device_type=DeviceType.FAN, room_id="room-studio", owner_id="test-user-id", pin=40,
-                capabilities={"power": True, "speed_steps": 3},
-                state={"is_on": False, "speed": 1}
+                capabilities={"power": True, "speed": {"mode": "percentage", "min": 0, "max": 100}},
+                state={"is_on": False, "speed": 35},
             ),
             Device(
                 id="dev-st-led", name="Desk RGB Strip",

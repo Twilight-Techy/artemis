@@ -16,6 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { artemisApi } from '../api/artemisClient';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { parseDeviceType } from '../components/devices/types';
 
 const { width } = Dimensions.get('window');
 
@@ -130,11 +131,10 @@ export default function AddDeviceScreen() {
                     onPress={() => {
                       navigation.navigate('EditDevice', {
                         deviceName: device.name,
-                        deviceType: device.device_type,
-                        // Could also pass protocol and endpoint if EditDeviceScreen expects them via params, 
-                        // but right now EditDevice acts as a "Create from scratch" or "Edit".
-                        // By passing name/type, we pre-fill the form!
-                      } as never);
+                        deviceType: parseDeviceType(device.device_type),
+                        protocol: device.protocol === 'mqtt' ? 'mqtt' : 'http',
+                        endpoint: device.endpoint ?? undefined,
+                      });
                     }}
                   >
                     <Text style={styles.connectBtnText}>CONNECT</Text>
@@ -172,7 +172,7 @@ export default function AddDeviceScreen() {
           <TouchableOpacity 
             style={styles.addManuallyBtn} 
             activeOpacity={0.8}
-            onPress={() => navigation.navigate('EditDevice' as never)}
+            onPress={() => navigation.navigate('EditDevice', {})}
           >
             <Ionicons name="link-outline" size={18} color={Colors.onSurface} />
             <Text style={styles.addManuallyText}>ADD MANUALLY</Text>

@@ -36,7 +36,14 @@ export type RootStackParamList = {
   AALEditor: { mode?: 'add' | 'edit'; automationId?: string } | undefined;
   MCPOverlay: undefined;
   AddDevice: undefined;
-  EditDevice: { deviceId: string; deviceName: string; roomId: string; deviceType: string };
+  EditDevice: {
+    deviceId?: string;
+    deviceName?: string;
+    roomId?: string;
+    deviceType?: string;
+    endpoint?: string;
+    protocol?: string;
+  };
   ManageRooms: undefined;
   AddEditFunction: { mode: 'add' | 'edit'; functionName?: string; functionCategory?: string; functionDescription?: string };
   ProfileSettings: undefined;

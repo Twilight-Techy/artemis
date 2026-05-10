@@ -5,35 +5,42 @@ import { Colors, Typography, Spacing, Radii } from '../../../constants/theme';
 interface Props {
   speed: number;
   maxSteps: number;
+  /** Optional label per step (same length as maxSteps). */
+  stepLabels?: string[];
   onChange: (speed: number) => void;
   disabled?: boolean;
 }
 
-export function FanSpeedControl({ speed, maxSteps, onChange, disabled }: Props) {
+export function FanSpeedControl({ speed, maxSteps, stepLabels, onChange, disabled }: Props) {
   return (
     <View style={styles.container}>
-      {Array.from({ length: maxSteps }, (_, i) => i + 1).map((step) => (
-        <TouchableOpacity
-          key={step}
-          style={[
-            styles.stepBtn,
-            speed >= step && !disabled && styles.stepBtnActive,
-            disabled && styles.stepBtnDisabled,
-          ]}
-          onPress={() => !disabled && onChange(step)}
-          activeOpacity={disabled ? 1 : 0.7}
-        >
-          <Text
+      {Array.from({ length: maxSteps }, (_, i) => i + 1).map((step) => {
+        const label = stepLabels?.[step - 1];
+        return (
+          <TouchableOpacity
+            key={step}
             style={[
-              styles.stepText,
-              speed >= step && !disabled && styles.stepTextActive,
+              styles.stepBtn,
+              speed >= step && !disabled && styles.stepBtnActive,
+              disabled && styles.stepBtnDisabled,
             ]}
+            onPress={() => !disabled && onChange(step)}
+            activeOpacity={disabled ? 1 : 0.7}
           >
-            {step}
-          </Text>
-        </TouchableOpacity>
-      ))}
-      <Text style={styles.label}>Speed {speed}/{maxSteps}</Text>
+            <Text
+              style={[
+                styles.stepText,
+                speed >= step && !disabled && styles.stepTextActive,
+              ]}
+            >
+              {label ?? String(step)}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+      <Text style={styles.label}>
+        {stepLabels?.[speed - 1] ? `${stepLabels[speed - 1]} (${speed}/${maxSteps})` : `${speed}/${maxSteps}`}
+      </Text>
     </View>
   );
 }
@@ -45,7 +52,8 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   stepBtn: {
-    width: 48,
+    minWidth: 48,
+    paddingHorizontal: 10,
     height: 48,
     borderRadius: Radii.md,
     backgroundColor: Colors.surfaceContainerHighest,

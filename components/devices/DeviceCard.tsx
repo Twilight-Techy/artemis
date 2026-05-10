@@ -3,6 +3,7 @@ import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, Radii } from '../../constants/theme';
 import { Device } from './types';
+import { getDeviceLevelBarPercent } from './capabilities';
 
 interface Props {
   device: Device;
@@ -42,6 +43,7 @@ export function DeviceCard({ device, onPress, onToggle, onLongPress }: Props) {
   };
 
   const statusColor = getStatusColor();
+  const levelBarPct = getDeviceLevelBarPercent(device);
 
   return (
     <TouchableOpacity
@@ -74,9 +76,9 @@ export function DeviceCard({ device, onPress, onToggle, onLongPress }: Props) {
           ) : 'Off'}
         </Text>
 
-        {device.isOn && device.intensity !== undefined && (
+        {device.isOn && levelBarPct !== null && (
           <View style={styles.miniIndicator}>
-            <View style={[styles.miniBar, { width: `${device.intensity}%`, backgroundColor: statusColor }]} />
+            <View style={[styles.miniBar, { width: `${levelBarPct}%`, backgroundColor: statusColor }]} />
           </View>
         )}
       </View>

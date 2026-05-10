@@ -122,5 +122,6 @@ export const Radii = {
   md: 8,
   lg: 16,
   xl: 24,
+  '3xl': 32,
   full: 9999,
 } as const;
