@@ -119,14 +119,14 @@ DEVICE_PIN_MAP = {
 }
 
 
-async def send_command(device_name: str, action: str, value: str | None = None) -> dict:
+async def send_command(device_name: str, action: str, value: str | int | float | bool | dict | None = None) -> dict:
     """
     Send a control command to a specific relay on the ESP32.
 
     Args:
         device_name: Human-readable name (e.g., "fan", "led_strip")
         action: "on" or "off"
-        value: Optional value (unused for relays, reserved for dimmers)
+        value: Optional scalar or capability payload for dimmers / richer simulated devices.
 
     Returns:
         ESP32 response dict with pin, name, state, result.
@@ -136,17 +136,29 @@ async def send_command(device_name: str, action: str, value: str | None = None) 
     if pin is None:
         raise HardwareError(f"Unknown device: '{device_name}'. Known: {list(DEVICE_PIN_MAP.keys())}")
 
-    # Normalize action
-    state = "on" if action.lower() in ("on", "true", "1", "activate") else "off"
+    # Normalize power actions without forcing richer "set" commands to off.
+    normalized_action = action.lower()
+    state = None
+    if normalized_action in ("on", "true", "1", "activate"):
+        state = "on"
+    elif normalized_action in ("off", "false", "0", "deactivate"):
+        state = "off"
+
+    payload = value if isinstance(value, dict) else None
+    scalar_value = None if isinstance(value, dict) else value
+
+    command_body = {
+        "action": action,
+        "value": scalar_value,
+        "payload": payload,
+    }
+    if state is not None:
+        command_body["state"] = state
 
     try:
         response = await _client.post(
             f"/api/relay/{pin}",
-            json={
-                "state": state,
-                "action": action,
-                "value": value
-            },
+            json=command_body,
         )
         response.raise_for_status()
         return response.json()

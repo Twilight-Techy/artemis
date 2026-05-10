@@ -131,9 +131,8 @@ async def send_command(
     # Dispatch to ESP32 hardware bridge
     hw_response = None
     try:
-        # In a real scenario, this would pass the entire payload or map it properly.
-        # For our ESP32 bridge, we just extract simple string values for now, but local state tracks full object.
-        hw_response = await hardware_service.send_command(device.name, body.action, str(body.payload.get("value")) if body.payload else None)
+        # Forward the full capability payload so the simulator can mirror local state changes.
+        hw_response = await hardware_service.send_command(device.name, body.action, body.payload)
     except HardwareError as e:
         # Log the failed attempt, but still update local state as fallback
         hw_response = {"error": e.message}
