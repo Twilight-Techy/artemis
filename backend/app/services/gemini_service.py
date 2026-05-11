@@ -39,6 +39,10 @@ CRITICAL RULES:
 1. When asked to control a device, you MUST use the `control_device` tool.
 2. Only say you did something IF the tool call succeeds. The user relies on you for real-time status.
 3. Be proactive. If sensors show environmental changes that warrant action, suggest it.
+4. REASONING RULE: Whenever you decide to call a tool, you MUST also write ONE short, casual question
+   in plain English asking the user if they'd like you to go ahead. Phrase it as a direct question, not
+   an explanation. Mention the device and room if relevant. No markdown, no bullet points.
+   Examples: "Want me to switch off the Studio fan?", "Should I dim the Bedroom lights to 40%?"
 
 The user's request will be accompanied by the CURRENT CONTEXT (time, sensors, device states).
 """
@@ -153,6 +157,70 @@ async def chat_with_artemis(user_message: str, context_str: str, history: list[d
         logger.exception("Unexpected error calling Gemini API")
         raise GeminiServiceError(f"Unexpected Gemini error: {e}") from e
 
+
+async def summarise_tool_result(
+    user_message: str,
+    tool_name: str,
+    tool_args: dict,
+    tool_result: dict,
+    succeeded: bool,
+) -> str:
+    """
+    Completes the Gemini agentic loop after a tool has been executed.
+
+    Sends the three-turn conversation:
+        user  -> original request
+        model -> function_call (what Gemini decided to do)
+        tool  -> function_response (what actually happened)
+
+    Gemini then writes the natural-language reply that Artemis speaks back to the
+    user, confirming (or explaining the failure of) the action.
+
+    Falls back to a simple canned string if the call fails.
+    """
+    if not client:
+        return "Done!" if succeeded else "Something went wrong — please try again."
+
+    # Turn 1: user
+    user_turn = types.Content(
+        role="user",
+        parts=[types.Part.from_text(text=user_message)]
+    )
+
+    # Turn 2: model's original function call decision
+    model_turn = types.Content(
+        role="model",
+        parts=[types.Part.from_function_call(name=tool_name, args=tool_args)]
+    )
+
+    # Turn 3: the actual tool result fed back in
+    tool_turn = types.Content(
+        role="tool",
+        parts=[
+            types.Part.from_function_response(
+                name=tool_name,
+                response={"result": tool_result, "success": succeeded}
+            )
+        ]
+    )
+
+    config = types.GenerateContentConfig(
+        system_instruction=SYSTEM_PROMPT,
+        temperature=0.5
+    )
+
+    try:
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            contents=[user_turn, model_turn, tool_turn],
+            config=config
+        )
+        return response.text.strip() if response.text else ("Done!" if succeeded else "That didn't work — let me know if you'd like to try again.")
+    except Exception:
+        logger.warning("summarise_tool_result fallback triggered", exc_info=True)
+        return "Done!" if succeeded else "Something went wrong — please try again."
+
+
 async def transcribe_audio(audio_bytes: bytes, mime_type: str = "audio/mp4") -> str | None:
     """
     Transcribes audio bytes using Gemini 2.5 Flash.
@@ -181,5 +249,4 @@ async def transcribe_audio(audio_bytes: bytes, mime_type: str = "audio/mp4") -> 
     except Exception as e:
         logger.exception("Unexpected error during Gemini transcription")
         raise GeminiServiceError(f"Unexpected Gemini error: {e}") from e
-
 

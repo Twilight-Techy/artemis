@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   StyleSheet,
@@ -12,28 +12,36 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 
-const REASONING_LINES = [
-  { text: 'Analyzing environment telemetry...', highlight: null },
-  {
-    text: 'Threshold (24.0°C) exceeded by ',
-    highlight: { text: '5.4°C', color: Colors.error },
-  },
-  {
-    text: 'Cross-referencing power budget: ',
-    highlight: { text: 'OPTIMAL', color: Colors.tertiary },
-  },
-  { text: 'Synthesizing Arduino control signal... _', highlight: null },
-];
+/** Shape mirrors the `ProactiveActionResponse` Pydantic model from the backend. */
+export interface ProactiveAction {
+  action_id: string;
+  action_type: string;
+  target_name: string;
+  payload: Record<string, any>;
+  reasoning: string;
+}
 
 interface MCPActionModalProps {
   visible: boolean;
   onClose: () => void;
   onExecute: () => void;
+  /** Live data from the /mcp/chat response. When null the modal stays hidden. */
+  proactiveAction: ProactiveAction | null;
 }
 
-export default function MCPActionModal({ visible, onClose, onExecute }: MCPActionModalProps) {
+export default function MCPActionModal({ visible, onClose, onExecute, proactiveAction }: MCPActionModalProps) {
   const insets = useSafeAreaInsets();
-  const [isTraceExpanded, setIsTraceExpanded] = useState(false);
+
+  // ── Derive display values from live backend data ──────────────────────────
+  const intentText = proactiveAction?.reasoning
+    ?? 'I have a suggestion for you. Would you like me to proceed?';
+
+  const targetLabel = proactiveAction?.target_name ?? 'Unknown Device';
+
+  // Derive a human-readable action label from the action_type snake_case identifier
+  const actionLabel = proactiveAction?.action_type
+    ? proactiveAction.action_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    : 'Action';
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -53,55 +61,20 @@ export default function MCPActionModal({ visible, onClose, onExecute }: MCPActio
               <Text style={styles.headerTitle}>Artemis Suggestion</Text>
             </View>
 
-            {/* ═══ Natural Language Intent ═══ */}
+            {/* ═══ Natural Language Intent (dynamic) ═══ */}
             <View style={styles.intentContainer}>
-              <Text style={styles.naturalLanguageText}>
-                The studio is getting noticeably warm at 29.4°C while you are working. Shall I turn on the fan to cool it down?
-              </Text>
+              <Text style={styles.naturalLanguageText}>{intentText}</Text>
             </View>
 
-            {/* ═══ Tool/Device Selection ═══ */}
+            {/* ═══ Tool/Device Selection (dynamic) ═══ */}
             <View style={styles.hardwareBadge}>
               <View style={styles.badgeLeft}>
                 <Ionicons name="hardware-chip-outline" size={18} color={Colors.secondary} />
-                <Text style={styles.badgeLabel}>Target Device</Text>
+                <Text style={styles.badgeLabel}>{actionLabel}</Text>
               </View>
-              <Text style={styles.badgeValue}>Studio Fan</Text>
+              <Text style={styles.badgeValue}>{targetLabel}</Text>
             </View>
 
-            {/* ═══ Expandable Reasoning Trace ═══ */}
-            <View style={styles.traceContainer}>
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => setIsTraceExpanded(!isTraceExpanded)}
-                style={styles.traceHeader}
-              >
-                <Text style={styles.traceLabel}>Diagnostic Trace</Text>
-                <Ionicons 
-                  name={isTraceExpanded ? "chevron-up" : "chevron-down"} 
-                  size={16} 
-                  color="rgba(255,255,255,0.4)" 
-                />
-              </TouchableOpacity>
-              
-              {isTraceExpanded && (
-                <View style={styles.traceBody}>
-                  {REASONING_LINES.map((line, i) => (
-                    <View key={i} style={styles.traceRow}>
-                      <Text style={styles.tracePrompt}>{'>'}</Text>
-                      <Text style={styles.traceText}>
-                        {line.text}
-                        {line.highlight && (
-                          <Text style={{ color: line.highlight.color }}>
-                            {line.highlight.text}
-                          </Text>
-                        )}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
 
             <View style={{ height: Spacing['3xl'] }} />
 
@@ -223,45 +196,6 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
   },
 
-  /* ── Trace Accordion ── */
-  traceContainer: {
-    borderRadius: Radii.lg,
-    backgroundColor: 'rgba(38, 37, 41, 0.3)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.03)',
-    overflow: 'hidden',
-  },
-  traceHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: Spacing.xl,
-  },
-  traceLabel: {
-    fontFamily: Typography.families.body,
-    fontSize: Typography.sizes.labelSm,
-    color: 'rgba(255,255,255,0.4)',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  traceBody: {
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  traceRow: { flexDirection: 'row', gap: Spacing.sm },
-  tracePrompt: {
-    fontFamily: Typography.families.body,
-    fontSize: Typography.sizes.bodySm,
-    color: 'rgba(116,177,255,0.5)',
-  },
-  traceText: {
-    flex: 1,
-    fontFamily: Typography.families.body,
-    fontSize: Typography.sizes.bodySm,
-    color: 'rgba(255,255,255,0.6)',
-    lineHeight: 20,
-  },
 
   /* ── Execute Buttons ── */
   executeWrapper: { marginBottom: Spacing.md },

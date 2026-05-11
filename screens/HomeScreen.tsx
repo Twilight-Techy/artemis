@@ -137,14 +137,18 @@ export default function HomeScreen() {
       const response = await artemisApi.approveAction(pendingAction.action_id);
       
       const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      // Use the LLM-generated confirmation if available, fallback to a generic message
+      const confirmationText = response?.confirmation
+        ?? `Done! ${pendingAction.target_name} has been updated.`;
+
       setMessages(prev => [
-        ...prev, 
+        ...prev,
         {
-          id: Date.now().toString() + '_sys',
-          role: 'system',
-          text: `Action Completed: ${pendingAction.target_name} -> ${pendingAction.payload?.action || 'auto'}`,
-          timestamp
-        }
+          id: Date.now().toString() + '_a',
+          role: 'assistant',
+          text: confirmationText,
+          timestamp,
+        },
       ]);
     } catch (err) {
       console.error(err);
@@ -183,22 +187,28 @@ export default function HomeScreen() {
 
     try {
       const response = await artemisApi.chat(text);
-      
-      setMessages(prev => [
-        ...prev,
-        { id: Date.now().toString() + '_a', role: 'assistant', text: response.reply, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
-      ]);
-      
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+      const replyTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
       if (response.requires_approval && response.proactive_action) {
-        setPendingAction(response.proactive_action);
+        // Action pending approval: the reasoning question lives in the modal, not in chat.
+        setPendingAction({
+          ...response.proactive_action,
+          reasoning: response.reply, // pass the AI's question to the modal
+        });
         setShowMCPModal(true);
+      } else if (response.reply) {
+        // Normal assistant reply — render as a chat bubble.
+        setMessages(prev => [
+          ...prev,
+          { id: Date.now().toString() + '_a', role: 'assistant', text: response.reply, timestamp: replyTimestamp },
+        ]);
       }
+
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
     } catch (e) {
       setMessages(prev => [
         ...prev,
-        { id: Date.now().toString() + '_e', role: 'system', text: "Error connecting to Artemis MCP Core.", timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+        { id: Date.now().toString() + '_e', role: 'system', text: "Error connecting to Artemis MCP Core.", timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) },
       ]);
     } finally {
       setIsSending(false);
@@ -436,6 +446,7 @@ export default function HomeScreen() {
         visible={showMCPModal} 
         onClose={declineAction}
         onExecute={handleExecuteLogic}
+        proactiveAction={pendingAction}
       />
     </View>
   );

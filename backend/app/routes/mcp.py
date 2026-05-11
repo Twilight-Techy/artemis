@@ -91,7 +91,7 @@ async def get_history(
     # Track which action IDs are already represented by system chat messages
     existing_action_ids = set()
     for m in chat_msgs:
-        if m.role == "system" and m.meta_info and m.meta_info.get("action_id"):
+        if m.role in ("system", "assistant") and m.meta_info and m.meta_info.get("action_id"):
             existing_action_ids.add(m.meta_info["action_id"])
 
     # Add execution logs that don't already have a matching system message
@@ -181,31 +181,34 @@ async def chat_endpoint(
                 action_type=tool_name,
                 target_name=target_name,
                 status="pending",
-                request_payload=args,
+                # Store the original user message alongside args so approve_action
+                # can reconstruct the full context for summarise_tool_result.
+                request_payload={**args, "_user_message": body.message},
                 triggered_by="mcp",
                 user_id=current_user.id
             )
             db.add(pending_log)
             
-            # Also save a placeholder assistant message so history flows
-            ast_msg = ChatMessage(
-                role="assistant",
-                content=f"I've evaluated the situation and suggest we call `{tool_name}` for `{target_name}`.",
-                meta_info={"action_id": action_id},
-                user_id=current_user.id
+            # Gemini returns a text part alongside the function call (per the system prompt rule).
+            # Use it as the modal's question text — don't persist it to the DB so it never
+            # appears in the chat history as a separate message.
+            reasoning_text = (
+                response.text.strip()
+                if response.text
+                else f"Want me to {tool_name.replace('_', ' ')} {target_name}?"
             )
-            db.add(ast_msg)
+
             await db.commit()
 
             return ChatResponse(
-                reply=ast_msg.content,
+                reply="",
                 requires_approval=True,
                 proactive_action=ProactiveActionResponse(
                     action_id=action_id,
                     action_type=tool_name,
                     target_name=target_name,
                     payload=args,
-                    reasoning=f"Based on your request, I propose adjusting {target_name}." # Simple reasoning
+                    reasoning=reasoning_text,
                 )
             )
         else:
@@ -276,17 +279,27 @@ async def approve_action(
         log.status = "failed"
         log.response_payload = {"error": e.message}
 
-    # Save system diagnostic message
+    # Ask Gemini to summarise what just happened in natural language
+    original_message = log.request_payload.get("_user_message", f"{log.action_type} {log.target_name}")
+    confirmation_text = await gemini_service.summarise_tool_result(
+        user_message=original_message,
+        tool_name=log.action_type,
+        tool_args=log.request_payload,
+        tool_result=log.response_payload or {},
+        succeeded=(log.status == "success"),
+    )
+
+    # Save the LLM confirmation as an assistant message so it renders as Artemis's natural voice
     sys_msg = ChatMessage(
-        role="system",
-        content=f"Executed: {log.target_name} -> {log.action_type}",
+        role="assistant",
+        content=confirmation_text,
         meta_info={"status": log.status, "action_id": action_id},
         user_id=current_user.id
     )
     db.add(sys_msg)
     await db.commit()
 
-    return {"status": log.status, "action_id": action_id}
+    return {"status": log.status, "action_id": action_id, "confirmation": confirmation_text}
 
 @router.post("/decline/{action_id}")
 async def decline_action(

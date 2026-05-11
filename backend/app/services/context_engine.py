@@ -1,5 +1,6 @@
 from datetime import datetime
 from sqlalchemy import select, desc
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Device, SensorReading, Automation, ChatMessage
 from app.services import sensor_service
@@ -29,13 +30,20 @@ async def gather_context(db: AsyncSession, user_id: str) -> str:
 
     # Gather device states
     context_lines.append("\n--- DEVICE STATES ---")
-    devices_result = await db.execute(select(Device).where(Device.owner_id == user_id))
+    devices_result = await db.execute(
+        select(Device)
+        .where(Device.owner_id == user_id)
+        .options(selectinload(Device.room))
+    )
     devices = devices_result.scalars().all()
     if devices:
         for d in devices:
             safe_type = getattr(d.device_type, "value", d.device_type)
             state_str = str(d.state) if d.state else "OFF"
-            context_lines.append(f"{d.name} ({safe_type}): State={state_str} - Online: {d.is_online}")
+            room_name = d.room.name if d.room else "Unknown Room"
+            context_lines.append(
+                f"{d.name} ({safe_type}) in {room_name}: State={state_str} - Online: {d.is_online}"
+            )
     else:
         context_lines.append("No devices registered.")
 
