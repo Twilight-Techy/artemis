@@ -65,25 +65,28 @@ export const artemisApi = {
     },
 
     chat: async (message: string) => {
-        try {
-            const response = await artemisApi._handleResponse(await fetch(`${BACKEND_URL}/mcp/chat`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...artemisApi.getAuthHeader(),
-                },
-                body: JSON.stringify({ message })
-            }));
+        const response = await artemisApi._handleResponse(await fetch(`${BACKEND_URL}/mcp/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...artemisApi.getAuthHeader(),
+            },
+            body: JSON.stringify({ message })
+        }));
 
-            if (!response.ok) {
-                throw new Error(`API returned ${response.status}`);
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error("Chat API error:", error);
-            throw error;
+        if (!response.ok) {
+            // Try to surface FastAPI's `detail` field for quota / service errors
+            let detail = `API returned ${response.status}`;
+            try {
+                const body = await response.json();
+                if (body?.detail) detail = body.detail;
+            } catch { /* ignore parse errors */ }
+            const err: any = new Error(detail);
+            err.status = response.status;
+            throw err;
         }
+
+        return await response.json();
     },
 
     getChatHistory: async () => {
@@ -100,30 +103,32 @@ export const artemisApi = {
     },
 
     transcribeAudio: async (audioUri: string, mimeType: string = 'audio/m4a') => {
-        try {
-            const formData = new FormData();
-            // In React Native, we can pass an object with uri, name, and type
-            formData.append('audio', {
-                uri: Platform.OS === 'ios' ? audioUri.replace('file://', '') : audioUri,
-                name: 'recording.m4a',
-                type: mimeType,
-            } as any);
+        const formData = new FormData();
+        formData.append('audio', {
+            uri: Platform.OS === 'ios' ? audioUri.replace('file://', '') : audioUri,
+            name: 'recording.m4a',
+            type: mimeType,
+        } as any);
 
-            const headers = artemisApi.getAuthHeader();
-            // Do NOT set Content-Type to multipart/form-data manually, fetch will set it with the correct boundary
-            
-            const response = await fetch(`${BACKEND_URL}/mcp/transcribe`, {
-                method: 'POST',
-                headers,
-                body: formData,
-            });
+        const headers = artemisApi.getAuthHeader();
+        // Do NOT set Content-Type to multipart/form-data manually, fetch will set it with the correct boundary
+        const response = await fetch(`${BACKEND_URL}/mcp/transcribe`, {
+            method: 'POST',
+            headers,
+            body: formData,
+        });
 
-            if (!response.ok) throw new Error(`Transcription failed: ${response.status}`);
-            return await response.json();
-        } catch (error) {
-            console.error("Transcription API error:", error);
-            throw error;
+        if (!response.ok) {
+            let detail = `Transcription failed: ${response.status}`;
+            try {
+                const body = await response.json();
+                if (body?.detail) detail = body.detail;
+            } catch { /* ignore */ }
+            const err: any = new Error(detail);
+            err.status = response.status;
+            throw err;
         }
+        return await response.json();
     },
 
     approveAction: async (actionId: string) => {

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from pydantic import BaseModel
 import uuid
 
@@ -7,6 +8,7 @@ from app.database import get_db
 from app.models import User, ChatMessage, ExecutionLog
 from app.services.auth_service import get_current_user
 from app.services import gemini_service, context_engine, permission_engine, hardware_service
+from app.services.gemini_service import GeminiQuotaError, GeminiServiceError
 
 router = APIRouter(prefix="/mcp", tags=["MCP Core"])
 
@@ -38,6 +40,12 @@ async def transcribe_endpoint(
         if not transcript:
             raise HTTPException(status_code=500, detail="Transcription returned empty or failed.")
         return {"transcript": transcript}
+    except GeminiQuotaError as e:
+        raise HTTPException(status_code=429, detail=str(e))
+    except GeminiServiceError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -48,8 +56,6 @@ async def get_history(
     db: AsyncSession = Depends(get_db)
 ):
     """Retrieve chat history + execution logs as a merged timeline."""
-    from sqlalchemy import select
-
     # 1. Fetch chat messages
     chat_query = await db.execute(
         select(ChatMessage)
@@ -140,7 +146,18 @@ async def chat_endpoint(
     history = await context_engine.get_recent_history(db, current_user.id, limit=5)
 
     # 3. Call Gemini
-    response = await gemini_service.chat_with_artemis(body.message, context_str, history)
+    try:
+        response = await gemini_service.chat_with_artemis(body.message, context_str, history)
+    except GeminiQuotaError as e:
+        raise HTTPException(
+            status_code=429,
+            detail=str(e)
+        )
+    except GeminiServiceError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=str(e)
+        )
     
     if not response:
         raise HTTPException(status_code=503, detail="Gemini service unavailable.")
@@ -220,7 +237,6 @@ async def approve_action(
     db: AsyncSession = Depends(get_db)
 ):
     """Executes a previously pending tool call."""
-    from sqlalchemy import select
     log_query = await db.execute(
         select(ExecutionLog).where(
             ExecutionLog.id == action_id,
@@ -279,7 +295,6 @@ async def decline_action(
     db: AsyncSession = Depends(get_db)
 ):
     """Declines and dismisses a pending tool call."""
-    from sqlalchemy import select
     log_query = await db.execute(
         select(ExecutionLog).where(
             ExecutionLog.id == action_id,

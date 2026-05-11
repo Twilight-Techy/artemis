@@ -5,7 +5,21 @@ Handles the interaction with the Gemini API, tool definition, and orchestration.
 """
 from google import genai
 from google.genai import types
+from google.genai import errors as genai_errors
 from app.config import get_settings
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class GeminiQuotaError(Exception):
+    """Raised when the Gemini API returns a 429 Resource Exhausted error."""
+    pass
+
+
+class GeminiServiceError(Exception):
+    """Raised for general, non-quota Gemini API errors."""
+    pass
 
 settings = get_settings()
 
@@ -121,12 +135,23 @@ async def chat_with_artemis(user_message: str, context_str: str, history: list[d
         temperature=0.4
     )
 
-    response = client.models.generate_content(
-        model=settings.gemini_model,
-        contents=contents,
-        config=config
-    )
-    return response
+    try:
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            contents=contents,
+            config=config
+        )
+        return response
+    except genai_errors.ClientError as e:
+        status_code = getattr(e, "status_code", None) or getattr(e, "code", None)
+        if status_code == 429:
+            logger.warning("Gemini API quota exhausted (429): %s", e)
+            raise GeminiQuotaError("Gemini API free-tier quota exhausted. Please try again later.") from e
+        logger.error("Gemini ClientError (%s): %s", status_code, e)
+        raise GeminiServiceError(f"Gemini API error ({status_code}): {e}") from e
+    except Exception as e:
+        logger.exception("Unexpected error calling Gemini API")
+        raise GeminiServiceError(f"Unexpected Gemini error: {e}") from e
 
 async def transcribe_audio(audio_bytes: bytes, mime_type: str = "audio/mp4") -> str | None:
     """
@@ -137,13 +162,24 @@ async def transcribe_audio(audio_bytes: bytes, mime_type: str = "audio/mp4") -> 
 
     prompt = "Transcribe the speech in this audio exactly. Do not add any extra text, markdown, or conversational formatting. If you hear silence, return an empty string."
     
-    response = client.models.generate_content(
-        model=settings.gemini_model,
-        contents=[
-            prompt,
-            types.Part.from_bytes(data=audio_bytes, mime_type=mime_type)
-        ]
-    )
-    return response.text.strip() if response.text else None
+    try:
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            contents=[
+                prompt,
+                types.Part.from_bytes(data=audio_bytes, mime_type=mime_type)
+            ]
+        )
+        return response.text.strip() if response.text else None
+    except genai_errors.ClientError as e:
+        status_code = getattr(e, "status_code", None) or getattr(e, "code", None)
+        if status_code == 429:
+            logger.warning("Gemini API quota exhausted during transcription (429): %s", e)
+            raise GeminiQuotaError("Gemini API free-tier quota exhausted.") from e
+        logger.error("Gemini transcription ClientError (%s): %s", status_code, e)
+        raise GeminiServiceError(f"Gemini transcription error ({status_code}): {e}") from e
+    except Exception as e:
+        logger.exception("Unexpected error during Gemini transcription")
+        raise GeminiServiceError(f"Unexpected Gemini error: {e}") from e
 
 
