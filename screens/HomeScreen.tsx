@@ -28,6 +28,7 @@ import CommandBar from '../components/CommandBar';
 import ChatBubble, { ChatMessage } from '../components/chat/ChatBubble';
 import { ArtemisPullLoader } from '../components/ArtemisPullLoader';
 import MCPActionModal from '../components/MCPActionModal';
+import ConfirmModal from '../components/ConfirmModal';
 import { useNetwork } from '../contexts/NetworkContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { artemisApi } from '../api/artemisClient';
@@ -43,6 +44,7 @@ export default function HomeScreen() {
   const [mode, setMode] = useState<HomeMode>('dashboard');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showMCPModal, setShowMCPModal] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const [isSending, setIsSending] = useState(false);
   const [isRefreshingChat, setIsRefreshingChat] = useState(false);
@@ -245,6 +247,21 @@ export default function HomeScreen() {
     };
   }, [keyboardShift]);
 
+  // ── Clear Chat ─────────────────────────────────────────────────────────────
+  const handleClearChat = useCallback(() => {
+    setShowClearModal(true);
+  }, []);
+
+  const confirmClearChat = useCallback(async () => {
+    setShowClearModal(false);
+    try {
+      await artemisApi.clearChatHistory();
+      setMessages([]);
+    } catch (err) {
+      console.error('Failed to clear chat history', err);
+    }
+  }, []);
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* ═══ Top App Bar ═══ */}
@@ -328,6 +345,17 @@ export default function HomeScreen() {
               )}
             </TouchableOpacity>
           </View>
+
+          {/* Clear chat button — only visible in Chat mode */}
+          {mode === 'chat' && messages.length > 0 && (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleClearChat}
+              style={styles.clearChatBtn}
+            >
+              <Ionicons name="trash-outline" size={16} color={Colors.error} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* ═══ Middle Content (switches based on mode) ═══ */}
@@ -448,6 +476,20 @@ export default function HomeScreen() {
         onExecute={handleExecuteLogic}
         proactiveAction={pendingAction}
       />
+
+      {/* ═══ Clear Chat Confirmation Modal ═══ */}
+      <ConfirmModal
+        visible={showClearModal}
+        icon="trash-outline"
+        iconColor={Colors.error}
+        title="Clear Conversation"
+        message="This will permanently delete your entire chat history. This cannot be undone."
+        confirmLabel="Clear"
+        cancelLabel="Keep It"
+        destructive
+        onConfirm={confirmClearChat}
+        onCancel={() => setShowClearModal(false)}
+      />
     </View>
   );
 }
@@ -515,7 +557,10 @@ const styles = StyleSheet.create({
   toggleBar: {
     paddingHorizontal: Spacing['2xl'],
     paddingBottom: Spacing.md,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.lg,
   },
   togglePill: {
     flexDirection: 'row',
@@ -554,6 +599,16 @@ const styles = StyleSheet.create({
   },
   toggleTextActive: {
     color: Colors.primary,
+  },
+  clearChatBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 113, 108, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 113, 108, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // ── Middle Content (flex: 1 fills remaining space) ──

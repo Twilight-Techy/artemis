@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from pydantic import BaseModel
 import uuid
 
@@ -125,6 +125,18 @@ async def get_history(
         item.pop("sort_key", None)
 
     return {"messages": timeline}
+
+@router.delete("/history", status_code=status.HTTP_204_NO_CONTENT)
+async def clear_history(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Permanently delete all chat messages for the authenticated user."""
+    await db.execute(
+        delete(ChatMessage).where(ChatMessage.user_id == current_user.id)
+    )
+    await db.commit()
+
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(

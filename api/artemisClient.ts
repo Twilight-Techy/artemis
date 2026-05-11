@@ -102,6 +102,18 @@ export const artemisApi = {
         }
     },
 
+    clearChatHistory: async () => {
+        const response = await fetch(`${BACKEND_URL}/mcp/history`, {
+            method: 'DELETE',
+            headers: artemisApi.getAuthHeader(),
+        });
+        // 204 No Content is success — no body to parse
+        if (!response.ok && response.status !== 204) {
+            throw new Error(`Clear history failed: ${response.status}`);
+        }
+    },
+
+
     transcribeAudio: async (audioUri: string, mimeType: string = 'audio/m4a') => {
         const formData = new FormData();
         formData.append('audio', {
