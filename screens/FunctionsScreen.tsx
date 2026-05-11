@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, TextInput, Animated, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert, TextInput, Animated, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { ArtemisLoader } from '../components/ArtemisLoader';
+import { ArtemisPullLoader } from '../components/ArtemisPullLoader';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
@@ -22,6 +24,7 @@ export default function FunctionsScreen() {
   
   const [functionsList, setFunctionsList] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const hasLoaded = useRef(false);
 
   const [selectedFunctionId, setSelectedFunctionId] = useState<string | null>(null);
@@ -40,8 +43,8 @@ export default function FunctionsScreen() {
     }, [])
   );
 
-  const fetchFunctions = async () => {
-    setIsLoading(true);
+  const fetchFunctions = async (isPullRefresh = false) => {
+    if (!isPullRefresh) setIsLoading(true);
     try {
       const data = await artemisApi.getFunctions();
       setFunctionsList(data);
@@ -50,8 +53,14 @@ export default function FunctionsScreen() {
       console.warn("Failed to fetch functions", e);
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchFunctions(true);
+  }, []);
 
   const handleOpenActionModal = (id: string) => {
     setSelectedFunctionId(id);
@@ -111,7 +120,29 @@ export default function FunctionsScreen() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <TopNavBar />
       
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            // Fully hide the native spinner — ArtemisPullLoader provides the visual
+            tintColor="transparent"
+            colors={['transparent']}
+            progressBackgroundColor="transparent"
+            progressViewOffset={-100}
+          />
+        }
+      >
+        {/* ── Custom pull-to-refresh header ── */}
+        {refreshing && (
+          <ArtemisPullLoader
+            size={10}
+            label="Syncing functions…"
+            style={styles.pullLoader}
+          />
+        )}
         {/* ΓòÉΓòÉΓòÉ Header Section ΓòÉΓòÉΓòÉ */}
         <View style={styles.headerSection}>
           <Text style={styles.headline}>Functions</Text>
@@ -158,7 +189,7 @@ export default function FunctionsScreen() {
         {/* Functions List */}
         <View style={styles.functionsList}>
           {isLoading ? (
-            <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
+            <ArtemisLoader size={72} label="Loading functions..." style={{ marginTop: 40 }} />
           ) : (
             (() => {
               const filtered = functionsList.filter(f => {
@@ -396,6 +427,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 140, // Ensure content isn't hidden by bottom nav
+  },
+  pullLoader: {
+    paddingVertical: Spacing.lg,
   },
   headerSection: {
     paddingHorizontal: Spacing['2xl'],

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { useAuth } from '../contexts/AuthContext';
 import { artemisApi } from '../api/artemisClient';
+import { useArtemisAlert } from '../components/ArtemisAlert';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -19,6 +20,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasBiometric, setHasBiometric] = useState(false);
+  const alert = useArtemisAlert();
 
   React.useEffect(() => {
     checkBiometrics();
@@ -41,21 +43,46 @@ export default function LoginScreen() {
       disableDeviceFallback: true,
     });
 
-    if (result.success) {
-      setIsLoading(true);
-      try {
-        await login(biometricToken);
-      } catch (error) {
-        Alert.alert('Error', 'Failed to login with biometrics.');
-      } finally {
-        setIsLoading(false);
+    if (!result.success) return;
+
+    setIsLoading(true);
+    try {
+      // Validate the stored token is still accepted by the server
+      // before committing it to auth state (avoids 401 → auto-logout loop)
+      const res = await fetch(
+        `${require('../api/artemisClient').BACKEND_URL}/auth/me`,
+        { headers: { Authorization: `Bearer ${biometricToken}` } }
+      );
+
+      if (res.status === 401) {
+        // Token has expired on the server — clear stale biometric credential
+        await SecureStore.deleteItemAsync('biometric_token');
+        setHasBiometric(false);
+        alert.show({
+          title: 'Session Expired',
+          message: 'Your saved session has expired. Please log in with your password to re-enable fingerprint login.',
+          variant: 'warning',
+        });
+        return;
       }
+
+      if (!res.ok) {
+        alert.show({ title: 'Error', message: 'Could not verify session. Please try again.', variant: 'error' });
+        return;
+      }
+
+      // Token is still valid — complete login
+      await login(biometricToken);
+    } catch (error) {
+      alert.show({ title: 'Error', message: 'Failed to connect to server. Check your network connection.', variant: 'error' });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password.');
+      alert.show({ title: 'Error', message: 'Please enter both email and password.', variant: 'error' });
       return;
     }
 
@@ -66,13 +93,15 @@ export default function LoginScreen() {
         await login(data.access_token);
       }
     } catch (error) {
-      Alert.alert('Login Failed', 'Invalid credentials or server error.');
+      alert.show({ title: 'Login Failed', message: 'Invalid credentials or server error.', variant: 'error' });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
+    <>
+    {alert.alertNode}
     <KeyboardAvoidingView 
       style={[styles.root, { paddingTop: insets.top }]} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -146,6 +175,7 @@ export default function LoginScreen() {
         <View style={{ height: 40 }} />
       </ScrollView>
     </KeyboardAvoidingView>
+    </>
   );
 }
 

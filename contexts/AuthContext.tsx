@@ -52,6 +52,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await AsyncStorage.setItem('@artemis_token', newToken);
       setToken(newToken);
       artemisApi.setToken(newToken);
+
+      // Keep biometric_token in sync: if the user has biometrics enrolled,
+      // update the stored credential to the fresh JWT so it doesn't go stale.
+      const SecureStore = await import('expo-secure-store');
+      const hasBiometric = await SecureStore.getItemAsync('biometric_token');
+      if (hasBiometric) {
+        await SecureStore.setItemAsync('biometric_token', newToken);
+      }
     } catch (e) {
       console.warn('Failed to save token', e);
     }

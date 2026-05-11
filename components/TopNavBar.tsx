@@ -9,24 +9,32 @@ import { artemisApi } from '../api/artemisClient';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
-export default function TopNavBar() {
+interface TopNavBarProps {
+  /** Called once with a `refresh` fn the parent can invoke to re-fetch the avatar */
+  onRefreshReady?: (refresh: () => Promise<void>) => void;
+}
+
+export default function TopNavBar({ onRefreshReady }: TopNavBarProps) {
   const navigation = useNavigation<NavProp>();
   const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
 
+  const fetchProfile = React.useCallback(async () => {
+    try {
+      const data = await artemisApi.getMe();
+      if (data.avatar_url) {
+        setAvatarUrl(data.avatar_url);
+      }
+    } catch (error) {
+      // Silent fail for avatar
+    }
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
-      const fetchProfile = async () => {
-        try {
-          const data = await artemisApi.getMe();
-          if (data.avatar_url) {
-            setAvatarUrl(data.avatar_url);
-          }
-        } catch (error) {
-          // Silent fail for avatar
-        }
-      };
       fetchProfile();
-    }, [])
+      // Expose the refresh fn to the parent once on mount
+      onRefreshReady?.(fetchProfile);
+    }, [fetchProfile, onRefreshReady])
   );
 
   return (

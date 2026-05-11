@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,6 +13,8 @@ import { RoomSection } from '../components/devices/RoomSection';
 import { DeviceDetailModal } from '../components/devices/DeviceDetailModal';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { artemisApi } from '../api/artemisClient';
+import { ArtemisLoader } from '../components/ArtemisLoader';
+import { ArtemisPullLoader } from '../components/ArtemisPullLoader';
 
 export default function DevicesScreen() {
   const insets = useSafeAreaInsets();
@@ -21,14 +23,15 @@ export default function DevicesScreen() {
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('All');
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   
   // Modal state
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
 
   // ── Fetch devices + rooms from backend ──
-  const loadDevices = useCallback(async () => {
+  const loadDevices = useCallback(async (isPullRefresh = false) => {
+    if (!isPullRefresh) setLoading(true);
     try {
-      setLoading(true);
       const [devicesData, roomsData] = await Promise.all([
         artemisApi.getDevices(),
         artemisApi.getRooms(),
@@ -50,8 +53,14 @@ export default function DevicesScreen() {
       console.error('Failed to load devices:', err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadDevices(true);
+  }, [loadDevices]);
 
   useEffect(() => {
     loadDevices();
@@ -153,11 +162,32 @@ export default function DevicesScreen() {
 
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>Syncing devices...</Text>
+          <ArtemisLoader size={72} label="Syncing devices..." />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+          <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              // Fully hide the native spinner — ArtemisPullLoader provides the visual
+              tintColor="transparent"
+              colors={['transparent']}
+              progressBackgroundColor="transparent"
+              progressViewOffset={-100}
+            />
+          }
+        >
+          {/* ── Custom pull-to-refresh header ── */}
+          {refreshing && (
+            <ArtemisPullLoader
+              size={10}
+              label="Syncing devices…"
+              style={styles.pullLoader}
+            />
+          )}
+
           {Object.keys(rooms).length === 0 ? (
             <View style={styles.emptyContainer}>
               <Ionicons name="hardware-chip-outline" size={48} color={Colors.onSurfaceVariant} />
@@ -252,6 +282,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.md,
     paddingTop: 60,
+  },
+  pullLoader: {
+    paddingVertical: Spacing.lg,
   },
   loadingText: {
     fontFamily: Typography.families.body,

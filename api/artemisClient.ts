@@ -15,13 +15,33 @@ export const artemisApi = {
     /** Register a callback (e.g. logout) to fire on any 401 response */
     onUnauthorized: (cb: () => void) => { artemisApi._onUnauthorized = cb; },
 
-    /** Check response for 401 and auto-logout if so */
+    /** Check response for 401 and auto-logout; validate JSON Content-Type before the caller calls .json() */
     _handleResponse: async (res: Response) => {
         if (res.status === 401) {
             artemisApi._onUnauthorized?.();
             throw new Error('Session expired');
         }
         return res;
+    },
+
+    /**
+     * Safe JSON parse — reads the response as text first so that when the
+     * server returns an HTML error page (or any non-JSON body) we get a
+     * helpful message instead of a cryptic SyntaxError.
+     */
+    _parseJSON: async (res: Response) => {
+        const text = await res.text();
+        const contentType = res.headers.get('content-type') ?? '';
+        if (!contentType.includes('application/json')) {
+            // Surface the raw body in the error so it's easy to diagnose
+            console.warn(`[artemisClient] Expected JSON but got "${contentType}". Body preview:`, text.slice(0, 300));
+            throw new Error(`Server returned non-JSON response (${res.status}): ${text.slice(0, 120)}`);
+        }
+        try {
+            return JSON.parse(text);
+        } catch {
+            throw new Error(`Failed to parse JSON (${res.status}): ${text.slice(0, 120)}`);
+        }
     },
 
     login: async (payload: any) => {
@@ -143,7 +163,7 @@ export const artemisApi = {
                     ...artemisApi.getAuthHeader(),
                 }
             }));
-            return await response.json();
+            return await artemisApi._parseJSON(response);
         } catch (error) {
             console.error("Get Rooms API error:", error);
             throw error;
@@ -157,7 +177,7 @@ export const artemisApi = {
                     ...artemisApi.getAuthHeader(),
                 }
             }));
-            return await response.json();
+            return await artemisApi._parseJSON(response);
         } catch (error) {
             console.error("Get Devices API error:", error);
             throw error;
@@ -172,7 +192,7 @@ export const artemisApi = {
                 }
             }));
             if (!response.ok) throw new Error('Failed to fetch device');
-            return await response.json();
+            return await artemisApi._parseJSON(response);
         } catch (error) {
             console.error('Get Device API error:', error);
             throw error;

@@ -1,9 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   ScrollView,
   FlatList,
+  RefreshControl,
   StyleSheet,
   TouchableOpacity,
   Keyboard,
@@ -25,6 +26,7 @@ import StatChip from '../components/StatChip';
 import QuickActionCard from '../components/QuickActionCard';
 import CommandBar from '../components/CommandBar';
 import ChatBubble, { ChatMessage } from '../components/chat/ChatBubble';
+import { ArtemisPullLoader } from '../components/ArtemisPullLoader';
 import MCPActionModal from '../components/MCPActionModal';
 import { useNetwork } from '../contexts/NetworkContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -43,23 +45,39 @@ export default function HomeScreen() {
   const [showMCPModal, setShowMCPModal] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isRefreshingChat, setIsRefreshingChat] = useState(false);
+  const [isRefreshingDashboard, setIsRefreshingDashboard] = useState(false);
+  const refreshAvatarRef = useRef<(() => Promise<void>) | null>(null);
   const [pendingAction, setPendingAction] = useState<any>(null);
   const [orbState, setOrbState] = useState<OrbState>('idle');
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const isRecordingRef = useRef(false);
 
-  useEffect(() => {
-    const loadHistory = async () => {
-      try {
-        const data = await artemisApi.getChatHistory();
-        if (data.messages) {
-          setMessages(data.messages);
-        }
-      } catch (err) {
-        console.error("Failed to load history:", err);
+  const loadChatHistory = useCallback(async () => {
+    try {
+      const data = await artemisApi.getChatHistory();
+      if (data.messages) {
+        setMessages(data.messages);
       }
-    };
-    loadHistory();
+    } catch (err) {
+      console.error("Failed to load history:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadChatHistory();
+  }, [loadChatHistory]);
+
+  const handleChatRefresh = useCallback(async () => {
+    setIsRefreshingChat(true);
+    await loadChatHistory();
+    setIsRefreshingChat(false);
+  }, [loadChatHistory]);
+
+  const handleDashboardRefresh = useCallback(async () => {
+    setIsRefreshingDashboard(true);
+    await refreshAvatarRef.current?.();
+    setIsRefreshingDashboard(false);
   }, []);
 
   const handleMicPressIn = async () => {
@@ -220,7 +238,7 @@ export default function HomeScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* ═══ Top App Bar ═══ */}
-      <TopNavBar />
+      <TopNavBar onRefreshReady={(fn) => { refreshAvatarRef.current = fn; }} />
 
       <Animated.View
         style={[styles.keyboardAvoidingContainer, { transform: [{ translateY: keyboardShift }] }]}
@@ -308,7 +326,21 @@ export default function HomeScreen() {
             <ScrollView
               contentContainerStyle={styles.dashboardContent}
               showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshingDashboard}
+                  onRefresh={handleDashboardRefresh}
+                  // Fully hide the native spinner — ArtemisPullLoader provides the visual
+                  tintColor="transparent"
+                  colors={['transparent']}
+                  progressBackgroundColor="transparent"
+                  progressViewOffset={-100}
+                />
+              }
             >
+              {isRefreshingDashboard && (
+                <ArtemisPullLoader size={10} label="Refreshing profile…" style={{ marginBottom: 8 }} />
+              )}
               {/* Greeting */}
               <View style={styles.greetingSection}>
                 <View style={styles.headlineRow}>
@@ -350,16 +382,34 @@ export default function HomeScreen() {
               onContentSizeChange={() =>
                 flatListRef.current?.scrollToEnd({ animated: true })
               }
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshingChat}
+                  onRefresh={handleChatRefresh}
+                  // Fully hide the native spinner — ArtemisPullLoader provides the visual
+                  tintColor="transparent"
+                  colors={['transparent']}
+                  progressBackgroundColor="transparent"
+                  progressViewOffset={-100}
+                />
+              }
+              ListHeaderComponent={
+                isRefreshingChat ? (
+                  <ArtemisPullLoader size={10} label="Reloading chat…" style={{ marginBottom: 8 }} />
+                ) : null
+              }
               ListEmptyComponent={
-                <View style={{ alignItems: 'center', paddingHorizontal: 32 }}>
-                  <Ionicons name="chatbubble-ellipses-outline" size={48} color="rgba(116, 177, 255, 0.3)" />
-                  <Text style={{ fontFamily: Typography.families.headline, fontSize: Typography.sizes.headlineSm, color: Colors.onSurfaceVariant, marginTop: 16, textAlign: 'center' }}>
-                    No conversation yet
-                  </Text>
-                  <Text style={{ fontFamily: Typography.families.body, fontSize: Typography.sizes.bodySm, color: 'rgba(255,255,255,0.35)', marginTop: 8, textAlign: 'center' }}>
-                    Tap the mic or type a message to begin speaking with Artemis.
-                  </Text>
-                </View>
+                !isRefreshingChat ? (
+                  <View style={{ alignItems: 'center', paddingHorizontal: 32 }}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={48} color="rgba(116, 177, 255, 0.3)" />
+                    <Text style={{ fontFamily: Typography.families.headline, fontSize: Typography.sizes.headlineSm, color: Colors.onSurfaceVariant, marginTop: 16, textAlign: 'center' }}>
+                      No conversation yet
+                    </Text>
+                    <Text style={{ fontFamily: Typography.families.body, fontSize: Typography.sizes.bodySm, color: 'rgba(255,255,255,0.35)', marginTop: 8, textAlign: 'center' }}>
+                      Tap the mic or type a message to begin speaking with Artemis.
+                    </Text>
+                  </View>
+                ) : null
               }
             />
           )}

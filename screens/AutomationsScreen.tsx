@@ -1,7 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Switch, Dimensions, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Switch, Dimensions, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { ArtemisLoader } from '../components/ArtemisLoader';
+import { ArtemisPullLoader } from '../components/ArtemisPullLoader';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -18,6 +20,7 @@ export default function AutomationsScreen() {
 
   const [automations, setAutomations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const hasLoaded = useRef(false);
   useFocusEffect(
     useCallback(() => {
@@ -27,8 +30,8 @@ export default function AutomationsScreen() {
     }, [])
   );
 
-  const fetchAutomations = async () => {
-    setIsLoading(true);
+  const fetchAutomations = async (isPullRefresh = false) => {
+    if (!isPullRefresh) setIsLoading(true);
     try {
       const data = await artemisApi.getAutomations();
       setAutomations(data);
@@ -37,8 +40,14 @@ export default function AutomationsScreen() {
       console.warn('Failed to fetch automations:', error);
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchAutomations(true);
+  }, []);
 
   const handleToggle = async (id: string, currentValue: boolean) => {
     // Optimistic toggle
@@ -56,7 +65,29 @@ export default function AutomationsScreen() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <TopNavBar />
       
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            // Fully hide the native spinner — ArtemisPullLoader provides the visual
+            tintColor="transparent"
+            colors={['transparent']}
+            progressBackgroundColor="transparent"
+            progressViewOffset={-100}
+          />
+        }
+      >
+        {/* ── Custom pull-to-refresh header ── */}
+        {refreshing && (
+          <ArtemisPullLoader
+            size={10}
+            label="Syncing automations…"
+            style={styles.pullLoader}
+          />
+        )}
         {/* Header Section */}
         <View style={styles.headerSection}>
           <Text style={styles.headline}>Automations</Text>
@@ -91,7 +122,7 @@ export default function AutomationsScreen() {
         {/* Active Automations Matrix */}
         <View style={styles.listContainer}>
           {isLoading ? (
-            <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
+            <ArtemisLoader size={72} label="Loading automations..." style={{ marginTop: 40 }} />
           ) : (
             (() => {
               if (automations.length === 0) {
@@ -192,6 +223,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 140, // Ensure content isn't hidden by bottom nav
+  },
+  pullLoader: {
+    paddingVertical: Spacing.lg,
   },
   headerSection: {
     paddingHorizontal: Spacing['2xl'],
