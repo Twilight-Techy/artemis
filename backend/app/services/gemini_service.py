@@ -102,7 +102,7 @@ async def chat_with_artemis(user_message: str, context_str: str, history: list[d
             contents.append(
                 types.Content(
                     role=msg["role"], 
-                    parts=[types.Part.from_text(p["text"]) for p in msg["parts"]]
+                    parts=[types.Part.from_text(text=p["text"]) for p in msg["parts"]]
                 )
             )
             

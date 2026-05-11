@@ -60,7 +60,7 @@ class DeviceOut(BaseModel):
     id: str
     name: str
     device_type: DeviceType
-    protocol: str
+    protocol: str | None = None
     endpoint: str | None
     is_online: bool
     capabilities: dict | None
