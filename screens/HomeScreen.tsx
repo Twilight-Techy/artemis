@@ -46,6 +46,7 @@ export default function HomeScreen() {
   const [pendingAction, setPendingAction] = useState<any>(null);
   const [orbState, setOrbState] = useState<OrbState>('idle');
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const isRecordingRef = useRef(false);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -66,7 +67,11 @@ export default function HomeScreen() {
       setOrbState('listening');
       const status = await AudioModule.requestRecordingPermissionsAsync();
       if (status.granted) {
-        audioRecorder.record();
+        await audioRecorder.record();
+        isRecordingRef.current = true;
+      } else {
+        console.warn('Microphone permission denied.');
+        setOrbState('idle');
       }
     } catch (err) {
       console.error('Failed to start recording', err);
@@ -75,12 +80,19 @@ export default function HomeScreen() {
   };
 
   const handleMicPressOut = async () => {
+    // Guard: only stop if recording actually started (i.e. permission was granted)
+    if (!isRecordingRef.current) {
+      setOrbState('idle');
+      return;
+    }
+
     setOrbState('processing');
-    
+    isRecordingRef.current = false;
+
     try {
       await audioRecorder.stop();
       const uri = audioRecorder.uri;
-      
+
       if (uri) {
         const { transcript } = await artemisApi.transcribeAudio(uri);
         if (transcript) {
