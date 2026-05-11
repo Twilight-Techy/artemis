@@ -155,7 +155,7 @@ async def chat_with_artemis(user_message: str, context_str: str, history: list[d
 
 async def transcribe_audio(audio_bytes: bytes, mime_type: str = "audio/mp4") -> str | None:
     """
-    Transcribes audio bytes using Gemini 2.0.
+    Transcribes audio bytes using Gemini 2.5 Flash.
     """
     if not client:
         return None
