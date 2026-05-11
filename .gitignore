@@ -40,6 +40,11 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# PlatformIO
+.pio/
+.pio-core/
+.pio-build/
+
 # generated native folders
 /ios
 /android
