@@ -281,6 +281,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.md,
+    // Pull loader up so it visually centres on the full screen,
+    // not just the remaining space below the greeting + filter bar.
+    marginBottom: 160,
   },
   pullLoader: {
     paddingVertical: Spacing.lg,
