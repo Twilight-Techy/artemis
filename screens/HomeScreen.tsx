@@ -26,6 +26,7 @@ import StatChip from '../components/StatChip';
 import QuickActionCard from '../components/QuickActionCard';
 import CommandBar from '../components/CommandBar';
 import ChatBubble, { ChatMessage } from '../components/chat/ChatBubble';
+import TypingIndicator from '../components/chat/TypingIndicator';
 import { ArtemisPullLoader } from '../components/ArtemisPullLoader';
 import MCPActionModal from '../components/MCPActionModal';
 import ConfirmModal from '../components/ConfirmModal';
@@ -184,6 +185,7 @@ export default function HomeScreen() {
     // Switch to chat mode automatically upon message
     setMode('chat');
     setIsSending(true);
+    setOrbState('processing');
     
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
 
@@ -214,6 +216,7 @@ export default function HomeScreen() {
       ]);
     } finally {
       setIsSending(false);
+      setOrbState('idle');
     }
   };
 
@@ -415,7 +418,7 @@ export default function HomeScreen() {
               data={messages}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => <ChatBubble message={item} />}
-              contentContainerStyle={[styles.chatContent, messages.length === 0 && { flex: 1, justifyContent: 'center' }]}
+              contentContainerStyle={[styles.chatContent, messages.length === 0 && !isSending && { flex: 1, justifyContent: 'center' }]}
               showsVerticalScrollIndicator={false}
               onContentSizeChange={() =>
                 flatListRef.current?.scrollToEnd({ animated: true })
@@ -436,8 +439,11 @@ export default function HomeScreen() {
                   <ArtemisPullLoader size={10} label="Reloading chat…" style={{ marginBottom: 8 }} />
                 ) : null
               }
+              ListFooterComponent={
+                isSending ? <TypingIndicator /> : null
+              }
               ListEmptyComponent={
-                !isRefreshingChat ? (
+                !isRefreshingChat && !isSending ? (
                   <View style={{ alignItems: 'center', paddingHorizontal: 32 }}>
                     <Ionicons name="chatbubble-ellipses-outline" size={48} color="rgba(116, 177, 255, 0.3)" />
                     <Text style={{ fontFamily: Typography.families.headline, fontSize: Typography.sizes.headlineSm, color: Colors.onSurfaceVariant, marginTop: 16, textAlign: 'center' }}>

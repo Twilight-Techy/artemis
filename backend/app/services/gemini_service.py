@@ -7,6 +7,7 @@ from google import genai
 from google.genai import types
 from google.genai import errors as genai_errors
 from app.config import get_settings
+import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
@@ -140,7 +141,8 @@ async def chat_with_artemis(user_message: str, context_str: str, history: list[d
     )
 
     try:
-        response = client.models.generate_content(
+        response = await asyncio.to_thread(
+            client.models.generate_content,
             model=settings.gemini_model,
             contents=contents,
             config=config
@@ -210,7 +212,8 @@ async def summarise_tool_result(
     )
 
     try:
-        response = client.models.generate_content(
+        response = await asyncio.to_thread(
+            client.models.generate_content,
             model=settings.gemini_model,
             contents=[user_turn, model_turn, tool_turn],
             config=config
@@ -231,7 +234,8 @@ async def transcribe_audio(audio_bytes: bytes, mime_type: str = "audio/mp4") -> 
     prompt = "Transcribe the speech in this audio exactly. Do not add any extra text, markdown, or conversational formatting. If you hear silence, return an empty string."
     
     try:
-        response = client.models.generate_content(
+        response = await asyncio.to_thread(
+            client.models.generate_content,
             model=settings.gemini_model,
             contents=[
                 prompt,
