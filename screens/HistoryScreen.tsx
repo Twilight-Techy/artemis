@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   Text,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { artemisApi } from '../api/artemisClient';
+import { ArtemisLoader } from '../components/ArtemisLoader';
+import { ArtemisPullLoader } from '../components/ArtemisPullLoader';
 
 type HistoryCategory = 'All' | 'Command' | 'Suggestion' | 'Automation';
 const CATEGORIES: HistoryCategory[] = ['All', 'Command', 'Suggestion', 'Automation'];
@@ -31,27 +34,32 @@ export default function HistoryScreen() {
   const navigation = useNavigation();
   const [activeFilter, setActiveFilter] = useState<HistoryCategory>('All');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  
+
   const [historyLogs, setHistoryLogs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchHistory();
-    }, [])
-  );
-
-  const fetchHistory = async () => {
-    setIsLoading(true);
+  const fetchHistory = useCallback(async (isPullRefresh = false) => {
+    if (!isPullRefresh) setIsLoading(true);
     try {
       const data = await artemisApi.getHistory();
       setHistoryLogs(data);
     } catch (e) {
-      console.warn("Failed to fetch history logs", e);
+      console.warn('Failed to fetch history logs', e);
     } finally {
       setIsLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchHistory(true);
+  }, [fetchHistory]);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
   const formattedLogs = historyLogs.map(log => {
       let mappedCategory = 'Command';
@@ -113,162 +121,187 @@ export default function HistoryScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ═══ Title Section ═══ */}
-        <View style={styles.titleSection}>
-          <Text style={styles.label}>System Logs</Text>
-          <Text style={styles.headline}>Action History</Text>
+      {/* ═══ Title Section ═══ */}
+      <View style={styles.titleSection}>
+        <Text style={styles.label}>System Logs</Text>
+        <Text style={styles.headline}>Action History</Text>
+      </View>
+
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ArtemisLoader size={72} label="Loading history..." />
         </View>
-
-        {/* ═══ Filter Chips ═══ */}
+      ) : (
         <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterBar}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="transparent"
+              colors={['transparent']}
+              progressBackgroundColor="transparent"
+              progressViewOffset={-100}
+            />
+          }
         >
-          {CATEGORIES.map(cat => {
-            const isActive = activeFilter === cat;
-            return (
-              <TouchableOpacity
-                key={cat}
-                style={[styles.filterChip, isActive && styles.filterChipActive]}
-                onPress={() => setActiveFilter(cat)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[
-                    styles.filterText,
-                    isActive && styles.filterTextActive,
-                  ]}
+          {/* ── Custom pull-to-refresh header ── */}
+          {refreshing && (
+            <ArtemisPullLoader
+              size={10}
+              label="Refreshing history…"
+              style={styles.pullLoader}
+            />
+          )}
+
+          {/* ═══ Filter Chips ═══ */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterBar}
+          >
+            {CATEGORIES.map(cat => {
+              const isActive = activeFilter === cat;
+              return (
+                <TouchableOpacity
+                  key={cat}
+                  style={[styles.filterChip, isActive && styles.filterChipActive]}
+                  onPress={() => setActiveFilter(cat)}
+                  activeOpacity={0.7}
                 >
-                  {cat}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        {/* ═══ Timeline ═══ */}
-        <View style={styles.timeline}>
-          {/* Timeline vertical line */}
-          <View style={styles.timelineLine} />
-
-          {filteredEntries.map((entry, index) => {
-            const isExpanded = expandedId === entry.id;
-            return (
-              <TouchableOpacity
-                key={entry.id}
-                style={styles.timelineEntry}
-                activeOpacity={0.8}
-                onPress={() => toggleExpand(entry.id)}
-              >
-                {/* Timeline dot */}
-                <View style={styles.timelineDotOuter}>
-                  <View
+                  <Text
                     style={[
-                      styles.timelineDotRing,
-                      {
-                        borderColor: isExpanded
-                          ? entry.color
-                          : `${entry.color}66`,
-                      },
-                      isExpanded && {
-                        shadowColor: entry.color,
-                        shadowOffset: { width: 0, height: 0 },
-                        shadowOpacity: 0.5,
-                        shadowRadius: 10,
-                        elevation: 6,
-                      },
+                      styles.filterText,
+                      isActive && styles.filterTextActive,
                     ]}
                   >
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {/* ═══ Timeline ═══ */}
+          <View style={styles.timeline}>
+            {/* Timeline vertical line */}
+            <View style={styles.timelineLine} />
+
+            {filteredEntries.map((entry) => {
+              const isExpanded = expandedId === entry.id;
+              return (
+                <TouchableOpacity
+                  key={entry.id}
+                  style={styles.timelineEntry}
+                  activeOpacity={0.8}
+                  onPress={() => toggleExpand(entry.id)}
+                >
+                  {/* Timeline dot */}
+                  <View style={styles.timelineDotOuter}>
                     <View
                       style={[
-                        styles.timelineDotInner,
+                        styles.timelineDotRing,
                         {
-                          backgroundColor: isExpanded
+                          borderColor: isExpanded
                             ? entry.color
                             : `${entry.color}66`,
                         },
+                        isExpanded && {
+                          shadowColor: entry.color,
+                          shadowOffset: { width: 0, height: 0 },
+                          shadowOpacity: 0.5,
+                          shadowRadius: 10,
+                          elevation: 6,
+                        },
                       ]}
-                    />
-                  </View>
-                </View>
-
-                {/* Entry card */}
-                <View
-                  style={[
-                    styles.entryCard,
-                    isExpanded && {
-                      borderColor: `${entry.color}4D`,
-                    },
-                  ]}
-                >
-                  <View style={styles.entryHeader}>
-                    <View style={styles.entryTitleGroup}>
-                      <View style={styles.entryTitleRow}>
-                        <Ionicons
-                          name={entry.icon as any}
-                          size={16}
-                          color={entry.color}
-                        />
-                        <Text style={styles.entryTitle}>{entry.title}</Text>
-                      </View>
-                      <Text style={styles.entryMeta}>
-                        {entry.time} • {entry.category.toUpperCase()}
-                      </Text>
+                    >
+                      <View
+                        style={[
+                          styles.timelineDotInner,
+                          {
+                            backgroundColor: isExpanded
+                              ? entry.color
+                              : `${entry.color}66`,
+                          },
+                        ]}
+                      />
                     </View>
-                    <Ionicons
-                      name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                      size={18}
-                      color={
-                        isExpanded ? entry.color : 'rgba(255, 255, 255, 0.15)'
-                      }
-                    />
                   </View>
 
-                  {/* Expanded content */}
-                  {isExpanded && entry.description && (
-                    <View style={styles.expandedContent}>
-                      <Text style={styles.entryDescription}>
-                        {entry.description}
-                      </Text>
-                      {entry.systemContext && (
-                        <View style={styles.contextBox}>
-                          <Text style={styles.contextLabel}>
-                            System Context
-                          </Text>
-                          <View style={styles.contextRow}>
-                            <View style={styles.contextIcon}>
-                              <Ionicons
-                                name="sparkles"
-                                size={14}
-                                color={Colors.primary}
-                              />
-                            </View>
-                            <Text style={styles.contextText}>
-                              {entry.systemContext}
-                            </Text>
-                          </View>
+                  {/* Entry card */}
+                  <View
+                    style={[
+                      styles.entryCard,
+                      isExpanded && {
+                        borderColor: `${entry.color}4D`,
+                      },
+                    ]}
+                  >
+                    <View style={styles.entryHeader}>
+                      <View style={styles.entryTitleGroup}>
+                        <View style={styles.entryTitleRow}>
+                          <Ionicons
+                            name={entry.icon as any}
+                            size={16}
+                            color={entry.color}
+                          />
+                          <Text style={styles.entryTitle}>{entry.title}</Text>
                         </View>
-                      )}
+                        <Text style={styles.entryMeta}>
+                          {entry.time} • {entry.category.toUpperCase()}
+                        </Text>
+                      </View>
+                      <Ionicons
+                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                        size={18}
+                        color={
+                          isExpanded ? entry.color : 'rgba(255, 255, 255, 0.15)'
+                        }
+                      />
                     </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
 
-        {/* ═══ End Marker ═══ */}
-        <View style={styles.endMarker}>
-          <Text style={styles.endMarkerText}>End of Transmission</Text>
-        </View>
+                    {/* Expanded content */}
+                    {isExpanded && entry.description && (
+                      <View style={styles.expandedContent}>
+                        <Text style={styles.entryDescription}>
+                          {entry.description}
+                        </Text>
+                        {entry.systemContext && (
+                          <View style={styles.contextBox}>
+                            <Text style={styles.contextLabel}>
+                              System Context
+                            </Text>
+                            <View style={styles.contextRow}>
+                              <View style={styles.contextIcon}>
+                                <Ionicons
+                                  name="sparkles"
+                                  size={14}
+                                  color={Colors.primary}
+                                />
+                              </View>
+                              <Text style={styles.contextText}>
+                                {entry.systemContext}
+                              </Text>
+                            </View>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
+          {/* ═══ End Marker ═══ */}
+          <View style={styles.endMarker}>
+            <Text style={styles.endMarkerText}>End of Transmission</Text>
+          </View>
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -302,11 +335,23 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 12,
   },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.md,
+    marginBottom: 80,
+  },
+  pullLoader: {
+    paddingVertical: Spacing.lg,
+  },
   scrollContent: {
     paddingHorizontal: Spacing['2xl'],
+    paddingBottom: 40,
   },
   titleSection: {
-    marginBottom: Spacing['3xl'],
+    paddingHorizontal: Spacing['2xl'],
+    marginBottom: Spacing['2xl'],
   },
   label: {
     fontFamily: Typography.families.label,
