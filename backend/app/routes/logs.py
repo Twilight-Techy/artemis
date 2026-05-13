@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, status
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import ExecutionLog, User
@@ -38,3 +38,14 @@ async def get_history_logs(
     )
     result = await db.execute(query)
     return result.scalars().all()
+
+@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+async def clear_history_logs(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Permanently delete all action/execution logs for the authenticated user."""
+    await db.execute(
+        delete(ExecutionLog).where(ExecutionLog.user_id == current_user.id)
+    )
+    await db.commit()

@@ -14,6 +14,7 @@ import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { artemisApi } from '../api/artemisClient';
 import { ArtemisLoader } from '../components/ArtemisLoader';
 import { ArtemisPullLoader } from '../components/ArtemisPullLoader';
+import ConfirmModal from '../components/ConfirmModal';
 
 type HistoryCategory = 'All' | 'Command' | 'Suggestion' | 'Automation';
 const CATEGORIES: HistoryCategory[] = ['All', 'Command', 'Suggestion', 'Automation'];
@@ -38,6 +39,7 @@ export default function HistoryScreen() {
   const [historyLogs, setHistoryLogs] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false);
 
   const fetchHistory = useCallback(async (isPullRefresh = false) => {
     if (!isPullRefresh) setIsLoading(true);
@@ -56,6 +58,20 @@ export default function HistoryScreen() {
     setRefreshing(true);
     fetchHistory(true);
   }, [fetchHistory]);
+
+  const handleClearHistory = useCallback(() => {
+    setShowClearModal(true);
+  }, []);
+
+  const confirmClearHistory = useCallback(async () => {
+    setShowClearModal(false);
+    try {
+      await artemisApi.clearHistory();
+      setHistoryLogs([]);
+    } catch (err) {
+      console.error('Failed to clear action history', err);
+    }
+  }, []);
 
   useEffect(() => {
     fetchHistory();
@@ -118,7 +134,17 @@ export default function HistoryScreen() {
           <Ionicons name="chevron-back" size={24} color={Colors.onSurfaceVariant} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>ARTEMIS</Text>
-        <View style={{ width: 40 }} />
+        {historyLogs.length > 0 ? (
+          <TouchableOpacity
+            onPress={handleClearHistory}
+            style={styles.clearButton}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="trash-outline" size={16} color={Colors.error} />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 40 }} />
+        )}
       </View>
 
       {/* ═══ Title Section ═══ */}
@@ -302,6 +328,19 @@ export default function HistoryScreen() {
           <View style={{ height: 40 }} />
         </ScrollView>
       )}
+      {/* ═══ Clear History Confirmation Modal ═══ */}
+      <ConfirmModal
+        visible={showClearModal}
+        icon="trash-outline"
+        iconColor={Colors.error}
+        title="Clear Action History"
+        message="This will permanently delete all action and execution logs. This cannot be undone."
+        confirmLabel="Clear"
+        cancelLabel="Keep It"
+        destructive
+        onConfirm={confirmClearHistory}
+        onCancel={() => setShowClearModal(false)}
+      />
     </View>
   );
 }
@@ -324,6 +363,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  clearButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 113, 108, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 113, 108, 0.18)',
   },
   headerTitle: {
     fontFamily: Typography.families.headline,

@@ -107,9 +107,21 @@ export const artemisApi = {
             method: 'DELETE',
             headers: artemisApi.getAuthHeader(),
         });
+        await artemisApi._handleResponse(response);
         // 204 No Content is success — no body to parse
         if (!response.ok && response.status !== 204) {
-            throw new Error(`Clear history failed: ${response.status}`);
+            throw new Error(`Clear chat history failed: ${response.status}`);
+        }
+    },
+
+    clearHistory: async () => {
+        const response = await fetch(`${BACKEND_URL}/logs/`, {
+            method: 'DELETE',
+            headers: artemisApi.getAuthHeader(),
+        });
+        await artemisApi._handleResponse(response);
+        if (!response.ok && response.status !== 204) {
+            throw new Error(`Clear action history failed: ${response.status}`);
         }
     },
 
