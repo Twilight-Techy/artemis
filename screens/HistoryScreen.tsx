@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -15,6 +15,7 @@ import { artemisApi } from '../api/artemisClient';
 import { ArtemisLoader } from '../components/ArtemisLoader';
 import { ArtemisPullLoader } from '../components/ArtemisPullLoader';
 import ConfirmModal from '../components/ConfirmModal';
+import { useHistory } from '../contexts/HistoryContext';
 
 type HistoryCategory = 'All' | 'Command' | 'Suggestion' | 'Automation';
 const CATEGORIES: HistoryCategory[] = ['All', 'Command', 'Suggestion', 'Automation'];
@@ -33,31 +34,14 @@ type HistoryEntry = {
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const { logs: historyLogs, isLoading, isRefreshing, refresh, clearLogs } = useHistory();
   const [activeFilter, setActiveFilter] = useState<HistoryCategory>('All');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  const [historyLogs, setHistoryLogs] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
 
-  const fetchHistory = useCallback(async (isPullRefresh = false) => {
-    if (!isPullRefresh) setIsLoading(true);
-    try {
-      const data = await artemisApi.getHistory();
-      setHistoryLogs(data);
-    } catch (e) {
-      console.warn('Failed to fetch history logs', e);
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
   const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchHistory(true);
-  }, [fetchHistory]);
+    refresh();
+  }, [refresh]);
 
   const handleClearHistory = useCallback(() => {
     setShowClearModal(true);
@@ -67,15 +51,11 @@ export default function HistoryScreen() {
     setShowClearModal(false);
     try {
       await artemisApi.clearHistory();
-      setHistoryLogs([]);
+      clearLogs(); // optimistic local update via context
     } catch (err) {
       console.error('Failed to clear action history', err);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+  }, [clearLogs]);
 
   const formattedLogs = historyLogs.map(log => {
       let mappedCategory = 'Command';
@@ -163,7 +143,7 @@ export default function HistoryScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
+              refreshing={isRefreshing}
               onRefresh={handleRefresh}
               tintColor="transparent"
               colors={['transparent']}
@@ -173,7 +153,7 @@ export default function HistoryScreen() {
           }
         >
           {/* ── Custom pull-to-refresh header ── */}
-          {refreshing && (
+          {isRefreshing && (
             <ArtemisPullLoader
               size={10}
               label="Refreshing history…"

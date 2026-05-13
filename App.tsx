@@ -23,6 +23,7 @@ import { Colors } from './constants/theme';
 import { NetworkProvider } from './contexts/NetworkContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProfileProvider } from './contexts/ProfileContext';
+import { HistoryProvider } from './contexts/HistoryContext';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -60,10 +61,12 @@ export default function App() {
       <NetworkProvider>
         <AuthProvider>
           <ProfileProvider>
-            <NavigationContainer theme={MyTheme}>
-              <AppNavigator />
-              <StatusBar style="light" />
-            </NavigationContainer>
+            <HistoryProvider>
+              <NavigationContainer theme={MyTheme}>
+                <AppNavigator />
+                <StatusBar style="light" />
+              </NavigationContainer>
+            </HistoryProvider>
           </ProfileProvider>
         </AuthProvider>
       </NetworkProvider>
