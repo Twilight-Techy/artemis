@@ -7,10 +7,12 @@ import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { artemisApi } from '../api/artemisClient';
+import { useProfile } from '../contexts/ProfileContext';
 
 export default function ProfileSettingsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const { refreshProfile } = useProfile();
 
   const [isLoading, setIsLoading] = useState(true);
   const [displayName, setDisplayName] = useState('');
@@ -41,6 +43,8 @@ export default function ProfileSettingsScreen() {
     setIsSaving(true);
     try {
       await artemisApi.updateMe({ display_name: displayName, email, avatar_url: avatarUrl || undefined });
+      // Sync the global profile context so TopNavBar reflects the new avatar immediately
+      await refreshProfile();
       setModalConfig({ type: 'success', title: 'SUCCESS', message: 'Profile updated successfully.' });
       setModalVisible(true);
     } catch (e) {

@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing } from '../constants/theme';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { artemisApi } from '../api/artemisClient';
+import { useProfile } from '../contexts/ProfileContext';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -16,26 +16,17 @@ interface TopNavBarProps {
 
 export default function TopNavBar({ onRefreshReady }: TopNavBarProps) {
   const navigation = useNavigation<NavProp>();
-  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+  const { avatarUrl, profileLoading, profileError, refreshProfile } = useProfile();
 
-  const fetchProfile = React.useCallback(async () => {
-    try {
-      const data = await artemisApi.getMe();
-      if (data.avatar_url) {
-        setAvatarUrl(data.avatar_url);
-      }
-    } catch (error) {
-      // Silent fail for avatar
-    }
-  }, []);
+  // Expose refreshProfile to the parent (e.g. HomeScreen pull-to-refresh)
+  React.useEffect(() => {
+    onRefreshReady?.(refreshProfile);
+  }, [refreshProfile, onRefreshReady]);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchProfile();
-      // Expose the refresh fn to the parent once on mount
-      onRefreshReady?.(fetchProfile);
-    }, [fetchProfile, onRefreshReady])
-  );
+  // Ring colour: red tint on error, blue default
+  const ringColor = profileError
+    ? 'rgba(255, 113, 108, 0.5)'
+    : 'rgba(116, 177, 255, 0.2)';
 
   return (
     <View style={styles.topBar}>
@@ -50,21 +41,26 @@ export default function TopNavBar({ onRefreshReady }: TopNavBarProps) {
         >
           <Ionicons name="time-outline" size={24} color={Colors.primary} />
         </TouchableOpacity>
+
         <TouchableOpacity
-          onPress={() => navigation.navigate('Settings')}
+          onPress={() => profileError ? refreshProfile() : navigation.navigate('Settings')}
           activeOpacity={0.7}
-          style={styles.avatarRing}
+          style={[styles.avatarRing, { borderColor: ringColor }]}
         >
-          {avatarUrl ? (
-            <Image
-              source={{ uri: avatarUrl }}
-              style={styles.avatar}
-            />
+          {profileLoading ? (
+            // First-load shimmer — show a spinner inside the ring
+            <View style={styles.avatarLoadingContainer}>
+              <ActivityIndicator size="small" color={Colors.primary} />
+            </View>
+          ) : avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+          ) : profileError ? (
+            // All retries failed — show a retry icon; tap to retry
+            <View style={styles.avatarLoadingContainer}>
+              <Ionicons name="refresh-outline" size={18} color={Colors.error} />
+            </View>
           ) : (
-            <Image
-              source={require('../assets/avatar.png')}
-              style={styles.avatar}
-            />
+            <Image source={require('../assets/avatar.png')} style={styles.avatar} />
           )}
         </TouchableOpacity>
       </View>
@@ -109,8 +105,13 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 21,
     borderWidth: 1,
-    borderColor: 'rgba(116, 177, 255, 0.2)',
     overflow: 'hidden',
+  },
+  avatarLoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
   avatar: {
     width: '100%',
