@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
@@ -22,8 +22,16 @@ type FunctionType = 'hardware' | 'software' | 'hybrid';
 interface ConnectableDevice {
   id: string;
   name: string;
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-  room: string;
+  device_type: string;
+  room?: string;
+}
+
+interface DeviceAction {
+  deviceId: string;
+  deviceName: string;
+  deviceType: string;
+  action: string;
+  value?: string;
 }
 
 // ── Constants ──
@@ -33,16 +41,34 @@ const FUNCTION_TYPES: { id: FunctionType; label: string; icon: keyof typeof Ioni
   { id: 'hybrid', label: 'Hybrid', icon: 'git-merge-outline', desc: 'Devices + services' },
 ];
 
-const AVAILABLE_DEVICES: ConnectableDevice[] = [
-  { id: '1', name: 'Main Lights', icon: 'lightbulb-outline', room: 'Living Room' },
-  { id: '2', name: 'AC Unit', icon: 'air-conditioner', room: 'Living Room' },
-  { id: '3', name: 'Smart Blinds', icon: 'blinds', room: 'Bedroom' },
-  { id: '4', name: 'Coffee Maker', icon: 'coffee-outline', room: 'Kitchen' },
-  { id: '5', name: 'Door Lock', icon: 'lock-outline', room: 'Entrance' },
-  { id: '6', name: 'Speakers', icon: 'speaker', room: 'Living Room' },
-  { id: '7', name: 'Thermostat', icon: 'thermometer', room: 'Living Room' },
-  { id: '8', name: 'Fireplace', icon: 'fireplace', room: 'Living Room' },
-];
+const getCapabilities = (deviceType: string): { label: string; value: string; hasValue?: boolean; placeholder?: string }[] => {
+  switch (deviceType?.toLowerCase()) {
+    case 'light': case 'lights':
+      return [
+        { label: 'Turn On', value: 'turn_on' },
+        { label: 'Turn Off', value: 'turn_off' },
+        { label: 'Toggle', value: 'toggle' },
+        { label: 'Set Brightness', value: 'set_brightness', hasValue: true, placeholder: '0–100' },
+      ];
+    case 'thermostat': case 'climate': case 'ac':
+      return [
+        { label: 'Turn On', value: 'turn_on' },
+        { label: 'Turn Off', value: 'turn_off' },
+        { label: 'Set Temp', value: 'set_temperature', hasValue: true, placeholder: 'e.g. 22°C' },
+      ];
+    case 'lock': case 'security':
+      return [
+        { label: 'Lock', value: 'lock' },
+        { label: 'Unlock', value: 'unlock' },
+      ];
+    default:
+      return [
+        { label: 'Turn On', value: 'turn_on' },
+        { label: 'Turn Off', value: 'turn_off' },
+        { label: 'Toggle', value: 'toggle' },
+      ];
+  }
+};
 
 type AddEditFunctionRouteParams = {
   AddEditFunction: {
@@ -63,7 +89,9 @@ export default function AddEditFunctionScreen() {
   const [name, setName] = useState(initName || '');
   const [description, setDescription] = useState('');
   const [functionType, setFunctionType] = useState<FunctionType>('hardware');
-  const [selectedDevices, setSelectedDevices] = useState<Set<string>>(new Set());
+  const [availableDevices, setAvailableDevices] = useState<ConnectableDevice[]>([]);
+  const [devicesLoading, setDevicesLoading] = useState(false);
+  const [deviceActions, setDeviceActions] = useState<DeviceAction[]>([]);
 
   // Triggers — voice phrases the AI listens for
   const [triggers, setTriggers] = useState<string[]>(isEdit ? ['good morning', 'wake up the house'] : []);
@@ -82,12 +110,22 @@ export default function AddEditFunctionScreen() {
   const [parameters, setParameters] = useState<string[]>(isEdit ? ['targetEmail', 'reportDate'] : []);
   const [parameterInput, setParameterInput] = useState('');
 
-  const toggleDevice = (id: string) => {
-    setSelectedDevices(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
+  const toggleDevice = (device: ConnectableDevice) => {
+    setDeviceActions(prev => {
+      if (prev.find(da => da.deviceId === device.id)) {
+        return prev.filter(da => da.deviceId !== device.id);
+      }
+      const caps = getCapabilities(device.device_type);
+      return [...prev, { deviceId: device.id, deviceName: device.name, deviceType: device.device_type, action: caps[0]?.value ?? 'toggle' }];
     });
+  };
+
+  const updateDeviceAction = (deviceId: string, action: string) => {
+    setDeviceActions(prev => prev.map(da => da.deviceId === deviceId ? { ...da, action, value: undefined } : da));
+  };
+
+  const updateDeviceValue = (deviceId: string, value: string) => {
+    setDeviceActions(prev => prev.map(da => da.deviceId === deviceId ? { ...da, value } : da));
   };
 
   const addTrigger = () => {
@@ -145,8 +183,6 @@ export default function AddEditFunctionScreen() {
     if (isEdit) {
       const fetchInitial = async () => {
         try {
-          // In a heavily optimized app, we'd pass the full object or fetch the specific function by ID.
-          // For now, let's assume we can fetch all and find ours.
           const fns = await artemisApi.getFunctions();
           const target = fns.find((f: any) => f.name === initName);
           if (target) {
@@ -155,15 +191,39 @@ export default function AddEditFunctionScreen() {
             setEndpoint(target.url || '');
             setMethod(target.method || 'POST');
             if (target.parameters) setParameters(target.parameters);
-            // Hydrate headers and bodies if available in the model (requires body_template/headers support)
+            if (target.device_actions) setDeviceActions(target.device_actions);
           }
         } catch (e) {
-          console.warn("Failed to fetch initial function", e);
+          console.warn('Failed to fetch initial function', e);
         }
       };
       fetchInitial();
     }
   }, [isEdit, initName]);
+
+  // Fetch real devices when hardware/hybrid type is selected
+  React.useEffect(() => {
+    const needsDevices = functionType === 'hardware' || functionType === 'hybrid';
+    if (!needsDevices) return;
+    setDevicesLoading(true);
+    Promise.all([artemisApi.getDevices(), artemisApi.getRooms()])
+      .then(([devicesData, roomsData]: [any[], any[]]) => {
+        const roomMap: Record<string, string> = {};
+        if (Array.isArray(roomsData)) {
+          roomsData.forEach((r: any) => { roomMap[r.id] = r.name; });
+        }
+        setAvailableDevices(
+          (Array.isArray(devicesData) ? devicesData : []).map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            device_type: d.device_type ?? 'generic',
+            room: roomMap[d.room_id] ?? '',
+          }))
+        );
+      })
+      .catch(() => console.warn('Failed to load devices'))
+      .finally(() => setDevicesLoading(false));
+  }, [functionType]);
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -180,7 +240,11 @@ export default function AddEditFunctionScreen() {
         method: method,
         url: functionType !== 'hardware' ? endpoint : undefined,
         parameters: parameters,
-        // body_template: body ? JSON.parse(body) : undefined, // add back if needed
+        device_actions: deviceActions.map(da => ({
+          device_id: da.deviceId,
+          action: da.action,
+          value: da.value,
+        })),
       };
 
       if (isEdit) {
@@ -314,45 +378,110 @@ export default function AddEditFunctionScreen() {
           </View>
         </View>
 
-        {/* ═══ Devices (Hardware / Hybrid) ═══ */}
+        {/* ═══ Devices & Actions (Hardware / Hybrid) ═══ */}
         {showDevices && (
           <View style={styles.section}>
             <View style={styles.sectionHeadingRow}>
               <Ionicons name="hardware-chip-outline" size={20} color={Colors.primaryDim} />
-              <Text style={styles.sectionHeading}>Devices</Text>
+              <Text style={styles.sectionHeading}>Devices & Actions</Text>
             </View>
             <Text style={styles.sectionSubtext}>
-              Select devices this function will control.
-              {selectedDevices.size > 0 ? ` ${selectedDevices.size} selected.` : ''}
+              Select a device and configure the action to perform on it.
+              {deviceActions.length > 0 ? ` ${deviceActions.length} configured.` : ''}
             </Text>
-            <View style={styles.devicesGrid}>
-              {AVAILABLE_DEVICES.map((device) => {
-                const isSelected = selectedDevices.has(device.id);
-                return (
-                  <TouchableOpacity
-                    key={device.id}
-                    style={[styles.deviceChip, isSelected && styles.deviceChipSelected]}
-                    onPress={() => toggleDevice(device.id)}
-                    activeOpacity={0.7}
-                  >
-                    <MaterialCommunityIcons
-                      name={device.icon}
-                      size={18}
-                      color={isSelected ? Colors.primary : Colors.onSurfaceVariant}
-                    />
-                    <View style={styles.deviceChipInfo}>
-                      <Text style={[styles.deviceChipText, isSelected && styles.deviceChipTextSelected]}>
-                        {device.name}
-                      </Text>
-                      <Text style={styles.deviceChipRoom}>{device.room}</Text>
-                    </View>
-                    {isSelected && (
-                      <Ionicons name="checkmark-circle" size={16} color={Colors.primary} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+
+            {devicesLoading ? (
+              <View style={styles.deviceEmptyState}>
+                <Text style={styles.deviceEmptyText}>Loading devices...</Text>
+              </View>
+            ) : availableDevices.length === 0 ? (
+              <View style={styles.deviceEmptyState}>
+                <Ionicons name="hardware-chip-outline" size={32} color={Colors.onSurfaceVariant} style={{ opacity: 0.3 }} />
+                <Text style={[styles.deviceEmptyText, { marginTop: Spacing.sm }]}>
+                  No devices found. Add devices first from the Devices tab.
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.deviceList}>
+                {(() => {
+                  const rooms = Array.from(
+                    new Set(availableDevices.map(d => d.room || 'No Room'))
+                  );
+                  return rooms.map(room => {
+                    const roomDevices = availableDevices.filter(
+                      d => (d.room || 'No Room') === room
+                    );
+                    return (
+                      <View key={room}>
+                        {/* Room header */}
+                        <Text style={styles.roomHeader}>{room.toUpperCase()}</Text>
+
+                        {roomDevices.map(device => {
+                          const da = deviceActions.find(a => a.deviceId === device.id);
+                          const isSelected = !!da;
+                          const caps = getCapabilities(device.device_type);
+                          const selectedCap = caps.find(c => c.value === da?.action);
+                          return (
+                            <View key={device.id} style={styles.deviceItem}>
+                              <TouchableOpacity
+                                style={[styles.deviceRow, isSelected && styles.deviceRowSelected]}
+                                onPress={() => toggleDevice(device)}
+                                activeOpacity={0.7}
+                              >
+                                <View style={[styles.deviceRowCheck, isSelected && styles.deviceRowCheckActive]}>
+                                  {isSelected && <Ionicons name="checkmark" size={11} color={Colors.onPrimary} />}
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={[styles.deviceRowName, isSelected && { color: Colors.onSurface }]}>
+                                    {device.name}
+                                  </Text>
+                                  <Text style={styles.deviceRowMeta}>{device.device_type}</Text>
+                                </View>
+                                <Ionicons
+                                  name={isSelected ? 'chevron-up' : 'chevron-down'}
+                                  size={16}
+                                  color={isSelected ? Colors.primary : Colors.onSurfaceVariant}
+                                />
+                              </TouchableOpacity>
+
+                              {isSelected && (
+                                <View style={styles.deviceActionPanel}>
+                                  <Text style={styles.deviceActionLabel}>ACTION</Text>
+                                  <View style={styles.actionPillRow}>
+                                    {caps.map(cap => (
+                                      <TouchableOpacity
+                                        key={cap.value}
+                                        style={[styles.actionPill, da?.action === cap.value && styles.actionPillActive]}
+                                        onPress={() => updateDeviceAction(device.id, cap.value)}
+                                        activeOpacity={0.7}
+                                      >
+                                        <Text style={[styles.actionPillText, da?.action === cap.value && styles.actionPillTextActive]}>
+                                          {cap.label}
+                                        </Text>
+                                      </TouchableOpacity>
+                                    ))}
+                                  </View>
+                                  {selectedCap?.hasValue && (
+                                    <TextInput
+                                      style={[styles.textInput, { marginTop: Spacing.md }]}
+                                      value={da?.value ?? ''}
+                                      onChangeText={val => updateDeviceValue(device.id, val)}
+                                      placeholder={selectedCap.placeholder ?? 'Enter value'}
+                                      placeholderTextColor="rgba(173,170,173,0.5)"
+                                      keyboardType="numeric"
+                                    />
+                                  )}
+                                </View>
+                              )}
+                            </View>
+                          );
+                        })}
+                      </View>
+                    );
+                  });
+                })()}
+              </View>
+            )}
           </View>
         )}
 
@@ -727,46 +856,124 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
+
   // ── Devices ──
-  devicesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
+  deviceEmptyState: {
+    padding: Spacing['2xl'],
+    alignItems: 'center',
+    backgroundColor: Colors.surfaceContainerHigh,
+    borderRadius: Radii.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(72, 71, 74, 0.15)',
   },
-  deviceChip: {
+  deviceEmptyText: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.bodySm,
+    color: Colors.onSurfaceVariant,
+    textAlign: 'center',
+  },
+  deviceList: {
+    gap: Spacing.md,
+  },
+  roomHeader: {
+    fontFamily: Typography.families.label,
+    fontSize: Typography.sizes.labelXs,
+    fontWeight: Typography.weights.bold,
+    color: Colors.primary,
+    letterSpacing: 3,
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.xs,
+    opacity: 0.8,
+  },
+  deviceItem: {
+    marginBottom: Spacing.xs,
+  },
+  deviceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    width: '48%',
-    paddingHorizontal: Spacing.md,
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderRadius: Radii.lg,
     borderWidth: 1,
     borderColor: 'rgba(72, 71, 74, 0.15)',
     backgroundColor: Colors.surfaceContainerHigh,
   },
-  deviceChipSelected: {
-    backgroundColor: 'rgba(116, 177, 255, 0.1)',
-    borderColor: 'rgba(116, 177, 255, 0.3)',
+  deviceRowSelected: {
+    backgroundColor: 'rgba(116, 177, 255, 0.08)',
+    borderColor: 'rgba(116, 177, 255, 0.25)',
   },
-  deviceChipInfo: {
-    flexShrink: 1,
+  deviceRowCheck: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(72, 71, 74, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  deviceChipText: {
+  deviceRowCheckActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  deviceRowName: {
     fontFamily: Typography.families.body,
     fontSize: Typography.sizes.bodySm,
     fontWeight: Typography.weights.medium,
     color: Colors.onSurfaceVariant,
   },
-  deviceChipTextSelected: {
-    color: Colors.onSurface,
-  },
-  deviceChipRoom: {
+  deviceRowMeta: {
     fontFamily: Typography.families.label,
     fontSize: 10,
     color: Colors.onSurfaceVariant,
-    opacity: 0.7,
+    opacity: 0.6,
+    marginTop: 1,
   },
+  deviceActionPanel: {
+    backgroundColor: 'rgba(116, 177, 255, 0.04)',
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: 'rgba(116, 177, 255, 0.15)',
+    borderBottomLeftRadius: Radii.lg,
+    borderBottomRightRadius: Radii.lg,
+    padding: Spacing.lg,
+  },
+  deviceActionLabel: {
+    fontFamily: Typography.families.label,
+    fontSize: Typography.sizes.labelXs,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onSurfaceVariant,
+    letterSpacing: 2,
+    marginBottom: Spacing.sm,
+  },
+  actionPillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  actionPill: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: 'rgba(72, 71, 74, 0.3)',
+    backgroundColor: Colors.surfaceContainerLow,
+  },
+  actionPillActive: {
+    backgroundColor: 'rgba(116, 177, 255, 0.15)',
+    borderColor: Colors.primary,
+  },
+  actionPillText: {
+    fontFamily: Typography.families.label,
+    fontSize: Typography.sizes.labelSm,
+    fontWeight: Typography.weights.bold,
+    color: Colors.onSurfaceVariant,
+    letterSpacing: 0.5,
+  },
+  actionPillTextActive: {
+    color: Colors.primary,
+  },
+
 
   // ── Method Pills ──
   methodRow: {

@@ -194,15 +194,28 @@ export default function HistoryScreen() {
             {/* Timeline vertical line */}
             <View style={styles.timelineLine} />
 
-            {filteredEntries.map((entry) => {
-              const isExpanded = expandedId === entry.id;
-              return (
-                <TouchableOpacity
-                  key={entry.id}
-                  style={styles.timelineEntry}
-                  activeOpacity={0.8}
-                  onPress={() => toggleExpand(entry.id)}
-                >
+            {filteredEntries.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="time-outline" size={48} color={Colors.onSurfaceVariant} style={{ opacity: 0.4 }} />
+                <Text style={styles.emptyText}>
+                  {activeFilter === 'All' ? 'No history yet' : `No ${activeFilter} entries`}
+                </Text>
+                <Text style={styles.emptySubText}>
+                  {activeFilter === 'All'
+                    ? 'Actions and automations will appear here once Artemis gets to work.'
+                    : `Try switching to "All" to see the full log.`}
+                </Text>
+              </View>
+            ) : (
+              filteredEntries.map((entry) => {
+                const isExpanded = expandedId === entry.id;
+                return (
+                  <TouchableOpacity
+                    key={entry.id}
+                    style={styles.timelineEntry}
+                    activeOpacity={0.8}
+                    onPress={() => toggleExpand(entry.id)}
+                  >
                   {/* Timeline dot */}
                   <View style={styles.timelineDotOuter}>
                     <View
@@ -297,7 +310,8 @@ export default function HistoryScreen() {
                   </View>
                 </TouchableOpacity>
               );
-            })}
+            })
+            )}
           </View>
 
           {/* ═══ End Marker ═══ */}
@@ -377,10 +391,33 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing['2xl'],
     paddingBottom: 40,
+    flexGrow: 1,
   },
   titleSection: {
     paddingHorizontal: Spacing['2xl'],
     marginBottom: Spacing['2xl'],
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 60,
+    paddingHorizontal: Spacing['2xl'],
+    gap: Spacing.sm,
+  },
+  emptyText: {
+    fontFamily: Typography.families.headline,
+    fontSize: Typography.sizes.headlineMd,
+    color: Colors.onSurface,
+    marginTop: Spacing.md,
+  },
+  emptySubText: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.bodyMd,
+    color: Colors.onSurfaceVariant,
+    textAlign: 'center',
+    lineHeight: 22,
+    opacity: 0.7,
   },
   label: {
     fontFamily: Typography.families.label,
