@@ -116,6 +116,7 @@ class Function(Base):
     headers: Mapped[dict | None] = mapped_column(JSON)
     body_template: Mapped[dict | None] = mapped_column(JSON)
     parameters: Mapped[list | None] = mapped_column(JSON)  # [{name, type, default, required}]
+    device_actions: Mapped[list | None] = mapped_column(JSON)  # [{device_id, action, value}]
     is_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     owner_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

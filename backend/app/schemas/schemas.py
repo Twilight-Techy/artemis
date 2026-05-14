@@ -82,6 +82,12 @@ class DeviceCommand(BaseModel):
 # ═══════════════════════════════════════════════
 # Function
 # ═══════════════════════════════════════════════
+class DeviceActionItem(BaseModel):
+    device_id: str
+    action: str
+    value: str | None = None
+
+
 class FunctionCreate(BaseModel):
     name: str = Field(..., max_length=100)
     description: str | None = None
@@ -91,6 +97,7 @@ class FunctionCreate(BaseModel):
     headers: dict | None = None
     body_template: dict | None = None
     parameters: list | None = None
+    device_actions: list[DeviceActionItem] | None = None
 
 
 class FunctionOut(BaseModel):
@@ -103,6 +110,7 @@ class FunctionOut(BaseModel):
     headers: dict | None
     body_template: dict | None
     parameters: list | None
+    device_actions: list | None
     is_enabled: bool
     created_at: datetime
     updated_at: datetime

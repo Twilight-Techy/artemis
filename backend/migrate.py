@@ -22,6 +22,12 @@ async def migrate():
                 ADD COLUMN IF NOT EXISTS protocol VARCHAR(30) DEFAULT 'http';
         """)
         print("Migration successful: 'pin' and 'protocol' columns added (or already existed).")
+        
+        await conn.execute("""
+            ALTER TABLE functions
+                ADD COLUMN IF NOT EXISTS device_actions JSON;
+        """)
+        print("Migration successful: 'device_actions' column added to functions (or already existed).")
     finally:
         await conn.close()
 
