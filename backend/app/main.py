@@ -23,7 +23,14 @@ async def lifespan(app: FastAPI):
     """Create tables on startup (dev convenience). Use Alembic for production migrations."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all, checkfirst=True)
+        
+    import asyncio
+    from app.services.time_scheduler import run_time_scheduler
+    scheduler_task = asyncio.create_task(run_time_scheduler())
+    
     yield
+    
+    scheduler_task.cancel()
     await engine.dispose()
 
 
