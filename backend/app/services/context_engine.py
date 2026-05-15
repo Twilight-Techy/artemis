@@ -59,6 +59,19 @@ async def gather_context(db: AsyncSession, user_id: str) -> str:
     else:
         context_lines.append("No active automations.")
 
+    # Gather functions
+    context_lines.append("\n--- AVAILABLE FUNCTIONS ---")
+    from app.models import Function
+    functions_result = await db.execute(
+        select(Function).where(Function.owner_id == user_id, Function.is_enabled == True)
+    )
+    functions = functions_result.scalars().all()
+    if functions:
+        for f in functions:
+            context_lines.append(f"Function '{f.name}': Type={f.function_type}, Description={f.description or 'None'}")
+    else:
+        context_lines.append("No functions available.")
+
     return "\n".join(context_lines)
 
 async def get_recent_history(db: AsyncSession, user_id: str, limit: int = 10) -> list[dict]:

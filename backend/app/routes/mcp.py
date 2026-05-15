@@ -269,8 +269,29 @@ async def approve_action(
         if log.action_type == "execute_function":
             function_name = args.get("function_name")
             parameters = args.get("parameters", {})
-            # Add execution logic here or dispatch to automation engine
-            hw_response = {"status": "Function executed locally", "function": function_name, "params": parameters}
+            
+            # Lookup function by name
+            from app.models import Function
+            fn_query = await db.execute(
+                select(Function).where(Function.name == function_name, Function.owner_id == current_user.id)
+            )
+            fn = fn_query.scalar_one_or_none()
+            if not fn:
+                raise hardware_service.HardwareError(f"Function '{function_name}' not found.")
+                
+            from app.services import function_service
+            # Note: The MCP logic doesn't currently inject the generated 'parameters' into the execution,
+            # as our function execution logic is purely config-driven right now. But we pass what we have.
+            try:
+                hw_response = await function_service.execute_function(db, fn.id, current_user)
+                # Overwrite triggered_by since it was AI
+                log_update = await db.execute(select(ExecutionLog).where(ExecutionLog.id == hw_response.get("log_id")))
+                actual_log = log_update.scalar_one_or_none()
+                if actual_log:
+                    actual_log.triggered_by = "mcp"
+            except ValueError as e:
+                raise hardware_service.HardwareError(str(e))
+                
             log.status = "success"
             log.response_payload = hw_response
             log.target_name = function_name

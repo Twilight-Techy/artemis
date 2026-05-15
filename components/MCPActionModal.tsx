@@ -69,10 +69,16 @@ export default function MCPActionModal({ visible, onClose, onExecute, proactiveA
             {/* ═══ Tool/Device Selection (dynamic) ═══ */}
             <View style={styles.hardwareBadge}>
               <View style={styles.badgeLeft}>
-                <Ionicons name="hardware-chip-outline" size={18} color={Colors.secondary} />
-                <Text style={styles.badgeLabel}>{actionLabel}</Text>
+                <Ionicons 
+                  name={proactiveAction?.action_type === 'execute_function' ? 'flash-outline' : 'hardware-chip-outline'} 
+                  size={18} 
+                  color={Colors.secondary} 
+                />
+                <Text style={styles.badgeLabel}>
+                  {proactiveAction?.action_type === 'execute_function' ? 'FUNCTION' : actionLabel}
+                </Text>
               </View>
-              <Text style={styles.badgeValue}>{targetLabel}</Text>
+              <Text style={styles.badgeValue} numberOfLines={1}>{targetLabel}</Text>
             </View>
 
 
