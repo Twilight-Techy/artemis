@@ -98,6 +98,8 @@ class FunctionCreate(BaseModel):
     body_template: dict | None = None
     parameters: list | None = None
     device_actions: list[DeviceActionItem] | None = None
+    triggers: list[str] | None = None
+    conditions: list[str] | None = None
 
 
 class FunctionOut(BaseModel):
@@ -111,6 +113,8 @@ class FunctionOut(BaseModel):
     body_template: dict | None
     parameters: list | None
     device_actions: list | None
+    triggers: list[str] | None
+    conditions: list[str] | None
     is_enabled: bool
     created_at: datetime
     updated_at: datetime

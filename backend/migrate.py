@@ -25,9 +25,11 @@ async def migrate():
         
         await conn.execute("""
             ALTER TABLE functions
-                ADD COLUMN IF NOT EXISTS device_actions JSON;
+                ADD COLUMN IF NOT EXISTS device_actions JSON,
+                ADD COLUMN IF NOT EXISTS triggers JSON,
+                ADD COLUMN IF NOT EXISTS conditions JSON;
         """)
-        print("Migration successful: 'device_actions' column added to functions (or already existed).")
+        print("Migration successful: 'device_actions', 'triggers', 'conditions' columns added to functions (or already existed).")
     finally:
         await conn.close()
 

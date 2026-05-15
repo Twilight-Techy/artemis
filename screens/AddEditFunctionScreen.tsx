@@ -94,11 +94,11 @@ export default function AddEditFunctionScreen() {
   const [deviceActions, setDeviceActions] = useState<DeviceAction[]>([]);
 
   // Triggers — voice phrases the AI listens for
-  const [triggers, setTriggers] = useState<string[]>(isEdit ? ['good morning', 'wake up the house'] : []);
+  const [triggers, setTriggers] = useState<string[]>([]);
   const [triggerInput, setTriggerInput] = useState('');
 
   // Conditions — contextual hints for AI suggestions
-  const [conditions, setConditions] = useState<string[]>(isEdit ? ['temperature falls below 18°C'] : []);
+  const [conditions, setConditions] = useState<string[]>([]);
   const [conditionInput, setConditionInput] = useState('');
 
   // Software config
@@ -107,7 +107,7 @@ export default function AddEditFunctionScreen() {
   const [headers, setHeaders] = useState<string[]>([]);
   const [headerInput, setHeaderInput] = useState('');
   const [body, setBody] = useState('');
-  const [parameters, setParameters] = useState<string[]>(isEdit ? ['targetEmail', 'reportDate'] : []);
+  const [parameters, setParameters] = useState<string[]>([]);
   const [parameterInput, setParameterInput] = useState('');
 
   const toggleDevice = (device: ConnectableDevice) => {
@@ -192,6 +192,8 @@ export default function AddEditFunctionScreen() {
             setMethod(target.method || 'POST');
             if (target.parameters) setParameters(target.parameters);
             if (target.device_actions) setDeviceActions(target.device_actions);
+            if (target.triggers) setTriggers(target.triggers);
+            if (target.conditions) setConditions(target.conditions);
           }
         } catch (e) {
           console.warn('Failed to fetch initial function', e);
@@ -245,6 +247,8 @@ export default function AddEditFunctionScreen() {
           action: da.action,
           value: da.value,
         })),
+        triggers: triggers.length > 0 ? triggers : undefined,
+        conditions: conditions.length > 0 ? conditions : undefined,
       };
 
       if (isEdit) {

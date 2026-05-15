@@ -68,7 +68,27 @@ async def gather_context(db: AsyncSession, user_id: str) -> str:
     functions = functions_result.scalars().all()
     if functions:
         for f in functions:
-            context_lines.append(f"Function '{f.name}': Type={f.function_type}, Description={f.description or 'None'}")
+            fn_desc = f"Function '{f.name}': Type={f.function_type}, Description={f.description or 'None'}"
+            if f.triggers:
+                fn_desc += f", Triggers={', '.join(f.triggers)}"
+            if f.conditions:
+                fn_desc += f", Conditions={', '.join(f.conditions)}"
+            if f.device_actions:
+                action_strs = []
+                for da in f.device_actions:
+                    dev_id = da.get("device_id")
+                    dev_name = next((d.name for d in devices if d.id == dev_id), "Unknown Device")
+                    action_str = f"{dev_name} -> {da.get('action')}"
+                    if da.get("value"):
+                        action_str += f" ({da.get('value')})"
+                    action_strs.append(action_str)
+                if action_strs:
+                    fn_desc += f", Actions=[{', '.join(action_strs)}]"
+            
+            if f.function_type in ("software", "hybrid") and f.url:
+                fn_desc += f", HTTP=[{f.method} {f.url}]"
+                
+            context_lines.append(fn_desc)
     else:
         context_lines.append("No functions available.")
 
