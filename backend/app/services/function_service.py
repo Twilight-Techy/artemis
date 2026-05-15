@@ -6,7 +6,7 @@ from app.services import hardware_service
 from app.services.hardware_service import HardwareError
 
 
-async def execute_function(db: AsyncSession, function_id: str, current_user: User):
+async def execute_function(db: AsyncSession, function_id: str, current_user: User, parameters: dict = None):
     """Executes a registered function (device actions + HTTP dispatch)."""
     result = await db.execute(
         select(Function).where(Function.id == function_id, Function.owner_id == current_user.id)
@@ -15,6 +15,7 @@ async def execute_function(db: AsyncSession, function_id: str, current_user: Use
     if not fn:
         raise ValueError("Function not found")
 
+    parameters = parameters or {}
     device_results = []
     overall_status = "success"
 
@@ -81,12 +82,52 @@ async def execute_function(db: AsyncSession, function_id: str, current_user: Use
     http_response = None
     if fn.function_type in ("software", "hybrid") and fn.url:
         try:
+            import json
+            
+            # Helper to replace {{key}} with value
+            def render_template(text: str) -> str:
+                if not text:
+                    return text
+                res = text
+                for k, v in parameters.items():
+                    res = res.replace(f"{{{{{k}}}}}", str(v))
+                return res
+
+            rendered_url = render_template(fn.url)
+            
+            rendered_headers = {}
+            if isinstance(fn.headers, dict):
+                for k, v in fn.headers.items():
+                    if isinstance(v, str):
+                        rendered_headers[k] = render_template(v)
+                    else:
+                        rendered_headers[k] = v
+            elif isinstance(fn.headers, list):
+                # The UI sometimes passes headers as a list of strings "Key: Value"
+                for h in fn.headers:
+                    if ":" in h:
+                        parts = h.split(":", 1)
+                        rendered_headers[parts[0].strip()] = render_template(parts[1].strip())
+                        
+            rendered_body = None
+            if fn.body_template:
+                # Assuming body_template might be a string (from text area) or dict
+                if isinstance(fn.body_template, str):
+                    rendered_body_str = render_template(fn.body_template)
+                    try:
+                        rendered_body = json.loads(rendered_body_str)
+                    except json.JSONDecodeError:
+                        rendered_body = {"_raw": rendered_body_str} # Fallback
+                else:
+                    body_str = json.dumps(fn.body_template)
+                    rendered_body = json.loads(render_template(body_str))
+
             async with httpx.AsyncClient(timeout=10.0) as client:
                 resp = await client.request(
                     method=fn.method or "GET",
-                    url=fn.url,
-                    headers=fn.headers or {},
-                    json=fn.body_template or None,
+                    url=rendered_url,
+                    headers=rendered_headers,
+                    json=rendered_body,
                 )
             http_response = {"status_code": resp.status_code, "body": resp.text[:500]}
         except Exception as e:

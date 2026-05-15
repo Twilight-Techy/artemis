@@ -73,16 +73,23 @@ async def update_function(
     return fn
 
 
+from pydantic import BaseModel
+
+class ExecutePayload(BaseModel):
+    parameters: dict | None = None
+
 @router.post("/{function_id}/execute")
 async def execute_function(
     function_id: str,
+    payload: ExecutePayload | None = None,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Execute a registered function: fires all device actions then dispatches the HTTP call."""
     from app.services import function_service
+    params = payload.parameters if payload else None
     try:
-        return await function_service.execute_function(db, function_id, current_user)
+        return await function_service.execute_function(db, function_id, current_user, parameters=params)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 

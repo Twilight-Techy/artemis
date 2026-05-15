@@ -88,6 +88,9 @@ async def gather_context(db: AsyncSession, user_id: str) -> str:
             if f.function_type in ("software", "hybrid") and f.url:
                 fn_desc += f", HTTP=[{f.method} {f.url}]"
                 
+            if f.parameters:
+                fn_desc += f", Required Parameters=[{', '.join(f.parameters)}]"
+
             context_lines.append(fn_desc)
     else:
         context_lines.append("No functions available.")

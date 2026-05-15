@@ -280,10 +280,8 @@ async def approve_action(
                 raise hardware_service.HardwareError(f"Function '{function_name}' not found.")
                 
             from app.services import function_service
-            # Note: The MCP logic doesn't currently inject the generated 'parameters' into the execution,
-            # as our function execution logic is purely config-driven right now. But we pass what we have.
             try:
-                hw_response = await function_service.execute_function(db, fn.id, current_user)
+                hw_response = await function_service.execute_function(db, fn.id, current_user, parameters=parameters)
                 # Overwrite triggered_by since it was AI
                 log_update = await db.execute(select(ExecutionLog).where(ExecutionLog.id == hw_response.get("log_id")))
                 actual_log = log_update.scalar_one_or_none()
