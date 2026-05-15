@@ -120,12 +120,27 @@ export default function AddEditFunctionScreen() {
     });
   };
 
-  const updateDeviceAction = (deviceId: string, action: string) => {
-    setDeviceActions(prev => prev.map(da => da.deviceId === deviceId ? { ...da, action, value: undefined } : da));
+  const toggleDeviceAction = (device: ConnectableDevice, action: string) => {
+    setDeviceActions(prev => {
+      const existing = prev.find(da => da.deviceId === device.id && da.action === action);
+      if (existing) {
+        return prev.filter(da => !(da.deviceId === device.id && da.action === action));
+      } else {
+        let updated = [...prev];
+        if (action === 'turn_on') {
+            updated = updated.filter(da => !(da.deviceId === device.id && (da.action === 'turn_off' || da.action === 'toggle')));
+        } else if (action === 'turn_off') {
+            updated = updated.filter(da => !(da.deviceId === device.id && (da.action === 'turn_on' || da.action === 'toggle')));
+        } else if (action === 'toggle') {
+            updated = updated.filter(da => !(da.deviceId === device.id && (da.action === 'turn_on' || da.action === 'turn_off')));
+        }
+        return [...updated, { deviceId: device.id, deviceName: device.name, deviceType: device.device_type, action }];
+      }
+    });
   };
 
-  const updateDeviceValue = (deviceId: string, value: string) => {
-    setDeviceActions(prev => prev.map(da => da.deviceId === deviceId ? { ...da, value } : da));
+  const updateDeviceValue = (deviceId: string, action: string, value: string) => {
+    setDeviceActions(prev => prev.map(da => (da.deviceId === deviceId && da.action === action) ? { ...da, value } : da));
   };
 
   const addTrigger = () => {
@@ -421,10 +436,10 @@ export default function AddEditFunctionScreen() {
                         <Text style={styles.roomHeader}>{room.toUpperCase()}</Text>
 
                         {roomDevices.map(device => {
-                          const da = deviceActions.find(a => a.deviceId === device.id);
-                          const isSelected = !!da;
+                          const deviceActionsForDevice = deviceActions.filter(a => a.deviceId === device.id);
+                          const isSelected = deviceActionsForDevice.length > 0;
                           const caps = getCapabilities(device.device_type);
-                          const selectedCap = caps.find(c => c.value === da?.action);
+                          
                           return (
                             <View key={device.id} style={styles.deviceItem}>
                               <TouchableOpacity
@@ -450,31 +465,41 @@ export default function AddEditFunctionScreen() {
 
                               {isSelected && (
                                 <View style={styles.deviceActionPanel}>
-                                  <Text style={styles.deviceActionLabel}>ACTION</Text>
+                                  <Text style={styles.deviceActionLabel}>ACTIONS</Text>
                                   <View style={styles.actionPillRow}>
-                                    {caps.map(cap => (
-                                      <TouchableOpacity
-                                        key={cap.value}
-                                        style={[styles.actionPill, da?.action === cap.value && styles.actionPillActive]}
-                                        onPress={() => updateDeviceAction(device.id, cap.value)}
-                                        activeOpacity={0.7}
-                                      >
-                                        <Text style={[styles.actionPillText, da?.action === cap.value && styles.actionPillTextActive]}>
-                                          {cap.label}
-                                        </Text>
-                                      </TouchableOpacity>
-                                    ))}
+                                    {caps.map(cap => {
+                                      const isCapSelected = deviceActionsForDevice.some(da => da.action === cap.value);
+                                      return (
+                                        <TouchableOpacity
+                                          key={cap.value}
+                                          style={[styles.actionPill, isCapSelected && styles.actionPillActive]}
+                                          onPress={() => toggleDeviceAction(device, cap.value)}
+                                          activeOpacity={0.7}
+                                        >
+                                          <Text style={[styles.actionPillText, isCapSelected && styles.actionPillTextActive]}>
+                                            {cap.label}
+                                          </Text>
+                                        </TouchableOpacity>
+                                      );
+                                    })}
                                   </View>
-                                  {selectedCap?.hasValue && (
-                                    <TextInput
-                                      style={[styles.textInput, { marginTop: Spacing.md }]}
-                                      value={da?.value ?? ''}
-                                      onChangeText={val => updateDeviceValue(device.id, val)}
-                                      placeholder={selectedCap.placeholder ?? 'Enter value'}
-                                      placeholderTextColor="rgba(173,170,173,0.5)"
-                                      keyboardType="numeric"
-                                    />
-                                  )}
+                                  {deviceActionsForDevice.filter(da => {
+                                    const cap = caps.find(c => c.value === da.action);
+                                    return cap?.hasValue;
+                                  }).map(da => {
+                                    const cap = caps.find(c => c.value === da.action)!;
+                                    return (
+                                      <TextInput
+                                        key={da.action}
+                                        style={[styles.textInput, { marginTop: Spacing.md }]}
+                                        value={da.value ?? ''}
+                                        onChangeText={val => updateDeviceValue(device.id, da.action, val)}
+                                        placeholder={cap.placeholder ?? 'Enter value'}
+                                        placeholderTextColor="rgba(173,170,173,0.5)"
+                                        keyboardType="numeric"
+                                      />
+                                    );
+                                  })}
                                 </View>
                               )}
                             </View>
