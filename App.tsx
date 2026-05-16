@@ -24,6 +24,7 @@ import { NetworkProvider } from './contexts/NetworkContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProfileProvider } from './contexts/ProfileContext';
 import { HistoryProvider } from './contexts/HistoryContext';
+import { MCPProvider } from './contexts/MCPContext';
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -62,10 +63,12 @@ export default function App() {
         <AuthProvider>
           <ProfileProvider>
             <HistoryProvider>
-              <NavigationContainer theme={MyTheme}>
-                <AppNavigator />
-                <StatusBar style="light" />
-              </NavigationContainer>
+              <MCPProvider>
+                <NavigationContainer theme={MyTheme}>
+                  <AppNavigator />
+                  <StatusBar style="light" />
+                </NavigationContainer>
+              </MCPProvider>
             </HistoryProvider>
           </ProfileProvider>
         </AuthProvider>

@@ -12,6 +12,7 @@ import {
   Easing,
   Platform,
   Dimensions,
+  DeviceEventEmitter,
 } from 'react-native';
 import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,11 +29,11 @@ import CommandBar from '../components/CommandBar';
 import ChatBubble, { ChatMessage } from '../components/chat/ChatBubble';
 import TypingIndicator from '../components/chat/TypingIndicator';
 import { ArtemisPullLoader } from '../components/ArtemisPullLoader';
-import MCPActionModal from '../components/MCPActionModal';
 import ConfirmModal from '../components/ConfirmModal';
 import { useNetwork } from '../contexts/NetworkContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { artemisApi } from '../api/artemisClient';
+import { useMCP } from '../contexts/MCPContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -44,7 +45,6 @@ export default function HomeScreen() {
   const { isOffline } = useNetwork();
   const [mode, setMode] = useState<HomeMode>('dashboard');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [showMCPModal, setShowMCPModal] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const [isSending, setIsSending] = useState(false);
@@ -52,7 +52,7 @@ export default function HomeScreen() {
   const [isRefreshingDashboard, setIsRefreshingDashboard] = useState(false);
   const chatHasLoaded = useRef(false);
   const refreshAvatarRef = useRef<(() => Promise<void>) | null>(null);
-  const [pendingAction, setPendingAction] = useState<any>(null);
+  const { setPendingAction, setShowMCPModal } = useMCP();
   const [orbState, setOrbState] = useState<OrbState>('idle');
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const isRecordingRef = useRef(false);
@@ -76,6 +76,15 @@ export default function HomeScreen() {
       }
     }, [loadChatHistory])
   );
+
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('mcp_action_executed', () => {
+      setMode('chat');
+      loadChatHistory();
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 250);
+    });
+    return () => sub.remove();
+  }, [loadChatHistory]);
 
   const handleChatRefresh = useCallback(async () => {
     setIsRefreshingChat(true);
@@ -133,50 +142,6 @@ export default function HomeScreen() {
     } catch (err) {
       console.error('Failed to stop recording or transcribe', err);
       setOrbState('idle');
-    }
-  };
-
-  const handleExecuteLogic = async () => {
-    setShowMCPModal(false);
-    if (!pendingAction) return;
-
-    setMode('chat');
-    
-    try {
-      const response = await artemisApi.approveAction(pendingAction.action_id);
-      
-      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      // Use the LLM-generated confirmation if available, fallback to a generic message
-      const confirmationText = response?.confirmation
-        ?? `Done! ${pendingAction.target_name} has been updated.`;
-
-      setMessages(prev => [
-        ...prev,
-        {
-          id: Date.now().toString() + '_a',
-          role: 'assistant',
-          text: confirmationText,
-          timestamp,
-        },
-      ]);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setPendingAction(null);
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 250);
-    }
-  };
-
-  const declineAction = async () => {
-    setShowMCPModal(false);
-    if (!pendingAction) return;
-    
-    try {
-      await artemisApi.declineAction(pendingAction.action_id);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setPendingAction(null);
     }
   };
 
@@ -480,14 +445,6 @@ export default function HomeScreen() {
           </View>
         </View>
       </Animated.View>
-
-      {/* ═══ MCP Proactive Overlay Modal ═══ */}
-      <MCPActionModal 
-        visible={showMCPModal} 
-        onClose={declineAction}
-        onExecute={handleExecuteLogic}
-        proactiveAction={pendingAction}
-      />
 
       {/* ═══ Clear Chat Confirmation Modal ═══ */}
       <ConfirmModal
