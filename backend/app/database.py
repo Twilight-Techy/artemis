@@ -1,3 +1,4 @@
+import json as _json
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 from app.config import get_settings
@@ -11,6 +12,8 @@ engine = create_async_engine(
     max_overflow=10,
     pool_pre_ping=True,
     pool_recycle=300,
+    json_serializer=_json.dumps,
+    json_deserializer=_json.loads,
     connect_args={"timeout": 60},
 )
 
