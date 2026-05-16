@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 from sqlalchemy import select
-from app.database import async_session_maker
+from app.database import AsyncSessionLocal
 from app.models import Automation
 from app.services.automation_orchestrator import evaluate_event
 
@@ -24,7 +24,7 @@ async def run_time_scheduler():
         time_str = current_time.strftime("%H:%M")
         
         try:
-            async with async_session_maker() as db:
+            async with AsyncSessionLocal() as db:
                 # Find all active automations where the trigger contains the current time string
                 # Note: For simplicity, we assume triggers like "07:00" or "at 14:30"
                 result = await db.execute(
