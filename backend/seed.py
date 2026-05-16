@@ -139,7 +139,7 @@ async def seed_database():
         
         for d in devices:
             db.add(d)
-        await db.flush()  # Ensure devices exist before logs
+            await db.flush()  # Flush individually to bypass asyncpg executemany JSON inference bug
 
         print("Creating Core Automations...")
         # 4. Automations
