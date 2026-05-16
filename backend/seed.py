@@ -72,6 +72,12 @@ async def seed_database():
                 capabilities={"reading_types": ["temperature", "humidity"]},
                 state={"is_on": True, "reading": 22.5, "unit": "°C"}
             ),
+            Device(
+                id="dev-lr-motion", name="Motion Sensor",
+                device_type=DeviceType.SENSOR, room_id="room-living", owner_id="test-user-id", pin=None,
+                capabilities={"reading_types": ["motion"]},
+                state={"is_on": True, "reading": False, "unit": "boolean"}
+            ),
 
             # ── Bedroom ──────────────────────────────────────
             Device(
@@ -122,6 +128,12 @@ async def seed_database():
                 device_type=DeviceType.LIGHT, room_id="room-studio", owner_id="test-user-id", pin=41,
                 capabilities={"power": True, "brightness": True, "rgb_color": True, "color_temp": True},
                 state={"is_on": True, "brightness": 75, "color": "#b884ff"}
+            ),
+            Device(
+                id="dev-st-motion", name="Desk Motion Sensor",
+                device_type=DeviceType.SENSOR, room_id="room-studio", owner_id="test-user-id", pin=None,
+                capabilities={"reading_types": ["motion"]},
+                state={"is_on": True, "reading": True, "unit": "boolean"}
             ),
         ]
         
