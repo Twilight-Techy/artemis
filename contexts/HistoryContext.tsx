@@ -8,6 +8,7 @@ type HistoryContextType = {
   logs: HistoryLog[];
   isLoading: boolean;
   isRefreshing: boolean;
+  hasFetched: boolean;
   refresh: () => Promise<void>;
   clearLogs: () => void;
 };
@@ -16,6 +17,7 @@ const HistoryContext = createContext<HistoryContextType>({
   logs: [],
   isLoading: true,
   isRefreshing: false,
+  hasFetched: false,
   refresh: async () => {},
   clearLogs: () => {},
 });
@@ -67,7 +69,7 @@ export const HistoryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   return (
-    <HistoryContext.Provider value={{ logs, isLoading, isRefreshing, refresh, clearLogs }}>
+    <HistoryContext.Provider value={{ logs, isLoading, isRefreshing, hasFetched, refresh, clearLogs }}>
       {children}
     </HistoryContext.Provider>
   );

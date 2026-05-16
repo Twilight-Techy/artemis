@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import { artemisApi } from '../api/artemisClient';
 import { ArtemisLoader } from '../components/ArtemisLoader';
@@ -35,7 +35,7 @@ type HistoryEntry = {
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { logs: historyLogs, isLoading, isRefreshing, refresh, clearLogs } = useHistory();
+  const { logs: historyLogs, isLoading, isRefreshing, hasFetched, refresh, clearLogs } = useHistory();
   const [activeFilter, setActiveFilter] = useState<HistoryCategory>('All');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
@@ -43,6 +43,14 @@ export default function HistoryScreen() {
   const handleRefresh = useCallback(() => {
     refresh();
   }, [refresh]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFetched) {
+        refresh();
+      }
+    }, [refresh, hasFetched])
+  );
 
   const handleClearHistory = useCallback(() => {
     setShowClearModal(true);

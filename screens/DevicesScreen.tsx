@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Text, TouchableOpacity, RefreshControl } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing } from '../constants/theme';
@@ -24,6 +24,7 @@ export default function DevicesScreen() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const hasLoaded = useRef(false);
   
   // Modal state
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
@@ -49,6 +50,7 @@ export default function DevicesScreen() {
       );
 
       setDevices(mapped);
+      hasLoaded.current = true;
     } catch (err) {
       console.error('Failed to load devices:', err);
     } finally {
@@ -62,9 +64,13 @@ export default function DevicesScreen() {
     loadDevices(true);
   }, [loadDevices]);
 
-  useEffect(() => {
-    loadDevices();
-  }, [loadDevices]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasLoaded.current) {
+        loadDevices();
+      }
+    }, [loadDevices])
+  );
 
   // ── Device toggle (local + API) ──
   const handleDeviceToggle = async (id: string, newState: boolean) => {

@@ -17,7 +17,7 @@ import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 import TopNavBar from '../components/TopNavBar';
@@ -50,6 +50,7 @@ export default function HomeScreen() {
   const [isSending, setIsSending] = useState(false);
   const [isRefreshingChat, setIsRefreshingChat] = useState(false);
   const [isRefreshingDashboard, setIsRefreshingDashboard] = useState(false);
+  const chatHasLoaded = useRef(false);
   const refreshAvatarRef = useRef<(() => Promise<void>) | null>(null);
   const [pendingAction, setPendingAction] = useState<any>(null);
   const [orbState, setOrbState] = useState<OrbState>('idle');
@@ -62,14 +63,19 @@ export default function HomeScreen() {
       if (data.messages) {
         setMessages(data.messages);
       }
+      chatHasLoaded.current = true;
     } catch (err) {
       console.error("Failed to load history:", err);
     }
   }, []);
 
-  useEffect(() => {
-    loadChatHistory();
-  }, [loadChatHistory]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!chatHasLoaded.current) {
+        loadChatHistory();
+      }
+    }, [loadChatHistory])
+  );
 
   const handleChatRefresh = useCallback(async () => {
     setIsRefreshingChat(true);
