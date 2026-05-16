@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import async_session_maker
+from app.database import AsyncSessionLocal
 from app.models import Automation, ExecutionLog, User, ChatMessage
 from app.services import context_engine, gemini_service, function_service
 
@@ -12,7 +12,7 @@ async def evaluate_event(user_id: str, event_reason: str):
     Called when a significant event occurs (sensor delta crossed, or time matched).
     Gathers context and asks the LLM if any automations should be triggered.
     """
-    async with async_session_maker() as db:
+    async with AsyncSessionLocal() as db:
         # Check if user has any active automations first to save LLM calls
         automations_result = await db.execute(
             select(Automation).where(Automation.owner_id == user_id, Automation.is_enabled == True)
