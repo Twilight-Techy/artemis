@@ -559,7 +559,7 @@ def dashboard():
 
         .layout {
             display: grid;
-            grid-template-columns: 340px 1fr;
+            grid-template-columns: 1fr;
             gap: 24px;
         }
 
@@ -579,72 +579,9 @@ def dashboard():
             margin-bottom: 16px;
         }
 
-        .sensor-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .sensor-box {
-            background: var(--surface-high);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 12px;
-        }
-
-        .sensor-label {
-            color: var(--muted);
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 6px;
-        }
-
-        .sensor-value {
-            color: var(--accent);
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        input[type="number"] {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.22);
-            border: 1px solid var(--line);
-            border-radius: 6px;
-            color: var(--text);
-            padding: 8px;
-            font: inherit;
-        }
-
-        .motion-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px;
-            margin-bottom: 16px;
-            background: var(--surface-high);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-        }
-
-        button {
-            border: 0;
-            border-radius: 8px;
-            background: var(--primary);
-            color: #081018;
-            cursor: pointer;
-            font: inherit;
-            font-weight: 800;
-            padding: 10px 14px;
-            width: 100%;
-        }
-
         .rooms {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 16px;
         }
 
@@ -721,10 +658,33 @@ def dashboard():
             word-break: break-word;
         }
 
-        @media (max-width: 900px) {
-            .layout { grid-template-columns: 1fr; }
-            .topbar { align-items: flex-start; flex-direction: column; }
+        .sensor-inputs {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
         }
+        
+        .sensor-inputs input[type="number"] {
+            width: 70px;
+            background: rgba(0, 0, 0, 0.22);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            color: var(--text);
+            padding: 4px;
+            font-size: 0.8rem;
+        }
+        
+        .sensor-inputs button {
+            border: 0;
+            border-radius: 4px;
+            background: rgba(116, 177, 255, 0.15);
+            color: var(--primary);
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+        }
+
     </style>
 </head>
 <body>
@@ -741,38 +701,7 @@ def dashboard():
 
         <div class="layout">
             <section class="panel">
-                <h2 class="section-title"><i class="fa-solid fa-tower-broadcast"></i> Telemetry</h2>
-                <div class="sensor-grid">
-                    <div class="sensor-box">
-                        <div class="sensor-label">Temperature</div>
-                        <div class="sensor-value" id="val-temp">-- deg C</div>
-                        <input type="number" id="inp-temp" step="0.1" value="24.5">
-                    </div>
-                    <div class="sensor-box">
-                        <div class="sensor-label">Humidity</div>
-                        <div class="sensor-value" id="val-hum">--%</div>
-                        <input type="number" id="inp-hum" step="1" value="45">
-                    </div>
-                    <div class="sensor-box">
-                        <div class="sensor-label">Light</div>
-                        <div class="sensor-value" id="val-light">-- lux</div>
-                        <input type="number" id="inp-light" step="10" value="800">
-                    </div>
-                    <div class="sensor-box">
-                        <div class="sensor-label">Smoke</div>
-                        <div class="sensor-value" id="val-smoke">-- ppm</div>
-                        <input type="number" id="inp-smoke" step="1" value="0">
-                    </div>
-                </div>
-                <div class="motion-row">
-                    <span>Motion</span>
-                    <input type="checkbox" id="inp-motion" onchange="updateSensors()">
-                </div>
-                <button onclick="updateSensors()"><i class="fa-solid fa-upload"></i> Apply</button>
-            </section>
-
-            <section class="panel">
-                <h2 class="section-title"><i class="fa-solid fa-server"></i> Devices</h2>
+                <h2 class="section-title"><i class="fa-solid fa-server"></i> Rooms & Devices</h2>
                 <div class="rooms" id="rooms-container"></div>
             </section>
         </div>
@@ -786,63 +715,83 @@ def dashboard():
                 .join(' | ');
         }
 
-        async function fetchSensors() {
-            const res = await fetch('/api/sensors');
-            const data = await res.json();
-            document.getElementById('val-temp').innerText = data.temperature.toFixed(1) + ' deg C';
-            document.getElementById('val-hum').innerText = data.humidity.toFixed(1) + '%';
-            document.getElementById('val-light').innerText = data.light_level + ' lux';
-            document.getElementById('val-smoke').innerText = data.smoke + ' ppm';
-
-            const motionEl = document.getElementById('inp-motion');
-            if (motionEl.checked !== data.motion) {
-                motionEl.checked = data.motion;
-            }
-        }
-
-        async function updateSensors() {
-            const data = {
-                temperature: parseFloat(document.getElementById('inp-temp').value),
-                humidity: parseFloat(document.getElementById('inp-hum').value),
-                light_level: parseInt(document.getElementById('inp-light').value, 10),
-                smoke: parseInt(document.getElementById('inp-smoke').value, 10),
-                motion: document.getElementById('inp-motion').checked
-            };
+        async function updateSensorReading(type, valueId) {
+            const val = parseFloat(document.getElementById(valueId).value);
+            const data = {};
+            data[type] = val;
             await fetch('/api/sensors/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
+            fetchDevices();
         }
 
+        function getRoomDisplayName(roomId) {
+            const parts = roomId.replace('room-', '').split('-');
+            return parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+        }
+
+        let isEditing = false;
+
         async function fetchDevices() {
-            const res = await fetch('/api/relays');
+            if (isEditing) return; // don't redraw if user is typing
+            
+            const res = await fetch('/api/devices');
             const devices = await res.json();
 
             const rooms = {};
-            for (const [pin, dev] of Object.entries(devices)) {
-                if (!rooms[dev.room]) rooms[dev.room] = [];
-                rooms[dev.room].push({ ...dev, pin });
+            for (const dev of devices) {
+                const r = dev.room_id || 'unknown';
+                if (!rooms[r]) rooms[r] = [];
+                rooms[r].push(dev);
             }
 
             const container = document.getElementById('rooms-container');
             let html = '';
 
-            for (const [roomName, devs] of Object.entries(rooms)) {
-                html += `<div class="room"><h3 class="room-title">${roomName}</h3>`;
+            for (const [roomId, devs] of Object.entries(rooms)) {
+                html += `<div class="room"><h3 class="room-title">${getRoomDisplayName(roomId)}</h3>`;
                 for (const d of devs) {
-                    const details = formatState(d.device_state || {});
+                    const is_on = d.state && d.state.is_on;
+                    const details = formatState(d.state || {});
+                    
+                    let icon = 'fa-plug';
+                    if(d.device_type === 'light') icon = 'fa-lightbulb';
+                    if(d.device_type === 'fan') icon = 'fa-fan';
+                    if(d.device_type === 'climate') icon = 'fa-snowflake';
+                    if(d.device_type === 'sensor') icon = 'fa-temperature-half';
+                    if(d.device_type === 'security') icon = 'fa-video';
+                    if(d.device_type === 'media') icon = 'fa-tv';
+
+                    let inputsHtml = '';
+                    if (d.device_type === 'sensor') {
+                        if (d.capabilities.reading_types.includes('temperature')) {
+                            const val = d.state.reading || 24.5;
+                            inputsHtml += `<input type="number" id="inp-t-${d.id}" value="${val.toFixed(1)}" step="0.1" onfocus="isEditing=true" onblur="isEditing=false"><button onclick="updateSensorReading('temperature', 'inp-t-${d.id}')">Set °C</button>`;
+                        }
+                        if (d.capabilities.reading_types.includes('humidity')) {
+                            const val = d.state.humidity || 45.0;
+                            inputsHtml += `<input type="number" id="inp-h-${d.id}" value="${val.toFixed(1)}" step="1" onfocus="isEditing=true" onblur="isEditing=false"><button onclick="updateSensorReading('humidity', 'inp-h-${d.id}')">Set %</button>`;
+                        }
+                        if (d.capabilities.reading_types.includes('smoke')) {
+                            const val = d.state.reading || 0;
+                            inputsHtml += `<input type="number" id="inp-s-${d.id}" value="${val}" step="1" onfocus="isEditing=true" onblur="isEditing=false"><button onclick="updateSensorReading('smoke', 'inp-s-${d.id}')">Set PPM</button>`;
+                        }
+                    }
+
                     html += `
-                    <div class="device ${d.state}">
-                        <div class="device-icon"><i class="fa-solid ${d.icon}"></i></div>
+                    <div class="device ${is_on ? 'on' : ''}">
+                        <div class="device-icon"><i class="fa-solid ${icon}"></i></div>
                         <div class="device-info">
                             <div class="device-name">${d.name}</div>
                             <div class="device-meta">
-                                <span class="tag active">${d.state.toUpperCase()}</span>
+                                <span class="tag ${is_on ? 'active' : ''}">${is_on ? 'ON' : 'OFF'}</span>
                                 <span class="tag">${d.device_type}</span>
-                                <span class="tag">Pin ${d.pin}</span>
+                                ${d.pin ? `<span class="tag">Pin ${d.pin}</span>` : ''}
                             </div>
                             <div class="state-line">${details || 'power only'}</div>
+                            ${inputsHtml ? `<div class="sensor-inputs">${inputsHtml}</div>` : ''}
                         </div>
                     </div>`;
                 }
@@ -852,11 +801,9 @@ def dashboard():
         }
 
         setInterval(() => {
-            fetchSensors();
             fetchDevices();
-        }, 1000);
+        }, 2000);
 
-        fetchSensors();
         fetchDevices();
     </script>
 </body>

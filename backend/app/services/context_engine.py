@@ -22,7 +22,9 @@ async def gather_context(db: AsyncSession, user_id: str) -> str:
     if latest_sensors:
         for stype, data in latest_sensors.items():
             if data:
-                context_lines.append(f"{stype.capitalize()}: {data['value']} {data['unit']}")
+                room = data.get('room_name', 'Unknown Room')
+                dev = data.get('device_name', 'Unknown Sensor')
+                context_lines.append(f"{stype.capitalize()} ({dev} in {room}): {data['value']} {data['unit']}")
             else:
                 context_lines.append(f"{stype.capitalize()}: Unknown")
     else:

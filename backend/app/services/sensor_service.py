@@ -13,21 +13,34 @@ from app.services import hardware_service
 from app.services.hardware_service import HardwareError
 
 
-async def poll_and_store(db: AsyncSession, owner_id: str) -> dict | None:
+async def process_and_store_readings(db: AsyncSession, owner_id: str, data: dict) -> None:
     """
-    Read sensors from ESP32 and store the readings in the database.
-    Returns the sensor data dict, or None if ESP32 is unreachable.
+    Parses a dictionary of sensor data, stores it in the database,
+    and runs delta/threshold evaluations to trigger automations.
     """
-    try:
-        data = await hardware_service.get_sensors()
-    except HardwareError:
+    # 0. Fetch sensor devices for this owner to map readings
+    sensor_devices_result = await db.execute(
+        select(Device).where(Device.owner_id == owner_id, Device.device_type == "sensor")
+    )
+    sensor_devices = sensor_devices_result.scalars().all()
+    
+    def get_device_id_for_reading(rtype: str) -> str | None:
+        for d in sensor_devices:
+            if d.capabilities and rtype in d.capabilities.get("reading_types", []):
+                return d.id
         return None
 
-    # Find devices that are sensors for this owner
-    # We store readings keyed by type regardless of specific device
-    
+    def parse_reading(key: str, default_unit: str) -> tuple[float, str] | None:
+        if key not in data:
+            return None
+        raw = data[key]
+        if isinstance(raw, dict):
+            return float(raw.get("value", 0)), raw.get("unit", default_unit)
+        else:
+            return float(raw), default_unit
+
     # 1. Fetch previous readings to calculate deltas
-    sensor_types = ["temperature", "humidity", "light_level", "motion"]
+    sensor_types = ["temperature", "humidity", "light_level", "motion", "smoke"]
     previous_readings = {}
     for stype in sensor_types:
         row = await db.execute(
@@ -40,36 +53,44 @@ async def poll_and_store(db: AsyncSession, owner_id: str) -> dict | None:
 
     readings = []
 
-    if "temperature" in data:
+    temp_data = parse_reading("temperature", "°C")
+    if temp_data:
         readings.append(SensorReading(
-            device_id=None,  # Will be linked if a sensor device exists
+            device_id=get_device_id_for_reading("temperature"),
             reading_type="temperature",
-            value=data["temperature"]["value"],
-            unit=data["temperature"].get("unit", "°C"),
+            value=temp_data[0], unit=temp_data[1]
         ))
 
-    if "humidity" in data:
+    hum_data = parse_reading("humidity", "%")
+    if hum_data:
         readings.append(SensorReading(
-            device_id=None,
+            device_id=get_device_id_for_reading("humidity"),
             reading_type="humidity",
-            value=data["humidity"]["value"],
-            unit=data["humidity"].get("unit", "%"),
+            value=hum_data[0], unit=hum_data[1]
         ))
 
-    if "light_level" in data:
+    light_data = parse_reading("light_level", "%")
+    if light_data:
         readings.append(SensorReading(
-            device_id=None,
+            device_id=get_device_id_for_reading("light_level"),
             reading_type="light_level",
-            value=data["light_level"]["value"],
-            unit=data["light_level"].get("unit", "%"),
+            value=light_data[0], unit=light_data[1]
         ))
 
-    if "motion" in data:
+    motion_data = parse_reading("motion", "bool")
+    if motion_data:
         readings.append(SensorReading(
-            device_id=None,
+            device_id=get_device_id_for_reading("motion"),
             reading_type="motion",
-            value=1.0 if data["motion"]["value"] else 0.0,
-            unit="bool",
+            value=1.0 if motion_data[0] else 0.0, unit="bool"
+        ))
+        
+    smoke_data = parse_reading("smoke", "ppm")
+    if smoke_data:
+        readings.append(SensorReading(
+            device_id=get_device_id_for_reading("smoke"),
+            reading_type="smoke",
+            value=smoke_data[0], unit=smoke_data[1]
         ))
 
     for r in readings:
@@ -129,30 +150,50 @@ async def poll_and_store(db: AsyncSession, owner_id: str) -> dict | None:
         # Fire and forget the orchestrator
         asyncio.create_task(evaluate_event(owner_id, event_reason))
 
+async def poll_and_store(db: AsyncSession, owner_id: str) -> dict | None:
+    """
+    Read sensors from ESP32 and store the readings in the database.
+    Returns the sensor data dict, or None if ESP32 is unreachable.
+    """
+    try:
+        data = await hardware_service.get_sensors()
+    except HardwareError:
+        return None
+        
+    await process_and_store_readings(db, owner_id, data)
     return data
 
 
 async def get_latest_readings(db: AsyncSession) -> dict:
     """
-    Fetch the most recent reading for each sensor type from the database.
+    Fetch the most recent reading for each sensor type from the database,
+    along with the device and room it belongs to.
     """
-    sensor_types = ["temperature", "humidity", "light_level", "motion"]
+    from sqlalchemy.orm import selectinload
+    sensor_types = ["temperature", "humidity", "light_level", "motion", "smoke"]
     result = {}
 
     for stype in sensor_types:
         query = (
             select(SensorReading)
             .where(SensorReading.reading_type == stype)
+            .options(
+                selectinload(SensorReading.device).selectinload(Device.room)
+            )
             .order_by(desc(SensorReading.recorded_at))
             .limit(1)
         )
         row = await db.execute(query)
         reading = row.scalar_one_or_none()
         if reading:
+            device_name = reading.device.name if reading.device else "Unknown Sensor"
+            room_name = (reading.device.room.name if reading.device and reading.device.room else "Unknown Room")
             result[stype] = {
                 "value": reading.value,
                 "unit": reading.unit,
                 "recorded_at": reading.recorded_at.isoformat(),
+                "device_name": device_name,
+                "room_name": room_name,
             }
         else:
             result[stype] = None

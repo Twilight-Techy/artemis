@@ -48,22 +48,21 @@ async def ingest_sensors(
     Push endpoint for the ESP32 to report readings directly.
     No auth required (used by the microcontroller on the LAN).
     """
-    from app.models import SensorReading
-
-    readings = []
-    for sensor_type in ["temperature", "humidity", "light_level", "motion"]:
-        if sensor_type in payload:
-            readings.append(SensorReading(
-                reading_type=sensor_type,
-                value=float(payload[sensor_type].get("value", 0)),
-                unit=payload[sensor_type].get("unit", ""),
-            ))
-
-    for r in readings:
-        db.add(r)
-    await db.commit()
-
-    return {"status": "ingested", "count": len(readings)}
+    # Since this is an unauthenticated push from the LAN, we need an owner_id 
+    # to evaluate automations against. For simplicity, we grab the first user
+    # (assuming single-tenant local hub for now).
+    from app.models import User
+    from sqlalchemy import select
+    
+    user_query = await db.execute(select(User).limit(1))
+    admin_user = user_query.scalar_one_or_none()
+    
+    if admin_user:
+        await sensor_service.process_and_store_readings(db, admin_user.id, payload)
+        count = sum(1 for k in payload.keys() if k in ["temperature", "humidity", "light_level", "motion"])
+        return {"status": "ingested", "count": count}
+    
+    return {"status": "failed", "detail": "No users configured to receive sensors"}
 
 
 @router.get("/esp32/status")
