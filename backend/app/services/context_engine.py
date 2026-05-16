@@ -57,7 +57,8 @@ async def gather_context(db: AsyncSession, user_id: str) -> str:
     automations = automations_result.scalars().all()
     if automations:
         for a in automations:
-            context_lines.append(f"Rule '{a.name}': WHEN {a.trigger} IF {a.condition} THEN {a.action}")
+            desc_str = f" - {a.description}" if a.description else ""
+            context_lines.append(f"Rule '{a.name}': WHEN {a.trigger} IF {a.condition} THEN {a.action}{desc_str}")
     else:
         context_lines.append("No active automations.")
 
