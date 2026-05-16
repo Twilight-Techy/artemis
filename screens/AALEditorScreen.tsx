@@ -49,6 +49,7 @@ export default function AALEditorScreen() {
           const target = autos.find((a: any) => a.id === automationId);
           if (target) {
             setName(target.name);
+            setDescription(target.description || '');
             setRequireApproval(target.requires_approval ?? true);
             let reconstructed = `WHEN ${target.trigger}`;
             if (target.condition && target.condition !== 'true') reconstructed += `\nIF ${target.condition}`;
@@ -71,6 +72,7 @@ export default function AALEditorScreen() {
     try {
       let payload: any = {
         name: name.trim(),
+        description: description.trim() || undefined,
         is_enabled: true,
       };
 

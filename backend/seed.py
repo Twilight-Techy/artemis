@@ -135,6 +135,7 @@ async def seed_database():
             Automation(
                 id="auto-cool-living",
                 name="Auto Cooling (Silent)",
+                description="Automatically activates the Living Room AC when the temperature gets too high and someone is present.",
                 automation_type="aal",
                 trigger="temperature > 28 in Living Room",
                 condition="someone is in the Living Room",
@@ -146,6 +147,7 @@ async def seed_database():
             Automation(
                 id="auto-morning",
                 name="Morning Routine (Requires Approval)",
+                description="Prompts the user to start their morning wake up routine at 7:00 AM.",
                 automation_type="aal",
                 trigger="time is 07:00 AM",
                 condition="someone is home",

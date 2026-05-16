@@ -6,11 +6,12 @@ from app.models import Automation, User
 from app.schemas import AutomationCreate, AutomationOut
 from app.services.auth_service import get_current_user
 from pydantic import BaseModel
-import os
 from google import genai
 from google.genai import types
+from app.config import get_settings
 
 router = APIRouter(prefix="/automations", tags=["Automations"])
+settings = get_settings()
 
 class AALParseRequest(BaseModel):
     text: str
@@ -52,7 +53,7 @@ async def parse_aal_text(
         for f in functions
     ) or "  (no functions registered)"
 
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY", "mock-key"))
+    client = genai.Client(api_key=settings.gemini_api_key)
 
     prompt = f"""You are an expert parser for the Artemis Automation Language (AAL).
 Your job is to decompose a plain-English automation description into a strict 4-part JSON structure.
