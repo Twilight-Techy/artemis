@@ -29,10 +29,11 @@ async def parse_aal_text(
 ):
     """Parse natural language into structured AAL JSON using the user's actual devices/functions."""
     from app.models import Device, Function
+    from sqlalchemy.orm import joinedload
 
     # Fetch the user's registered devices and functions so the LLM can reference them by name
     devices_result = await db.execute(
-        select(Device).where(Device.owner_id == current_user.id)
+        select(Device).options(joinedload(Device.room)).where(Device.owner_id == current_user.id)
     )
     devices = devices_result.scalars().all()
 
@@ -42,7 +43,7 @@ async def parse_aal_text(
     functions = functions_result.scalars().all()
 
     device_list = "\n".join(
-        f'  - [DEVICE] "{d.name}" in {d.room or "Unknown Room"} (type: {d.device_type})'
+        f'  - [DEVICE] "{d.name}" in room: {d.room.name if d.room else "Unknown"} (type: {d.device_type.value})'
         for d in devices
     ) or "  (no devices registered)"
 
