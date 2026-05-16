@@ -26,17 +26,55 @@ async def parse_aal_text(body: AALParseRequest, current_user: User = Depends(get
     """Parse natural language into structured AAL JSON."""
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY", "mock-key"))
     
-    prompt = f"""
-You are an expert natural language parser for an AI smart home hub called Artemis.
-Convert the following natural language automation rule into a structured JSON object with 4 fields:
-1. trigger: The event or time (e.g., "time is 07:00" or "temperature > 28")
-2. condition: Optional contextual gate (e.g., "someone is home")
-3. action: What to do (e.g., "turn on the fan". If bypassing approval, prefix with "silently ")
-4. fallback: Optional action if condition fails (e.g., "silently do nothing")
+    prompt = f"""You are an expert parser for the Artemis Automation Language (AAL). Your job is to convert a user's plain-English description into a structured AAL JSON object.
 
-Text to parse: "{body.text}"
+== AAL SPECIFICATION ==
 
-Ensure the output is ONLY valid JSON mapping exactly to these keys.
+AAL follows a strict 4-tier evaluation structure:
+  WHEN [trigger] IF [condition] THEN [action] ELSE [fallback]
+
+CLAUSES:
+- WHEN (Trigger): Required. The event or schedule that initiates the automation.
+- IF (Condition): Optional. A contextual gate checked at trigger time.
+- THEN (Action): Required. The executor — a hardware or software directive.
+- ELSE (Fallback): Optional. An alternative action if the IF condition is false.
+
+THE "SILENTLY" MODIFIER:
+- By default, ALL actions generate an approval request (a Suggestion Card) in the mobile app.
+- To bypass user approval and execute immediately, the THEN clause MUST start with the word "silently".
+- Example: "THEN silently turn on the living room lights"
+- IMPORTANT: Only add "silently" if the user EXPLICITLY wants automatic execution with no approval. Default to requiring approval.
+
+EVENT IDENTIFIERS (for WHEN and IF):
+- Time: Standard time formats (e.g., "time is 07:00", "time is 7 AM")
+- Sensor Values: Simple comparators (e.g., "temperature > 28", "humidity < 30", "motion detected in living room")
+- Presence: Network/GPS-based (e.g., "someone is home", "alex leaves home")
+
+TARGET IDENTIFIERS (for THEN and ELSE):
+- Device Targets: Device names as stored in the system (e.g., "turn on the Studio Fan", "turn off the Ambient LED Strip")
+- Function Targets: Named software macros (e.g., "execute Morning Summary Email", "suggest Deep Shield")
+
+OUTPUT FORMAT:
+Return ONLY a valid JSON object with exactly these 4 keys:
+- "trigger": string — the WHEN clause (e.g., "temperature > 28")
+- "condition": string or null — the IF clause, or null if none
+- "action": string — the THEN clause (e.g., "turn on the Studio Fan" or "silently turn on the Studio Fan")
+- "fallback": string or null — the ELSE clause, or null if none
+
+EXAMPLES:
+Input: "When it gets hot in the studio, suggest turning on the fan if someone is there"
+Output: {{"trigger": "temperature > 28", "condition": "someone is in the room", "action": "turn on the Studio Fan", "fallback": null}}
+
+Input: "At 7am, if someone is home, automatically start the wake up routine"
+Output: {{"trigger": "time is 07:00", "condition": "someone is home", "action": "silently execute Wake Up Living Room", "fallback": null}}
+
+Input: "When the front door opens after 10pm, quietly turn on the hallway lights, otherwise do nothing"
+Output: {{"trigger": "exterior_door_lock opens", "condition": "time is after 22:00", "action": "silently turn on the hallway lights", "fallback": "silently do nothing"}}
+
+== USER INPUT ==
+"{body.text}"
+
+Return ONLY valid JSON. No explanation, no markdown code fences.
 """
     try:
         response = client.models.generate_content(

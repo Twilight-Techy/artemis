@@ -24,11 +24,12 @@ type HistoryEntry = {
   id: string;
   title: string;
   time: string;
+  date?: string;
   category: Exclude<HistoryCategory, 'All'>;
   icon: string;
   color: string;
   description?: string;
-  systemContext?: string;
+  systemContext?: string | null;
 };
 
 export default function HistoryScreen() {
@@ -58,38 +59,73 @@ export default function HistoryScreen() {
   }, [clearLogs]);
 
   const formattedLogs = historyLogs.map(log => {
-      let mappedCategory = 'Command';
-      let icon = 'flash';
-      let color: string = Colors.primary;
-      
-      if (log.action_type === 'automation_run') {
+      let mappedCategory: Exclude<HistoryCategory, 'All'> = 'Command';
+      let icon = 'bulb-outline';
+      let color: string = Colors.secondary;
+
+      if (log.action_type === 'automation_run' || log.triggered_by === 'automation') {
           mappedCategory = 'Automation';
           icon = 'flash';
-      } else if (log.action_type === 'mcp_suggestion') {
-          mappedCategory = 'Suggestion';
-          icon = 'chatbubble-outline';
-          color = Colors.tertiary;
-      } else {
-          mappedCategory = 'Command';
-          icon = 'bulb-outline';
-          color = Colors.secondary;
+          color = Colors.primary;
+      } else if (log.action_type === 'mcp_suggestion' || log.action_type === 'control_device' || log.action_type === 'execute_function') {
+          if (log.triggered_by === 'automation') {
+              mappedCategory = 'Automation';
+              icon = 'flash';
+              color = Colors.primary;
+          } else {
+              mappedCategory = 'Suggestion';
+              icon = 'chatbubble-outline';
+              color = Colors.tertiary;
+          }
       }
 
       let timeStr = 'Now';
+      let dateStr = '';
       if (log.executed_at) {
           const dt = new Date(log.executed_at + 'Z');
           timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          dateStr = dt.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
       }
+
+      // Build rich description lines from actual log data
+      const descLines: string[] = [];
+      const req = log.request_payload || {};
+      const res = log.response_payload || {};
+
+      const actionTypeLabel = log.action_type?.replace(/_/g, ' ') ?? 'unknown action';
+      const triggeredByLabel = log.triggered_by === 'automation' ? 'Triggered by automation rule' :
+                               log.triggered_by === 'user' ? 'Triggered by user command' :
+                               `Triggered by ${log.triggered_by ?? 'system'}`;
+      descLines.push(triggeredByLabel);
+
+      if (req._user_message) descLines.push(`Prompt: "${req._user_message}"`);
+
+      // Args passed to the action (device name, capability, function name, etc.)
+      const argLines = Object.entries(req)
+          .filter(([k]) => !k.startsWith('_'))
+          .map(([k, v]) => `${k.replace(/_/g, ' ')}: ${v}`);
+      if (argLines.length > 0) descLines.push(...argLines);
+
+      // Status
+      const statusLabel = log.status === 'success' ? '✓ Executed successfully' :
+                          log.status === 'pending' ? '⏳ Pending user approval' :
+                          log.status === 'declined' ? '✗ Declined by user' :
+                          log.status === 'failed' ? '✗ Execution failed' : `Status: ${log.status}`;
+      descLines.push(statusLabel);
+
+      // System context if available
+      const systemContext = res.reasoning ?? res.context ?? req._event_reason ?? null;
 
       return {
           id: log.id,
-          title: log.target_name || 'System Action',
+          title: log.target_name || actionTypeLabel || 'System Action',
           time: timeStr,
+          date: dateStr,
           category: mappedCategory,
           icon,
           color,
-          description: log.response_payload?.description,
-          systemContext: log.response_payload?.systemContext
+          description: descLines.join('\n'),
+          systemContext,
       };
   });
 
@@ -162,32 +198,34 @@ export default function HistoryScreen() {
           )}
 
           {/* ═══ Filter Chips ═══ */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterBar}
-          >
-            {CATEGORIES.map(cat => {
-              const isActive = activeFilter === cat;
-              return (
-                <TouchableOpacity
-                  key={cat}
-                  style={[styles.filterChip, isActive && styles.filterChipActive]}
-                  onPress={() => setActiveFilter(cat)}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={[
-                      styles.filterText,
-                      isActive && styles.filterTextActive,
-                    ]}
+          <View style={styles.filterBarWrapper}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterBar}
+            >
+              {CATEGORIES.map(cat => {
+                const isActive = activeFilter === cat;
+                return (
+                  <TouchableOpacity
+                    key={cat}
+                    style={[styles.filterChip, isActive && styles.filterChipActive]}
+                    onPress={() => setActiveFilter(cat)}
+                    activeOpacity={0.7}
                   >
-                    {cat}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+                    <Text
+                      style={[
+                        styles.filterText,
+                        isActive && styles.filterTextActive,
+                      ]}
+                    >
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
 
           {/* ═══ Timeline ═══ */}
           <View style={styles.timeline}>
@@ -268,28 +306,29 @@ export default function HistoryScreen() {
                           <Text style={styles.entryTitle}>{entry.title}</Text>
                         </View>
                         <Text style={styles.entryMeta}>
-                          {entry.time} • {entry.category.toUpperCase()}
+                          {entry.date ? `${entry.date} · ` : ''}{entry.time} · {entry.category.toUpperCase()}
                         </Text>
                       </View>
                       <Ionicons
                         name={isExpanded ? 'chevron-up' : 'chevron-down'}
                         size={18}
-                        color={
-                          isExpanded ? entry.color : 'rgba(255, 255, 255, 0.15)'
-                        }
+                        color={isExpanded ? entry.color : 'rgba(255, 255, 255, 0.15)'}
                       />
                     </View>
 
-                    {/* Expanded content */}
-                    {isExpanded && entry.description && (
+                    {/* Expanded content — always shown when expanded */}
+                    {isExpanded && (
                       <View style={styles.expandedContent}>
-                        <Text style={styles.entryDescription}>
-                          {entry.description}
-                        </Text>
+                        {entry.description && entry.description.split('\n').map((line, i) => (
+                          <View key={i} style={styles.descLine}>
+                            <View style={[styles.descDot, { backgroundColor: entry.color }]} />
+                            <Text style={styles.entryDescription}>{line}</Text>
+                          </View>
+                        ))}
                         {entry.systemContext && (
                           <View style={styles.contextBox}>
                             <Text style={styles.contextLabel}>
-                              System Context
+                              Artemis Reasoning
                             </Text>
                             <View style={styles.contextRow}>
                               <View style={styles.contextIcon}>
@@ -435,9 +474,15 @@ const styles = StyleSheet.create({
     color: Colors.onSurface,
     letterSpacing: -1,
   },
-  filterBar: {
-    gap: Spacing.md,
+  filterBarWrapper: {
+    height: 44,
     marginBottom: Spacing['3xl'],
+  },
+  filterBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingVertical: 4,
   },
   filterChip: {
     paddingHorizontal: Spacing.xl,
@@ -540,13 +585,28 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.lg,
     borderTopWidth: 1,
     borderTopColor: 'rgba(72, 71, 74, 0.1)',
+    gap: Spacing.sm,
+  },
+  descLine: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    marginBottom: 2,
+  },
+  descDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    marginTop: 8,
+    opacity: 0.7,
+    flexShrink: 0,
   },
   entryDescription: {
+    flex: 1,
     fontFamily: Typography.families.body,
     fontSize: Typography.sizes.bodyMd,
     color: 'rgba(255, 255, 255, 0.6)',
     lineHeight: 22,
-    marginBottom: Spacing.lg,
   },
   contextBox: {
     backgroundColor: 'rgba(0, 0, 0, 0.3)',

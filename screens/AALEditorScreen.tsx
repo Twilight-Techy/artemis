@@ -36,11 +36,10 @@ export default function AALEditorScreen() {
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [engine, setEngine] = useState<'AAL' | 'PYTHON'>('AAL');
   const [logicAAL, setLogicAAL] = useState('WHEN \nIF \nTHEN ');
-  const [logicPython, setLogicPython] = useState('def evaluate(sensor_data):\n    # Write advanced automation script here\n    pass');
   const [requireApproval, setRequireApproval] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   React.useEffect(() => {
     if (isEdit && automationId) {
@@ -51,17 +50,11 @@ export default function AALEditorScreen() {
           if (target) {
             setName(target.name);
             setRequireApproval(target.action?.indexOf('silently ') === -1);
-            if (target.automation_type.toLowerCase() === 'python') {
-              setEngine('PYTHON');
-              setLogicPython(target.action);
-            } else {
-              setEngine('AAL');
-              let reconstructed = `WHEN ${target.trigger}`;
-              if (target.condition && target.condition !== 'true') reconstructed += `\nIF ${target.condition}`;
-              reconstructed += `\nTHEN ${target.action}`;
-              if (target.fallback) reconstructed += `\nELSE ${target.fallback}`;
-              setLogicAAL(reconstructed);
-            }
+            let reconstructed = `WHEN ${target.trigger}`;
+            if (target.condition && target.condition !== 'true') reconstructed += `\nIF ${target.condition}`;
+            reconstructed += `\nTHEN ${target.action}`;
+            if (target.fallback) reconstructed += `\nELSE ${target.fallback}`;
+            setLogicAAL(reconstructed);
           }
         } catch (e) {
           console.warn('Failed to fetch automation', e);
@@ -81,24 +74,18 @@ export default function AALEditorScreen() {
         is_enabled: true,
       };
 
-      if (engine === 'AAL') {
-        const parsed = await artemisApi.parseAALText(logicAAL);
-        let actionStr = parsed.action || 'silently do nothing';
+      const parsed = await artemisApi.parseAALText(logicAAL);
+      let actionStr = parsed.action || 'silently do nothing';
 
-        if (!requireApproval && !actionStr.toLowerCase().startsWith('silently')) {
-             actionStr = 'silently ' + actionStr;
-        }
-
-        payload.automation_type = 'aal';
-        payload.trigger = parsed.trigger || 'manual';
-        payload.condition = parsed.condition;
-        payload.action = actionStr;
-        payload.fallback = parsed.fallback;
-      } else {
-        payload.automation_type = 'python';
-        payload.trigger = 'manual';
-        payload.action = logicPython.trim();
+      if (!requireApproval && !actionStr.toLowerCase().startsWith('silently')) {
+           actionStr = 'silently ' + actionStr;
       }
+
+      payload.automation_type = 'aal';
+      payload.trigger = parsed.trigger || 'manual';
+      payload.condition = parsed.condition;
+      payload.action = actionStr;
+      payload.fallback = parsed.fallback;
 
       if (isEdit && automationId) {
         await artemisApi.updateAutomation(automationId, payload);
@@ -110,6 +97,23 @@ export default function AALEditorScreen() {
       console.warn('Failed to save automation', e);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGenerateAAL = async () => {
+    if (!description.trim()) return;
+    setIsGenerating(true);
+    try {
+      const parsed = await artemisApi.parseAALText(description);
+      let reconstructed = `WHEN ${parsed.trigger}`;
+      if (parsed.condition && parsed.condition !== 'true') reconstructed += `\nIF ${parsed.condition}`;
+      reconstructed += `\nTHEN ${parsed.action}`;
+      if (parsed.fallback) reconstructed += `\nELSE ${parsed.fallback}`;
+      setLogicAAL(reconstructed);
+    } catch (e) {
+      console.warn('Failed to generate AAL from description', e);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -177,6 +181,16 @@ export default function AALEditorScreen() {
                 numberOfLines={3}
                 textAlignVertical="top"
               />
+              
+              <TouchableOpacity 
+                style={styles.generateBtn} 
+                activeOpacity={0.8} 
+                onPress={handleGenerateAAL} 
+                disabled={isGenerating || !description.trim()}
+              >
+                <Ionicons name="sparkles" size={16} color={Colors.primary} />
+                <Text style={styles.generateBtnText}>{isGenerating ? 'GENERATING...' : 'GENERATE AAL LOGIC'}</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -186,55 +200,18 @@ export default function AALEditorScreen() {
               <Ionicons name="hardware-chip-outline" size={20} color={Colors.primaryDim} />
               <Text style={styles.sectionHeading}>Execution Engine</Text>
             </View>
-            <View style={styles.engineToggleRow}>
-              <TouchableOpacity
-                style={[styles.enginePill, engine === 'AAL' && styles.enginePillActiveAAL]}
-                onPress={() => setEngine('AAL')}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="sparkles" size={16} color={engine === 'AAL' ? Colors.primary : Colors.onSurfaceVariant} />
-                <Text style={[styles.enginePillText, engine === 'AAL' && styles.enginePillTextActiveAAL]}>AAL Logic</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.enginePill, engine === 'PYTHON' && styles.enginePillActivePython]}
-                onPress={() => setEngine('PYTHON')}
-                activeOpacity={0.8}
-              >
-                <MaterialCommunityIcons name="language-python" size={16} color={engine === 'PYTHON' ? Colors.secondary : Colors.onSurfaceVariant} />
-                <Text style={[styles.enginePillText, engine === 'PYTHON' && styles.enginePillTextActivePython]}>Python Sandbox</Text>
-              </TouchableOpacity>
-            </View>
 
             <View style={styles.card}>
-              {engine === 'AAL' ? (
-                <>
-                  <Text style={styles.fieldLabel}>ARTEMIS AUTOMATION LANGUAGE</Text>
-                  <Text style={styles.contextHint}>Write rules in natural English (WHEN / IF / THEN / ELSE).</Text>
-                  <TextInput
-                    style={[styles.textInput, styles.textArea, styles.codeArea]}
-                    value={logicAAL}
-                    onChangeText={setLogicAAL}
-                    multiline
-                    autoCapitalize="sentences"
-                    textAlignVertical="top"
-                  />
-                </>
-              ) : (
-                <>
-                  <Text style={styles.fieldLabel}>PYTHON SCRIPT</Text>
-                  <Text style={styles.contextHint}>Sandboxed environment. Use mcp.requestAction() for execution.</Text>
-                  <TextInput
-                    style={[styles.textInput, styles.textArea, styles.codeArea, styles.pythonCodeArea]}
-                    value={logicPython}
-                    onChangeText={setLogicPython}
-                    multiline
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    textAlignVertical="top"
-                  />
-                </>
-              )}
+              <Text style={styles.fieldLabel}>ARTEMIS AUTOMATION LANGUAGE</Text>
+              <Text style={styles.contextHint}>Write rules in natural English (WHEN / IF / THEN / ELSE).</Text>
+              <TextInput
+                style={[styles.textInput, styles.textArea, styles.codeArea]}
+                value={logicAAL}
+                onChangeText={setLogicAAL}
+                multiline
+                autoCapitalize="sentences"
+                textAlignVertical="top"
+              />
             </View>
           </View>
 
@@ -422,42 +399,24 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     color: '#00e3fd', // Executor hue
   },
-  engineToggleRow: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginBottom: Spacing.xl,
-  },
-  enginePill: {
-    flex: 1,
+  generateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    paddingVertical: Spacing.md,
+    backgroundColor: 'rgba(116, 177, 255, 0.1)',
     borderRadius: Radii.lg,
-    backgroundColor: Colors.surfaceContainerLow,
+    paddingVertical: Spacing.md,
+    marginTop: Spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(116, 177, 255, 0.25)',
   },
-  enginePillActiveAAL: {
-    backgroundColor: 'rgba(116, 177, 255, 0.15)',
-    borderColor: Colors.primary,
-  },
-  enginePillActivePython: {
-    backgroundColor: 'rgba(184, 132, 255, 0.15)',
-    borderColor: Colors.secondary,
-  },
-  enginePillText: {
-    fontFamily: Typography.families.label,
+  generateBtnText: {
+    fontFamily: Typography.families.headline,
     fontSize: Typography.sizes.labelLg,
     fontWeight: Typography.weights.bold,
-    color: Colors.onSurfaceVariant,
-  },
-  enginePillTextActiveAAL: {
     color: Colors.primary,
-  },
-  enginePillTextActivePython: {
-    color: Colors.secondary,
+    letterSpacing: 1,
   },
   rowCard: {
     flexDirection: 'row',
