@@ -7,7 +7,7 @@ import uuid
 from app.database import get_db
 from app.models import User, ChatMessage, ExecutionLog
 from app.services.auth_service import get_current_user
-from app.services import gemini_service, context_engine, permission_engine, hardware_service
+from app.services import gemini_service, context_engine, permission_engine, hardware_service, executor as exec_service
 from app.services.gemini_service import GeminiQuotaError, GeminiServiceError
 
 router = APIRouter(prefix="/mcp", tags=["MCP Core"])
@@ -224,10 +224,26 @@ async def chat_endpoint(
                 )
             )
         else:
-            # Auto-approve (e.g. read sensors). Ideally we'd recursively call the model with the tool output.
-            # Simplified for now: just return a canned response that we executed an auto tool.
-            # In a full flow we'd await the tool and pass back to Gemini.
-            pass
+            # Auto-approve (silently modifier) — execute immediately and log it
+            result = await exec_service.run_tool(
+                db=db,
+                user=current_user,
+                action_type=tool_name,
+                args=args,
+                triggered_by="mcp",
+                generate_summary=True,
+                original_message=body.message,
+            )
+            reply_text = result["summary"]
+            ast_msg = ChatMessage(
+                role="assistant",
+                content=reply_text,
+                meta_info={"status": result["status"], "action_id": result["log_id"]},
+                user_id=current_user.id
+            )
+            db.add(ast_msg)
+            await db.commit()
+            return ChatResponse(reply=reply_text, requires_approval=False)
 
     # 5. It's a text reply
     reply_text = response.text if response.text else "I've handled that for you."
@@ -263,74 +279,35 @@ async def approve_action(
     if not log:
         raise HTTPException(status_code=404, detail="Pending action not found")
 
-    args = log.request_payload
-    
-    try:
-        if log.action_type == "execute_function":
-            function_name = args.get("function_name")
-            parameters = args.get("parameters", {})
-            
-            # Lookup function by name
-            from app.models import Function
-            fn_query = await db.execute(
-                select(Function).where(Function.name == function_name, Function.owner_id == current_user.id)
-            )
-            fn = fn_query.scalar_one_or_none()
-            if not fn:
-                raise hardware_service.HardwareError(f"Function '{function_name}' not found.")
-                
-            from app.services import function_service
-            try:
-                hw_response = await function_service.execute_function(db, fn.id, current_user, parameters=parameters)
-                # Overwrite triggered_by since it was AI
-                log_update = await db.execute(select(ExecutionLog).where(ExecutionLog.id == hw_response.get("log_id")))
-                actual_log = log_update.scalar_one_or_none()
-                if actual_log:
-                    actual_log.triggered_by = "mcp"
-            except ValueError as e:
-                raise hardware_service.HardwareError(str(e))
-                
-            log.status = "success"
-            log.response_payload = hw_response
-            log.target_name = function_name
-            
-        elif log.action_type == "control_device":
-            device_name = args.get("device_name")
-            action = args.get("action")
-            payload = args.get("payload")
-            hw_response = await hardware_service.send_command(device_name, action, payload)
-            log.status = "success"
-            log.response_payload = hw_response
-            log.target_name = device_name
-            
-        else:
-            raise hardware_service.HardwareError(f"Unknown action type {log.action_type}")
-            
-    except hardware_service.HardwareError as e:
-        log.status = "failed"
-        log.response_payload = {"error": e.message}
+    args = log.request_payload or {}
 
-    # Ask Gemini to summarise what just happened in natural language
-    original_message = log.request_payload.get("_user_message", f"{log.action_type} {log.target_name}")
-    confirmation_text = await gemini_service.summarise_tool_result(
-        user_message=original_message,
-        tool_name=log.action_type,
-        tool_args=log.request_payload,
-        tool_result=log.response_payload or {},
-        succeeded=(log.status == "success"),
+    result = await exec_service.run_tool(
+        db=db,
+        user=current_user,
+        action_type=log.action_type,
+        args={k: v for k, v in args.items() if not k.startswith("_")},
+        triggered_by="mcp",
+        generate_summary=True,
+        original_message=args.get("_user_message", f"{log.action_type} {log.target_name}"),
     )
 
-    # Save the LLM confirmation as an assistant message so it renders as Artemis's natural voice
+    # Update the original pending log to reflect the outcome
+    log.status = result["status"]
+    log.response_payload = result["hw_response"]
+    log.response_payload["summary"] = result["summary"]
+    await db.commit()
+
+    # Save the LLM confirmation as an assistant message
     sys_msg = ChatMessage(
         role="assistant",
-        content=confirmation_text,
-        meta_info={"status": log.status, "action_id": action_id},
+        content=result["summary"],
+        meta_info={"status": result["status"], "action_id": action_id},
         user_id=current_user.id
     )
     db.add(sys_msg)
     await db.commit()
 
-    return {"status": log.status, "action_id": action_id, "confirmation": confirmation_text}
+    return {"status": result["status"], "action_id": action_id, "confirmation": result["summary"]}
 
 @router.post("/decline/{action_id}")
 async def decline_action(

@@ -6,7 +6,7 @@ from app.services import hardware_service
 from app.services.hardware_service import HardwareError
 
 
-async def execute_function(db: AsyncSession, function_id: str, current_user: User, parameters: dict = None):
+async def execute_function(db: AsyncSession, function_id: str, current_user: User, parameters: dict = None, triggered_by: str = "user"):
     """Executes a registered function (device actions + HTTP dispatch)."""
     result = await db.execute(
         select(Function).where(Function.id == function_id, Function.owner_id == current_user.id)
@@ -142,7 +142,7 @@ async def execute_function(db: AsyncSession, function_id: str, current_user: Use
         status=overall_status,
         request_payload={"device_actions": fn.device_actions, "url": fn.url},
         response_payload={"device_results": device_results, "http_response": http_response},
-        triggered_by="user",  # Overwritten in MCP if triggered by AI
+        triggered_by=triggered_by,
         user_id=current_user.id,
     )
     db.add(log)

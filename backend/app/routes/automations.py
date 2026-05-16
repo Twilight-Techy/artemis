@@ -39,12 +39,6 @@ CLAUSES:
 - THEN (Action): Required. The executor — a hardware or software directive.
 - ELSE (Fallback): Optional. An alternative action if the IF condition is false.
 
-THE "SILENTLY" MODIFIER:
-- By default, ALL actions generate an approval request (a Suggestion Card) in the mobile app.
-- To bypass user approval and execute immediately, the THEN clause MUST start with the word "silently".
-- Example: "THEN silently turn on the living room lights"
-- IMPORTANT: Only add "silently" if the user EXPLICITLY wants automatic execution with no approval. Default to requiring approval.
-
 EVENT IDENTIFIERS (for WHEN and IF):
 - Time: Standard time formats (e.g., "time is 07:00", "time is 7 AM")
 - Sensor Values: Simple comparators (e.g., "temperature > 28", "humidity < 30", "motion detected in living room")
@@ -58,18 +52,18 @@ OUTPUT FORMAT:
 Return ONLY a valid JSON object with exactly these 4 keys:
 - "trigger": string — the WHEN clause (e.g., "temperature > 28")
 - "condition": string or null — the IF clause, or null if none
-- "action": string — the THEN clause (e.g., "turn on the Studio Fan" or "silently turn on the Studio Fan")
+- "action": string — the THEN clause (e.g., "turn on the Studio Fan")
 - "fallback": string or null — the ELSE clause, or null if none
 
 EXAMPLES:
 Input: "When it gets hot in the studio, suggest turning on the fan if someone is there"
 Output: {{"trigger": "temperature > 28", "condition": "someone is in the room", "action": "turn on the Studio Fan", "fallback": null}}
 
-Input: "At 7am, if someone is home, automatically start the wake up routine"
-Output: {{"trigger": "time is 07:00", "condition": "someone is home", "action": "silently execute Wake Up Living Room", "fallback": null}}
+Input: "At 7am, if someone is home, start the wake up routine"
+Output: {{"trigger": "time is 07:00", "condition": "someone is home", "action": "execute Wake Up Living Room", "fallback": null}}
 
-Input: "When the front door opens after 10pm, quietly turn on the hallway lights, otherwise do nothing"
-Output: {{"trigger": "exterior_door_lock opens", "condition": "time is after 22:00", "action": "silently turn on the hallway lights", "fallback": "silently do nothing"}}
+Input: "When the front door opens after 10pm, turn on the hallway lights, otherwise do nothing"
+Output: {{"trigger": "exterior_door_lock opens", "condition": "time is after 22:00", "action": "turn on the hallway lights", "fallback": "do nothing"}}
 
 == USER INPUT ==
 "{body.text}"
@@ -99,7 +93,7 @@ Return ONLY valid JSON. No explanation, no markdown code fences.
         return AALParseResponse(
             trigger=when_match.group(1).strip() if when_match else "unknown",
             condition=if_match.group(1).strip() if if_match else None,
-            action=then_match.group(1).strip() if then_match else "silently do nothing",
+            action=then_match.group(1).strip() if then_match else "do nothing",
             fallback=else_match.group(1).strip() if else_match else None
         )
 

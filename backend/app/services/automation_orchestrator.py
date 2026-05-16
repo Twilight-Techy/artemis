@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import AsyncSessionLocal
 from app.models import Automation, ExecutionLog, User, ChatMessage
 from app.services import context_engine, gemini_service, function_service
+from app.services import executor as exec_service
 
 async def evaluate_event(user_id: str, event_reason: str):
     """
@@ -55,17 +56,33 @@ If no conditions are met, reply with the exact text "NO_ACTION". Do not explain.
                 args = function_call.args
 
                 target_name = args.get("device_name") or args.get("function_name", "unknown")
-                
-                # Check if the triggered automation requires user approval. 
-                # (For now, we default to requiring approval for safety, turning it into a proactive suggestion)
-                requires_approval = True 
-                
-                # We could attempt to look up the specific Automation to see if `requires_approval` is False,
-                # but since the LLM just calls the tool directly, we treat background triggers as proactive suggestions.
 
-                if requires_approval:
+                # Read requires_approval directly from the automation's saved setting —
+                # this is the toggle the user set when creating/editing the automation.
+                matching = next(
+                    (a for a in automations if target_name.lower() in (a.action or "").lower()),
+                    None
+                )
+                requires_approval = matching.requires_approval if matching else True
+
+                if not requires_approval:
+                    # Silent execution — run immediately, log it, no UI modal
+                    user_result = await db.execute(select(User).where(User.id == user_id))
+                    user = user_result.scalar_one_or_none()
+                    if user:
+                        await exec_service.run_tool(
+                            db=db,
+                            user=user,
+                            action_type=tool_name,
+                            args=dict(args),
+                            triggered_by="automation",
+                            generate_summary=False,
+                            event_reason=event_reason,
+                        )
+                        print(f"Silent automation executed for {user_id}: {target_name}")
+                else:
+                    # Requires approval — create a pending suggestion card
                     action_id = str(uuid.uuid4())
-                    
                     reasoning_text = response.text.strip() if response.text else f"Based on {event_reason}, I suggest triggering {target_name}."
 
                     pending_log = ExecutionLog(
@@ -73,13 +90,15 @@ If no conditions are met, reply with the exact text "NO_ACTION". Do not explain.
                         action_type=tool_name,
                         target_name=target_name,
                         status="pending",
-                        request_payload={**args, "_user_message": f"Event trigger: {event_reason}"},
+                        request_payload={
+                            **dict(args),
+                            "_user_message": f"Event trigger: {event_reason}",
+                            "_event_reason": event_reason,
+                        },
+                        response_payload={"reasoning": reasoning_text},
                         triggered_by="automation",
                         user_id=user_id
                     )
                     db.add(pending_log)
-                    
-                    # Instead of saving a ChatMessage (which pollutes history), we just log it.
-                    # The mobile app should poll for 'pending' execution logs to show suggestion cards.
                     await db.commit()
                     print(f"Generated proactive suggestion for {user_id}: {target_name}")

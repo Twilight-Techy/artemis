@@ -49,7 +49,7 @@ export default function AALEditorScreen() {
           const target = autos.find((a: any) => a.id === automationId);
           if (target) {
             setName(target.name);
-            setRequireApproval(target.action?.indexOf('silently ') === -1);
+            setRequireApproval(target.requires_approval ?? true);
             let reconstructed = `WHEN ${target.trigger}`;
             if (target.condition && target.condition !== 'true') reconstructed += `\nIF ${target.condition}`;
             reconstructed += `\nTHEN ${target.action}`;
@@ -75,17 +75,14 @@ export default function AALEditorScreen() {
       };
 
       const parsed = await artemisApi.parseAALText(logicAAL);
-      let actionStr = parsed.action || 'silently do nothing';
-
-      if (!requireApproval && !actionStr.toLowerCase().startsWith('silently')) {
-           actionStr = 'silently ' + actionStr;
-      }
+      const actionStr = parsed.action || 'do nothing';
 
       payload.automation_type = 'aal';
       payload.trigger = parsed.trigger || 'manual';
       payload.condition = parsed.condition;
       payload.action = actionStr;
       payload.fallback = parsed.fallback;
+      payload.requires_approval = requireApproval;
 
       if (isEdit && automationId) {
         await artemisApi.updateAutomation(automationId, payload);
@@ -225,7 +222,7 @@ export default function AALEditorScreen() {
               <View style={styles.rowInfo}>
                 <Text style={styles.rowTitle}>Require User Approval</Text>
                 <Text style={styles.rowDescription}>
-                  Generate a suggestion card instead of silently executing.
+                  Generate a suggestion card instead of executing immediately.
                 </Text>
               </View>
               <Switch

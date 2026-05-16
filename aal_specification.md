@@ -13,10 +13,9 @@ AAL follows a strict, 4-tier evaluation structure:
 * **THEN (Action):** The executor. Dispatches a software or hardware directive. (Status: Required)
 * **ELSE (Fallback):** An alternative executor if the `IF` condition returns `False`. (Status: Optional)
 
-### 2.1 The "Silently" Modifier
-By default, AAL triggers generate **approval requests** (Proactive Suggestions) via the Mobile App HUD rather than blindly acting.
-To bypass manual user approval, the keyword `silently` must be used within the `THEN` clause.
-* Example: `...THEN silently turn on the living room lights...`
+### 2.1 User Approval Semantics
+By default, AAL rules trigger **approval requests** (Proactive Suggestions) via the Mobile App HUD rather than blindly acting.
+To bypass manual user approval, the **"Require User Approval" toggle** must be disabled when creating or editing the automation in the app. This is a per-automation setting stored in the database — not a keyword in the rule text.
 
 ## 3. Data Types & Identifiers
 
@@ -37,12 +36,12 @@ To bypass manual user approval, the keyword `silently` must be used within the `
 Artemis Behavior: Emits a UI "Suggestion Card" to the user, waiting for Allow/Decline.
 
 #### Example 2: Modified Execution (Silent Modifier)
-> `WHEN time is 07:00 IF someone is home THEN silently execute Wake Up Living Room.`
+> `WHEN time is 07:00 IF someone is home THEN execute Wake Up Living Room.`
 
-Artemis Behavior: Triggers the `Wake Up Living Room` function at exactly 7 AM with zero user intervention, provided a known user is clocked in on the local network. 
+Artemis Behavior: Triggers the `Wake Up Living Room` function at exactly 7 AM. Whether a suggestion card is shown depends on the automation's "Require User Approval" setting.
 
 #### Example 3: Full IF/ELSE Branching
-> `WHEN exterior_door_lock opens IF time is after 22:00 THEN silently turn on the hallway lights ELSE silently do nothing.`
+> `WHEN exterior_door_lock opens IF time is after 22:00 THEN turn on the hallway lights ELSE do nothing.`
 
 ## 5. Parser Compilation (AAL -> JSON)
 When an AAL string is analyzed by the backend (via `POST /automations`), it is parsed into the following executable JSON AST (Abstract Syntax Tree):
@@ -74,4 +73,4 @@ When an AAL string is analyzed by the backend (via `POST /automations`), it is p
 ## 6. Execution Flow
 1. **Network Sync:** Hardware triggers report data back to `app/services/hardware_service.py`.
 2. **Context Check:** The `automation_engine` checks the `trigger` queue and verifies the `condition` queue against cached state.
-3. **Execution Routing:** If `requires_approval` is `true`, a push-event is routed through FastApi WebSockets to the React Native App. If `false` (the `silently` modifier was detected), it skips the client entirely and fires a command back down the HTTP/MQTT bridge.
+3. **Execution Routing:** If the automation's `requires_approval` setting is `true`, a push-event is routed through FastAPI WebSockets to the React Native App as a Suggestion Card. If `false` (the "Require User Approval" toggle was disabled by the user), it skips the client entirely and fires a command back down the HTTP/MQTT bridge.
