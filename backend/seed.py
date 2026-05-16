@@ -39,7 +39,7 @@ async def seed_database():
         await db.flush()  # Ensure rooms exist for device FK references
 
         print("Creating Devices...")
-        # 3. Create Devices — diverse types with proper capabilities & state
+        # 3. Create Devices
         devices = [
             # ── Living Room ──────────────────────────────────
             Device(
@@ -104,12 +104,6 @@ async def seed_database():
                 state={"is_on": True, "brightness": 2},
             ),
             Device(
-                id="dev-kt-smoke", name="Smoke Detector",
-                device_type=DeviceType.SENSOR, room_id="room-kitchen", owner_id="test-user-id", pin=None,
-                capabilities={"reading_types": ["smoke"]},
-                state={"is_on": True, "reading": 0, "unit": "ppm", "status": "Clear"}
-            ),
-            Device(
                 id="dev-kt-plug", name="Coffee Maker Plug",
                 device_type=DeviceType.SWITCH, room_id="room-kitchen", owner_id="test-user-id", pin=31,
                 capabilities={"power": True},
@@ -129,12 +123,6 @@ async def seed_database():
                 capabilities={"power": True, "brightness": True, "rgb_color": True, "color_temp": True},
                 state={"is_on": True, "brightness": 75, "color": "#b884ff"}
             ),
-            Device(
-                id="dev-st-relay", name="Spare Relay",
-                device_type=DeviceType.SWITCH, room_id="room-studio", owner_id="test-user-id", pin=42,
-                capabilities={"power": True},
-                state={"is_on": False}
-            ),
         ]
         
         for d in devices:
@@ -142,25 +130,27 @@ async def seed_database():
         await db.flush()  # Ensure devices exist before logs
 
         print("Creating Core Automations...")
-        # 4. Automations Example
+        # 4. Automations
         automations = [
             Automation(
-                id="test-auto-id",
-                name="Auto Cooling",
+                id="auto-cool-living",
+                name="Auto Cooling (Silent)",
                 automation_type="aal",
-                trigger="temperature > 28",
-                condition="true",
-                action="silently turn on fan",
+                trigger="temperature > 28 in Living Room",
+                condition="someone is in the Living Room",
+                action="turn on Living Room AC",
+                requires_approval=False,  # Silent automation!
                 is_enabled=True,
                 owner_id="test-user-id"
             ),
             Automation(
-                id="test-auto-id-2",
-                name="Morning Routine",
+                id="auto-morning",
+                name="Morning Routine (Requires Approval)",
                 automation_type="aal",
-                trigger="time is 07:00",
+                trigger="time is 07:00 AM",
                 condition="someone is home",
-                action="suggest wake up living room",
+                action="suggest wake up living room function",
+                requires_approval=True,  # Suggestion Card automation!
                 is_enabled=True,
                 owner_id="test-user-id"
             ),
@@ -169,45 +159,50 @@ async def seed_database():
             db.add(a)
 
         print("Creating Core Functions...")
-        
+        # 5. Functions
         functions = [
             Function(
-                id="test-func-1",
+                id="func-wakeup",
                 name="Wake Up Living Room",
                 description="Gradual light increase, temperature adjustment, and coffee initiation sequence.",
                 function_type="hardware",
                 method="GET",
                 url=None,
+                triggers=["wake up", "good morning", "start my day"],
+                conditions=["time is between 05:00 and 09:00", "someone is home"],
                 owner_id="test-user-id"
             ),
             Function(
-                id="test-func-2",
+                id="func-morning-email",
                 name="Morning Summary Email",
                 description="Fetch overnight security logs and email the summary to admin account.",
                 function_type="software",
                 method="POST",
                 url="https://api.artemis.local/alerts",
                 parameters=["adminEmail", "reportDate"],
+                triggers=["send morning report", "email security summary"],
+                conditions=["time is 08:00 AM"],
                 owner_id="test-user-id"
             ),
             Function(
-                id="test-func-3",
+                id="func-deep-shield",
                 name="Deep Shield",
                 description="Lock all entry points, arm perimeter sensors, and notify external security service API.",
                 function_type="hybrid",
                 method="POST",
                 url="https://api.artemis.local/lockdown",
                 parameters=["authorizationCode"],
+                triggers=["activate deep shield", "lock down the house", "intruder alert"],
+                conditions=["system is armed"],
                 owner_id="test-user-id"
             )
         ]
 
         for f in functions:
             db.add(f)
+        await db.flush()
 
-        print("Creating Chat History & Execution Logs...")
-
-        # ── Build a coherent conversation timeline ──
+        print("Creating Execution Logs...")
         # Base time: ~40 minutes ago
         now = datetime.utcnow()
         t = now - timedelta(minutes=40)
@@ -215,62 +210,63 @@ async def seed_database():
         def ts(offset_minutes):
             return t + timedelta(minutes=offset_minutes)
 
-        chat_messages = [
-            # --- 1. User arrives home, Artemis greets ---
-            ChatMessage(id="msg-01", role="assistant", content="Good evening, Alex. Welcome home. All systems are nominal. Living room is at 73F with 5 active devices.", user_id="test-user-id", created_at=ts(0)),
-
-            # --- 2. User asks about temperature ---
-            ChatMessage(id="msg-02", role="user", content="Hey Artemis, it's a bit warm in here. What's the temperature?", user_id="test-user-id", created_at=ts(2)),
-            ChatMessage(id="msg-03", role="assistant", content="The living room temperature sensor reads 78.2F. That's above your comfort range. Would you like me to turn on the AC and the ceiling fan?", user_id="test-user-id", created_at=ts(2.5)),
-
-            # --- 3. User approves ---
-            ChatMessage(id="msg-04", role="user", content="Yes, cool it down please.", user_id="test-user-id", created_at=ts(3)),
-            ChatMessage(id="msg-05", role="assistant", content="On it. I've set the AC to 72F and turned on the ceiling fan at medium speed.", user_id="test-user-id", created_at=ts(3.5)),
-            # System confirms execution
-            ChatMessage(id="msg-06", role="system", content="Executed: Living Room AC -> set_temperature (72F)", meta_info={"action_id": "log-ac-cool", "status": "success"}, user_id="test-user-id", created_at=ts(3.7)),
-            ChatMessage(id="msg-07", role="system", content="Executed: Ceiling Fan -> set_speed (medium)", meta_info={"action_id": "log-fan-on", "status": "success"}, user_id="test-user-id", created_at=ts(3.9)),
-
-            # --- 4. User asks to set mood ---
-            ChatMessage(id="msg-08", role="user", content="Set the living room lights to something relaxing.", user_id="test-user-id", created_at=ts(8)),
-            ChatMessage(id="msg-09", role="assistant", content="Setting the Hue Ceiling Light to 40% brightness with warm white (2700K), and dimming the LED Strip to a soft amber at 25%.", user_id="test-user-id", created_at=ts(8.5)),
-            ChatMessage(id="msg-10", role="system", content="Executed: Hue Ceiling Light -> set_brightness (40%)", meta_info={"action_id": "log-light-dim", "status": "success"}, user_id="test-user-id", created_at=ts(8.8)),
-
-            # --- 5. Automation fires in background ---
-            ChatMessage(id="msg-11", role="system", content="Auto Cooling triggered: temperature threshold exceeded.", meta_info={"action_id": "log-auto-cool", "status": "success"}, user_id="test-user-id", created_at=ts(15)),
-
-            # --- 6. User asks about security ---
-            ChatMessage(id="msg-12", role="user", content="Is the security camera armed?", user_id="test-user-id", created_at=ts(20)),
-            ChatMessage(id="msg-13", role="assistant", content="The Bedroom Security Camera is currently armed and recording. No motion events in the last 2 hours. All clear.", user_id="test-user-id", created_at=ts(20.5)),
-
-            # --- 7. Getting ready for bed ---
-            ChatMessage(id="msg-14", role="user", content="It's getting late. Turn off everything except the bedroom lamp.", user_id="test-user-id", created_at=ts(30)),
-            ChatMessage(id="msg-15", role="assistant", content="Understood. Powering down the living room, kitchen, and studio. Keeping the Bedside Lamp on at 30% for you. Goodnight, Alex.", user_id="test-user-id", created_at=ts(30.5)),
-            ChatMessage(id="msg-16", role="system", content="Executed: Scene Change -> Goodnight Mode", meta_info={"action_id": "log-goodnight", "status": "success"}, user_id="test-user-id", created_at=ts(31)),
-        ]
-
-        for m in chat_messages:
-            db.add(m)
-
-        # ── Matching execution logs ──
+        # 6. Execution Logs
         execution_logs = [
-            ExecutionLog(id="log-ac-cool", action_type="control_device", target_name="Living Room AC", status="success", triggered_by="mcp", user_id="test-user-id", executed_at=ts(3.7),
-                response_payload={"description": "Set target temperature to 72F. Compressor engaged.", "device_id": "dev-ac"}),
+            # Manual Control
+            ExecutionLog(id="log-ac-cool", action_type="device_control", target_name="AC Unit", target_id="dev-lr-ac", status="success", triggered_by="manual", user_id="test-user-id", executed_at=ts(3.7),
+                request_payload={"action": "on"}, response_payload={"description": "Set target temperature to 72F. Compressor engaged.", "device_id": "dev-lr-ac"}),
+            
+            # MCP (AI) Control
+            ExecutionLog(id="log-fan-on", action_type="device_control", target_name="Ceiling Fan", target_id="dev-bd-fan", status="success", triggered_by="mcp", user_id="test-user-id", executed_at=ts(3.9),
+                request_payload={"action": "on", "speed": 2}, response_payload={"description": "Fan speed set to medium (level 2/3).", "device_id": "dev-bd-fan"}),
 
-            ExecutionLog(id="log-fan-on", action_type="control_device", target_name="Ceiling Fan", status="success", triggered_by="mcp", user_id="test-user-id", executed_at=ts(3.9),
-                response_payload={"description": "Fan speed set to medium (level 2/3).", "device_id": "dev-fan-living"}),
+            # Automation Execution (Silent)
+            ExecutionLog(id="log-auto-cool", action_type="automation_run", target_name="Auto Cooling (Silent)", target_id="auto-cool-living", status="success", triggered_by="automation", user_id="test-user-id", executed_at=ts(15),
+                request_payload={"trigger": "temperature > 28"}, response_payload={"description": "Temperature exceeded 28C threshold. AC activated automatically.", "automation_id": "auto-cool-living"}),
 
-            ExecutionLog(id="log-light-dim", action_type="control_device", target_name="Hue Ceiling Light", status="success", triggered_by="mcp", user_id="test-user-id", executed_at=ts(8.8),
-                response_payload={"description": "Brightness adjusted to 40%, color temperature set to 2700K warm white.", "device_id": "dev-light-ceiling"}),
-
-            ExecutionLog(id="log-auto-cool", action_type="automation_run", target_name="Auto Cooling", status="success", triggered_by="automation", user_id="test-user-id", executed_at=ts(15),
-                response_payload={"description": "Temperature exceeded 28C threshold. Studio fan activated automatically.", "automation_id": "test-auto-id"}),
-
-            ExecutionLog(id="log-goodnight", action_type="function_call", target_name="Goodnight Mode", status="success", triggered_by="user", user_id="test-user-id", executed_at=ts(31),
-                response_payload={"description": "All devices powered off except Bedside Lamp (30%). Security camera maintained.", "devices_affected": 8}),
+            # User Function Call
+            ExecutionLog(id="log-goodnight", action_type="function_call", target_name="Deep Shield", target_id="func-deep-shield", status="success", triggered_by="manual", user_id="test-user-id", executed_at=ts(31),
+                request_payload={"authorizationCode": "1234"}, response_payload={"description": "Perimeter secured. Notified external service.", "status": "success"}),
         ]
 
         for l in execution_logs:
             db.add(l)
+        
+        await db.flush()
+
+        print("Creating Chat History...")
+        # 7. Chat History
+        chat_messages = [
+            # User arrives home, Artemis greets
+            ChatMessage(id="msg-01", role="assistant", content="Good evening, Alex. Welcome home. All systems are nominal. Living room is at 73F with 5 active devices.", user_id="test-user-id", created_at=ts(0)),
+
+            # User asks about temperature
+            ChatMessage(id="msg-02", role="user", content="Hey Artemis, it's a bit warm in here. What's the temperature?", user_id="test-user-id", created_at=ts(2)),
+            ChatMessage(id="msg-03", role="assistant", content="The living room temperature sensor reads 78.2F. That's above your comfort range. Would you like me to turn on the AC and the ceiling fan?", user_id="test-user-id", created_at=ts(2.5)),
+
+            # User approves
+            ChatMessage(id="msg-04", role="user", content="Yes, cool it down please.", user_id="test-user-id", created_at=ts(3)),
+            ChatMessage(id="msg-05", role="assistant", content="On it. I've set the AC to 72F and turned on the ceiling fan at medium speed.", user_id="test-user-id", created_at=ts(3.5)),
+            
+            # System confirms execution (linked to ExecutionLog)
+            ChatMessage(id="msg-06", role="system", content="Executed: AC Unit -> turn_on", meta_info={"action_id": "log-ac-cool", "status": "success"}, user_id="test-user-id", created_at=ts(3.7)),
+            ChatMessage(id="msg-07", role="system", content="Executed: Ceiling Fan -> set_speed (medium)", meta_info={"action_id": "log-fan-on", "status": "success"}, user_id="test-user-id", created_at=ts(3.9)),
+
+            # Automation fires in background
+            ChatMessage(id="msg-11", role="system", content="Auto Cooling triggered: temperature threshold exceeded.", meta_info={"action_id": "log-auto-cool", "status": "success"}, user_id="test-user-id", created_at=ts(15)),
+
+            # User asks about security
+            ChatMessage(id="msg-12", role="user", content="Is the security camera armed?", user_id="test-user-id", created_at=ts(20)),
+            ChatMessage(id="msg-13", role="assistant", content="The Bedroom Security Camera is currently armed and recording. No motion events in the last 2 hours. All clear.", user_id="test-user-id", created_at=ts(20.5)),
+
+            # Getting ready for bed
+            ChatMessage(id="msg-14", role="user", content="It's getting late. Trigger Deep Shield.", user_id="test-user-id", created_at=ts(30)),
+            ChatMessage(id="msg-15", role="assistant", content="Understood. Initiating Deep Shield. Have a good night, Alex.", user_id="test-user-id", created_at=ts(30.5)),
+            ChatMessage(id="msg-16", role="system", content="Executed: Function -> Deep Shield", meta_info={"action_id": "log-goodnight", "status": "success"}, user_id="test-user-id", created_at=ts(31)),
+        ]
+
+        for m in chat_messages:
+            db.add(m)
 
         await db.commit()
         print("Database Seeded Successfully!")
