@@ -22,40 +22,79 @@ class AALParseResponse(BaseModel):
     fallback: str | None = None
 
 @router.post("/parse", response_model=AALParseResponse)
-async def parse_aal_text(body: AALParseRequest, current_user: User = Depends(get_current_user)):
-    """Parse natural language into structured AAL JSON."""
+async def parse_aal_text(
+    body: AALParseRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Parse natural language into structured AAL JSON using the user's actual devices/functions."""
+    from app.models import Device, Function
+
+    # Fetch the user's registered devices and functions so the LLM can reference them by name
+    devices_result = await db.execute(
+        select(Device).where(Device.owner_id == current_user.id)
+    )
+    devices = devices_result.scalars().all()
+
+    functions_result = await db.execute(
+        select(Function).where(Function.owner_id == current_user.id)
+    )
+    functions = functions_result.scalars().all()
+
+    device_list = "\n".join(
+        f'  - [DEVICE] "{d.name}" in {d.room or "Unknown Room"} (type: {d.device_type})'
+        for d in devices
+    ) or "  (no devices registered)"
+
+    function_list = "\n".join(
+        f'  - [FUNCTION] "{f.name}"'
+        for f in functions
+    ) or "  (no functions registered)"
+
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY", "mock-key"))
-    
-    prompt = f"""You are an expert parser for the Artemis Automation Language (AAL). Your job is to convert a user's plain-English description into a structured AAL JSON object.
 
-== AAL SPECIFICATION ==
+    prompt = f"""You are an expert parser for the Artemis Automation Language (AAL).
+Your job is to decompose a plain-English automation description into a strict 4-part JSON structure.
 
-AAL follows a strict 4-tier evaluation structure:
-  WHEN [trigger] IF [condition] THEN [action] ELSE [fallback]
+== AAL CLAUSE MEANINGS ==
 
-CLAUSES:
-- WHEN (Trigger): Required. The event or schedule that initiates the automation.
-- IF (Condition): Optional. A contextual gate checked at trigger time.
-- THEN (Action): Required. The executor — a hardware or software directive.
-- ELSE (Fallback): Optional. An alternative action if the IF condition is false.
+- WHEN (Trigger): The sensor event or time schedule that STARTS the automation.
+  Examples: "temperature > 28", "time is 07:00", "motion detected", "door opens"
+  IMPORTANT: This is a measurable event, NOT a presence check. Temperature, time, and sensor readings go here.
 
-EVENT IDENTIFIERS (for WHEN and IF):
-- Time: Standard time formats (e.g., "time is 07:00", "time is 7 AM")
-- Sensor Values: Simple comparators (e.g., "temperature > 28", "humidity < 30", "motion detected in living room")
-- Presence: Network/GPS-based (e.g., "someone is home", "alex leaves home")
+- IF (Condition): An OPTIONAL gate that is checked at trigger time. Usually presence or secondary state.
+  Examples: "someone is in the living room", "someone is home", "time is after 22:00"
 
-TARGET IDENTIFIERS (for THEN and ELSE):
-- Device Targets: Device names as stored in the system (e.g., "turn on the Studio Fan", "turn off the Ambient LED Strip")
-- Function Targets: Named software macros (e.g., "execute Morning Summary Email", "suggest Deep Shield")
+- THEN (Action): What to DO. Must reference a DEVICE or FUNCTION from the registered list below.
+  For a device: "turn on [Device Name]" or "turn off [Device Name]" or "set [Device Name] brightness to 50%"
+  For a function: "execute [Function Name]"
 
-OUTPUT FORMAT:
-Return ONLY a valid JSON object with exactly these 4 keys:
-- "trigger": string — the WHEN clause (e.g., "temperature > 28")
-- "condition": string or null — the IF clause, or null if none
-- "action": string — the THEN clause (e.g., "turn on the Studio Fan")
-- "fallback": string or null — the ELSE clause, or null if none
+- ELSE (Fallback): OPTIONAL. What to do if the IF condition is false.
+  Example: "do nothing"
 
-EXAMPLES:
+== HOW TO DECOMPOSE A SENTENCE ==
+
+Step 1 — Find the TRIGGER (WHEN): What is the measurable event that starts this? (temperature too high = "temperature > 28", it's morning = "time is 07:00")
+Step 2 — Find the CONDITION (IF): Is there a presence or secondary check? ("I'm in the living room" = "someone is in the living room")
+Step 3 — Find the ACTION (THEN): What device or function should activate? Match to the registered list.
+Step 4 — Find the FALLBACK (ELSE): Is there an alternative? Usually null.
+
+== REGISTERED DEVICES & FUNCTIONS ==
+Use ONLY names from this list in the "action" and "fallback" fields.
+
+{device_list}
+
+{function_list}
+
+== WORKED EXAMPLES ==
+
+Input: "If I'm in the living room and it's too hot, turn on the fan"
+Decomposition:
+  WHEN → "it's too hot" = sensor trigger → "temperature > 28"
+  IF   → "I'm in the living room" = presence check → "someone is in the living room"
+  THEN → "turn on the fan" = device action → match to registered device list
+Output: {{"trigger": "temperature > 28", "condition": "someone is in the living room", "action": "turn on the [Fan device name from list]", "fallback": null}}
+
 Input: "When it gets hot in the studio, suggest turning on the fan if someone is there"
 Output: {{"trigger": "temperature > 28", "condition": "someone is in the room", "action": "turn on the Studio Fan", "fallback": null}}
 
@@ -64,6 +103,13 @@ Output: {{"trigger": "time is 07:00", "condition": "someone is home", "action": 
 
 Input: "When the front door opens after 10pm, turn on the hallway lights, otherwise do nothing"
 Output: {{"trigger": "exterior_door_lock opens", "condition": "time is after 22:00", "action": "turn on the hallway lights", "fallback": "do nothing"}}
+
+== OUTPUT FORMAT ==
+Return ONLY a valid JSON object with exactly these 4 keys:
+- "trigger": string — the WHEN clause
+- "condition": string or null — the IF clause, or null if none
+- "action": string — the THEN clause, using the exact device/function name from the registered list above
+- "fallback": string or null — the ELSE clause, or null if none
 
 == USER INPUT ==
 "{body.text}"
