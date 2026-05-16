@@ -288,9 +288,9 @@ export default function HomeScreen() {
             </View>
           )}
           <View style={styles.atmosphericGlow} />
-          <TouchableOpacity activeOpacity={0.9} onPress={() => setShowMCPModal(true)}>
+          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
             <OrbEntity state={orbState} />
-          </TouchableOpacity>
+          </View>
           <View style={styles.climateChip}>
             <StatChip
               icon="thermometer-outline"

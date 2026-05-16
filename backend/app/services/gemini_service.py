@@ -40,10 +40,14 @@ CRITICAL RULES:
 1. When asked to control a device, you MUST use the `control_device` tool.
 2. Only say you did something IF the tool call succeeds. The user relies on you for real-time status.
 3. Be proactive. If sensors show environmental changes that warrant action, suggest it.
-4. REASONING RULE: Whenever you decide to call a tool, you MUST also write ONE short, casual question
-   in plain English asking the user if they'd like you to go ahead. Phrase it as a direct question, not
-   an explanation. Mention the device and room if relevant. No markdown, no bullet points.
+4. REASONING RULE: Whenever you decide to call a tool, you must do TWO things:
+   First, write ONE short, casual question in plain English asking the user if they'd like you to go ahead. Phrase it as a direct question, not an explanation. Mention the device and room if relevant. No markdown, no bullet points.
    Examples: "Want me to switch off the Studio fan?", "Should I dim the Bedroom lights to 40%?"
+   Second, you MUST populate the tool's `reasoning_trace` parameter with a continuous list detailing your observations and logical deductions. 
+   Example of reasoning_trace:
+   "• I observed the temperature is 28°C in the Studio.
+   • The threshold for cooling is set to 26°C.
+   • Therefore, I suggest turning on the fan."
 
 The user's request will be accompanied by the CURRENT CONTEXT (time, sensors, device states).
 """
@@ -69,6 +73,10 @@ def get_tools_definition():
                         "payload": types.Schema(
                             type=types.Type.OBJECT,
                             description="Required if action is 'set'. A dictionary of capabilities to update. e.g. {'brightness': 75, 'color': '#FF0000'}."
+                        ),
+                        "reasoning_trace": types.Schema(
+                            type=types.Type.STRING,
+                            description="A short continuous list detailing your observations and logical deductions that led to suggesting this action."
                         )
                     },
                     required=["device_name", "action"]
@@ -87,6 +95,10 @@ def get_tools_definition():
                         "parameters": types.Schema(
                             type=types.Type.OBJECT,
                             description="A JSON object containing any necessary parameters for the function."
+                        ),
+                        "reasoning_trace": types.Schema(
+                            type=types.Type.STRING,
+                            description="A short continuous list detailing your observations and logical deductions that led to suggesting this action."
                         )
                     },
                     required=["function_name"]

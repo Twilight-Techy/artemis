@@ -16,9 +16,9 @@ import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 export interface ProactiveAction {
   action_id: string;
   action_type: string;
-  target_name: string;
   payload: Record<string, any>;
   reasoning: string;
+  reasoning_trace?: string | null;
 }
 
 interface MCPActionModalProps {
@@ -80,6 +80,14 @@ export default function MCPActionModal({ visible, onClose, onExecute, proactiveA
               </View>
               <Text style={styles.badgeValue} numberOfLines={1}>{targetLabel}</Text>
             </View>
+
+            {/* ═══ Reasoning Trace (dynamic) ═══ */}
+            {proactiveAction?.reasoning_trace ? (
+              <View style={styles.traceContainer}>
+                <Ionicons name="git-branch-outline" size={14} color={Colors.primary} style={styles.traceIcon} />
+                <Text style={styles.traceText}>{proactiveAction.reasoning_trace}</Text>
+              </View>
+            ) : null}
 
 
             <View style={{ height: Spacing['3xl'] }} />
@@ -202,6 +210,28 @@ const styles = StyleSheet.create({
     color: Colors.secondary,
   },
 
+  /* ── Reasoning Trace ── */
+  traceContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(116, 177, 255, 0.05)',
+    padding: Spacing.lg,
+    borderRadius: Radii.lg,
+    marginBottom: Spacing['2xl'],
+    borderWidth: 1,
+    borderColor: 'rgba(116, 177, 255, 0.1)',
+  },
+  traceIcon: {
+    marginTop: 2,
+    marginRight: Spacing.sm,
+  },
+  traceText: {
+    flex: 1,
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.bodySm,
+    color: 'rgba(255,255,255,0.6)',
+    lineHeight: 20,
+  },
 
   /* ── Execute Buttons ── */
   executeWrapper: { marginBottom: Spacing.md },

@@ -21,6 +21,7 @@ class ProactiveActionResponse(BaseModel):
     target_name: str
     payload: dict
     reasoning: str
+    reasoning_trace: str | None = None
 
 class ChatResponse(BaseModel):
     reply: str
@@ -212,6 +213,8 @@ async def chat_endpoint(
 
             await db.commit()
 
+            reasoning_trace = args.get("reasoning_trace")
+
             return ChatResponse(
                 reply="",
                 requires_approval=True,
@@ -221,6 +224,7 @@ async def chat_endpoint(
                     target_name=target_name,
                     payload=args,
                     reasoning=reasoning_text,
+                    reasoning_trace=reasoning_trace,
                 )
             )
         else:
