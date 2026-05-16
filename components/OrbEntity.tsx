@@ -80,9 +80,9 @@ export default function OrbEntity({ state = 'idle' }: OrbEntityProps) {
     gradientColors = ['rgba(129, 236, 255, 0.35)', 'rgba(129, 236, 255, 0.10)', 'transparent'];
     innerRingColors = [Colors.tertiary, '#4abccf', '#1c7180'];
   } else if (state === 'processing') {
-    activeColor = Colors.secondary; // Violet
-    gradientColors = ['rgba(184, 132, 255, 0.35)', 'rgba(184, 132, 255, 0.10)', 'transparent'];
-    innerRingColors = [Colors.secondary, '#8855cc', '#452277'];
+    activeColor = Colors.primary; // Blue — energetic idle, not a mood shift
+    gradientColors = ['rgba(116, 177, 255, 0.45)', 'rgba(116, 177, 255, 0.15)', 'transparent'];
+    innerRingColors = [Colors.primary, Colors.primaryDim, Colors.onPrimaryContainer];
   }
 
   return (
