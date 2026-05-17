@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import AsyncSessionLocal
 from app.models import Automation, ExecutionLog, User, ChatMessage
-from app.services import context_engine, gemini_service, function_service
+from app.services import context_engine, gemini_service, function_service, notification_service
 from app.services import executor as exec_service
 
 async def evaluate_event(user_id: str, event_reason: str):
@@ -101,4 +101,21 @@ If no conditions are met, reply with the exact text "NO_ACTION". Do not explain.
                     )
                     db.add(pending_log)
                     await db.commit()
+                    
+                    user_result = await db.execute(select(User).where(User.id == user_id))
+                    user = user_result.scalar_one_or_none()
+                    if user and user.push_token:
+                        # Fire push notification so the user can approve
+                        await notification_service.send_push_notification(
+                            token=user.push_token,
+                            title="🤖 Artemis Automation",
+                            body=reasoning_text,
+                            data={
+                                "action_id": action_id,
+                                "action_type": tool_name,
+                                "target_name": target_name,
+                                "reasoning": reasoning_text,
+                                "reasoning_trace": "",
+                            }
+                        )
                     print(f"Generated proactive suggestion for {user_id}: {target_name}")
