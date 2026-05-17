@@ -27,6 +27,7 @@
 #include <ArduinoJson.h>
 #include <DHT.h>
 #include <ESPmDNS.h>
+#include <HTTPClient.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -36,6 +37,7 @@ const char* WIFI_SSID     = "YOUR_WIFI_SSID";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 const char* DEVICE_NAME   = "artemis-hub";  // mDNS: http://artemis-hub.local
 const char* AUTH_TOKEN    = "";             // Optional: set to match ESP32_AUTH_TOKEN in backend .env
+const char* BACKEND_URL   = "http://192.168.1.100:8000/sensors/ingest"; // Update with your backend IP
 
 // Sensor pins.
 #define DHT_PIN       4
@@ -448,18 +450,62 @@ void applyScalarValue(int index, const String& action, JsonVariantConst value) {
   }
 }
 
+void pushSensorData(float t, float h, int light, bool motion) {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(BACKEND_URL);
+    http.addHeader("Content-Type", "application/json");
+
+    JsonDocument doc;
+    doc["temperature"] = t;
+    doc["humidity"] = h;
+    doc["light_level"] = map(light, 0, 4095, 0, 100);
+    doc["motion"] = motion;
+
+    String payload;
+    serializeJson(doc, payload);
+
+    int httpResponseCode = http.POST(payload);
+    if (httpResponseCode > 0) {
+      Serial.printf("[Artemis] Pushed sensor data. Response: %d\n", httpResponseCode);
+    } else {
+      Serial.printf("[Artemis] Error pushing sensor data: %s\n", http.errorToString(httpResponseCode).c_str());
+    }
+    http.end();
+  }
+}
+
 void readSensors() {
   if (millis() - lastSensorRead < SENSOR_INTERVAL) return;
   lastSensorRead = millis();
 
   float t = dht.readTemperature();
   float h = dht.readHumidity();
+  int l = analogRead(LDR_PIN);
+  bool m = digitalRead(PIR_PIN) == HIGH;
 
-  if (!isnan(t)) lastTemperature = t;
-  if (!isnan(h)) lastHumidity = h;
+  bool changed = false;
 
-  lastLightLevel = analogRead(LDR_PIN);
-  lastMotion = digitalRead(PIR_PIN) == HIGH;
+  if (!isnan(t) && abs(t - lastTemperature) >= 0.5) {
+    lastTemperature = t;
+    changed = true;
+  }
+  if (!isnan(h) && abs(h - lastHumidity) >= 5.0) {
+    lastHumidity = h;
+    changed = true;
+  }
+  if (abs(l - lastLightLevel) >= 400) { // Approx 10% change
+    lastLightLevel = l;
+    changed = true;
+  }
+  if (m != lastMotion) {
+    lastMotion = m;
+    changed = true;
+  }
+
+  if (changed) {
+    pushSensorData(lastTemperature, lastHumidity, lastLightLevel, lastMotion);
+  }
 }
 
 void handleGetSensors() {
