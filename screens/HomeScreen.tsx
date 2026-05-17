@@ -34,6 +34,7 @@ import { useNetwork } from '../contexts/NetworkContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { artemisApi } from '../api/artemisClient';
 import { useMCP } from '../contexts/MCPContext';
+import { useProfile } from '../contexts/ProfileContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -43,6 +44,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isOffline } = useNetwork();
+  const { displayName } = useProfile();
   const [mode, setMode] = useState<HomeMode>('dashboard');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showClearModal, setShowClearModal] = useState(false);
@@ -221,13 +223,6 @@ export default function HomeScreen() {
     };
   }, [keyboardShift]);
 
-  const [userProfile, setUserProfile] = useState<any>(null);
-
-  useEffect(() => {
-    // Fetch user profile on load
-    artemisApi.getMe().then(setUserProfile).catch(console.error);
-  }, []);
-
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning, ';
@@ -355,7 +350,7 @@ export default function HomeScreen() {
               <View style={styles.greetingSection}>
                 <View style={styles.headlineRow}>
                   <Text style={styles.headline}>{getGreeting()}</Text>
-                  <Text style={styles.headlineGradient}>{userProfile?.display_name || userProfile?.username || 'User'}</Text>
+                  <Text style={styles.headlineGradient}>{displayName || 'User'}</Text>
                 </View>
               </View>
 
