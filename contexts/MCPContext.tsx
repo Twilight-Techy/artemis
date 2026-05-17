@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { DeviceEventEmitter } from 'react-native';
 import { artemisApi } from '../api/artemisClient';
 import MCPActionModal, { ProactiveAction } from '../components/MCPActionModal';
@@ -10,6 +10,8 @@ type MCPContextType = {
   setShowMCPModal: (show: boolean) => void;
   approveAction: () => Promise<string | null>;
   declineAction: () => Promise<void>;
+  /** Called by the notification listener to restore a pending action by ID. */
+  showActionFromNotification: (actionId: string) => Promise<void>;
 };
 
 const MCPContext = createContext<MCPContextType | null>(null);
@@ -51,6 +53,29 @@ export const MCPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  /**
+   * Fetches a pending action by ID (from notification data) and shows the modal.
+   * Used when the user taps a push notification while outside the app.
+   */
+  const showActionFromNotification = useCallback(async (actionId: string) => {
+    try {
+      const action = await artemisApi.getPendingAction(actionId);
+      if (!action || action.status !== 'pending') return;
+
+      setPendingAction({
+        action_id: action.action_id,
+        action_type: action.action_type,
+        target_name: action.target_name,
+        payload: action.payload,
+        reasoning: action.reasoning,
+        reasoning_trace: action.reasoning_trace ?? null,
+      });
+      setShowMCPModal(true);
+    } catch (e) {
+      console.error('[MCPContext] showActionFromNotification failed:', e);
+    }
+  }, []);
+
   return (
     <MCPContext.Provider value={{
       pendingAction,
@@ -58,7 +83,8 @@ export const MCPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showMCPModal,
       setShowMCPModal,
       approveAction,
-      declineAction
+      declineAction,
+      showActionFromNotification,
     }}>
       {children}
       <MCPActionModal

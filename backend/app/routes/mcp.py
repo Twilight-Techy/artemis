@@ -9,6 +9,7 @@ from app.models import User, ChatMessage, ExecutionLog
 from app.services.auth_service import get_current_user
 from app.services import gemini_service, context_engine, permission_engine, hardware_service, executor as exec_service
 from app.services.gemini_service import GeminiQuotaError, GeminiServiceError
+from app.services import notification_service
 
 router = APIRouter(prefix="/mcp", tags=["MCP Core"])
 
@@ -215,6 +216,21 @@ async def chat_endpoint(
 
             reasoning_trace = args.get("reasoning_trace")
 
+            # Fire push notification so the user can approve even if outside the app
+            if current_user.push_token:
+                await notification_service.send_push_notification(
+                    token=current_user.push_token,
+                    title="🤖 Artemis needs your approval",
+                    body=reasoning_text,
+                    data={
+                        "action_id": action_id,
+                        "action_type": tool_name,
+                        "target_name": target_name,
+                        "reasoning": reasoning_text,
+                        "reasoning_trace": reasoning_trace or "",
+                    }
+                )
+
             return ChatResponse(
                 reply="",
                 requires_approval=True,
@@ -344,3 +360,31 @@ async def decline_action(
     
     return {"status": "declined", "action_id": action_id}
 
+
+@router.get("/pending/{action_id}")
+async def get_pending_action(
+    action_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Fetches a pending action by ID — used by the app when woken via a push notification."""
+    log_query = await db.execute(
+        select(ExecutionLog).where(
+            ExecutionLog.id == action_id,
+            ExecutionLog.user_id == current_user.id,
+        )
+    )
+    log = log_query.scalar_one_or_none()
+    if not log:
+        raise HTTPException(status_code=404, detail="Action not found")
+
+    args = log.request_payload or {}
+    return {
+        "action_id": log.id,
+        "action_type": log.action_type,
+        "target_name": log.target_name,
+        "status": log.status,
+        "payload": {k: v for k, v in args.items() if not k.startswith("_")},
+        "reasoning": args.get("_reasoning", f"Artemis wants to {log.action_type.replace('_', ' ')} {log.target_name}"),
+        "reasoning_trace": args.get("reasoning_trace"),
+    }

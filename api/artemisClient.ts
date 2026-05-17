@@ -613,5 +613,35 @@ export const artemisApi = {
             console.error("Update Profile error:", error);
             throw error;
         }
-    }
+    },
+
+    registerPushToken: async (token: string) => {
+        try {
+            await fetch(`${BACKEND_URL}/auth/push-token`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...artemisApi.getAuthHeader(),
+                },
+                body: JSON.stringify({ token }),
+            });
+        } catch (error) {
+            console.error('Register push token error:', error);
+        }
+    },
+
+    getPendingAction: async (actionId: string) => {
+        try {
+            const response = await artemisApi._handleResponse(
+                await fetch(`${BACKEND_URL}/mcp/pending/${actionId}`, {
+                    headers: artemisApi.getAuthHeader(),
+                })
+            );
+            if (!response.ok) return null;
+            return await artemisApi._parseJSON(response);
+        } catch (error) {
+            console.error('Get pending action error:', error);
+            return null;
+        }
+    },
 };

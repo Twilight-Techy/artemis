@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
@@ -25,6 +25,37 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProfileProvider } from './contexts/ProfileContext';
 import { HistoryProvider } from './contexts/HistoryContext';
 import { MCPProvider } from './contexts/MCPContext';
+import { useMCP } from './contexts/MCPContext';
+import { registerForPushNotifications } from './services/notificationService';
+import * as Notifications from 'expo-notifications';
+
+/**
+ * Inner component that lives inside MCPProvider so it can access useMCP().
+ * Sets up push notification listeners once on mount.
+ */
+function NotificationBridge() {
+  const { showActionFromNotification } = useMCP();
+  const responseListener = useRef<Notifications.EventSubscription>();
+
+  useEffect(() => {
+    // Register token after login (best-effort — fails gracefully on simulator)
+    registerForPushNotifications();
+
+    // Fired when the user TAPS a notification (foreground or background)
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data as any;
+      if (data?.action_id) {
+        showActionFromNotification(data.action_id);
+      }
+    });
+
+    return () => {
+      responseListener.current?.remove();
+    };
+  }, [showActionFromNotification]);
+
+  return null;
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -64,6 +95,7 @@ export default function App() {
           <ProfileProvider>
             <HistoryProvider>
               <MCPProvider>
+                <NotificationBridge />
                 <NavigationContainer theme={MyTheme}>
                   <AppNavigator />
                   <StatusBar style="light" />

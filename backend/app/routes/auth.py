@@ -74,3 +74,17 @@ async def update_me(
     await db.commit()
     await db.refresh(current_user)
     return current_user
+
+
+class PushTokenRequest(BaseModel):
+    token: str
+
+@router.post("/push-token", status_code=status.HTTP_204_NO_CONTENT)
+async def register_push_token(
+    body: PushTokenRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Store the user's Expo push token for proactive notifications."""
+    current_user.push_token = body.token
+    await db.commit()
