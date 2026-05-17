@@ -256,22 +256,6 @@ export default function HomeScreen() {
           <View style={{ alignItems: 'center', justifyContent: 'center' }}>
             <OrbEntity state={orbState} />
           </View>
-          <View style={styles.climateChip}>
-            <StatChip
-              icon="thermometer-outline"
-              iconColor={Colors.secondary}
-              label="CLIMATE"
-              value="72°F"
-            />
-          </View>
-          <View style={styles.powerChip}>
-            <StatChip
-              icon="flash"
-              iconColor={Colors.tertiary}
-              label="POWER"
-              value="2.4kW"
-            />
-          </View>
         </View>
 
         {/* ═══ Mode Toggle ═══ */}
@@ -511,17 +495,7 @@ const styles = StyleSheet.create({
     borderRadius: SCREEN_WIDTH * 0.3,
     backgroundColor: 'rgba(116, 177, 255, 0.06)',
   },
-  climateChip: {
-    position: 'absolute',
-    left: Spacing['2xl'],
-    top: 20,
   },
-  powerChip: {
-    position: 'absolute',
-    right: Spacing['2xl'],
-    bottom: 15,
-  },
-
   // ── Mode Toggle ──
   toggleBar: {
     paddingHorizontal: Spacing['2xl'],
