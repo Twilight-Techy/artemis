@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, Radii } from '../../constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useMCPContext } from '../../contexts/MCPContext';
 
 export type ChatMessage = {
   id: string;
@@ -23,6 +24,8 @@ type Props = {
 };
 
 export default function ChatBubble({ message }: Props) {
+  const { showActionFromNotification } = useMCPContext();
+
   // ── Action Execution Log ──
   if (message.role === 'action') {
     const status = message.meta_info?.status || 'unknown';
@@ -30,8 +33,21 @@ export default function ChatBubble({ message }: Props) {
     const description = message.meta_info?.description;
     const statusColor = status === 'success' ? '#00e3fd' : status === 'failed' ? '#ff716c' : '#b884ff';
 
+    const ActionContainer = status === 'pending' ? TouchableOpacity : View;
+
     return (
-      <View style={styles.actionWrapper}>
+      <ActionContainer 
+        style={styles.actionWrapper}
+        activeOpacity={0.7}
+        onPress={() => {
+          // If the bubble is pending and has an action_id, tapping it re-opens the approval modal!
+          // We extract the UUID from the bubble's id ("action-UUID")
+          if (status === 'pending') {
+             const actionId = message.id.replace('action-', '');
+             showActionFromNotification(actionId);
+          }
+        }}
+      >
         <LinearGradient
           colors={[`${statusColor}18`, `${statusColor}08`]}
           start={{ x: 0, y: 0 }}
@@ -49,6 +65,13 @@ export default function ChatBubble({ message }: Props) {
           {description ? (
             <Text style={styles.actionDesc}>{description}</Text>
           ) : null}
+          
+          {status === 'pending' && (
+            <Text style={{ fontFamily: Typography.families.label, fontSize: 10, color: statusColor, marginTop: 4, textTransform: 'uppercase' }}>
+              Tap to review & approve
+            </Text>
+          )}
+
           <View style={styles.actionMeta}>
             <Text style={styles.actionMetaText}>
               {triggeredBy === 'automation' ? '⚙ AUTOMATION' : triggeredBy === 'mcp' ? '🧠 MCP' : '👤 USER'}
@@ -56,7 +79,7 @@ export default function ChatBubble({ message }: Props) {
           </View>
         </LinearGradient>
         <Text style={styles.systemTimestamp}>{message.timestamp}</Text>
-      </View>
+      </ActionContainer>
     );
   }
 

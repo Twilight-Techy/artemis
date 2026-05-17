@@ -51,71 +51,79 @@ If no conditions are met, reply with the exact text "NO_ACTION". Do not explain.
 
         # If LLM decided to execute a tool, it will be in response.function_calls
         if response.function_calls:
-            for function_call in response.function_calls:
-                tool_name = function_call.name
-                args = function_call.args
-
-                target_name = args.get("device_name") or args.get("function_name", "unknown")
-
-                # Read requires_approval directly from the automation's saved setting —
-                # this is the toggle the user set when creating/editing the automation.
+            # Check if any action requires approval
+            requires_approval = False
+            for call in response.function_calls:
+                target_name = call.args.get("device_name") or call.args.get("function_name", "unknown")
                 matching = next(
                     (a for a in automations if target_name.lower() in (a.action or "").lower()),
                     None
                 )
-                requires_approval = matching.requires_approval if matching else True
+                if not matching or matching.requires_approval:
+                    requires_approval = True
+                    break
 
-                if not requires_approval:
-                    # Silent execution — run immediately, log it, no UI modal
-                    user_result = await db.execute(select(User).where(User.id == user_id))
-                    user = user_result.scalar_one_or_none()
-                    if user:
+            actions_list = [
+                {"tool_name": call.name, "args": dict(call.args)}
+                for call in response.function_calls
+            ]
+            
+            target_names = [call.args.get("device_name") or call.args.get("function_name", "unknown") for call in response.function_calls]
+            target_name_str = ", ".join(target_names)
+            tool_name_str = "batch_execution" if len(actions_list) > 1 else actions_list[0]["tool_name"]
+
+            if not requires_approval:
+                # Silent execution — run all immediately, log them, no UI modal
+                user_result = await db.execute(select(User).where(User.id == user_id))
+                user = user_result.scalar_one_or_none()
+                if user:
+                    for action in actions_list:
                         await exec_service.run_tool(
                             db=db,
                             user=user,
-                            action_type=tool_name,
-                            args=dict(args),
+                            action_type=action["tool_name"],
+                            args=action["args"],
                             triggered_by="automation",
                             generate_summary=False,
                             event_reason=event_reason,
                         )
-                        print(f"Silent automation executed for {user_id}: {target_name}")
-                else:
-                    # Requires approval — create a pending suggestion card
-                    action_id = str(uuid.uuid4())
-                    reasoning_text = response.text.strip() if response.text else f"Based on {event_reason}, I suggest triggering {target_name}."
+                        print(f"Silent automation executed for {user_id}: {action['args'].get('device_name', 'unknown')}")
+            else:
+                # Requires approval — create a single bundled pending suggestion card
+                action_id = str(uuid.uuid4())
+                reasoning_text = response.text.strip() if response.text else f"Based on {event_reason}, I suggest triggering {target_name_str}."
 
-                    pending_log = ExecutionLog(
-                        id=action_id,
-                        action_type=tool_name,
-                        target_name=target_name,
-                        status="pending",
-                        request_payload={
-                            **dict(args),
-                            "_user_message": f"Event trigger: {event_reason}",
-                            "_event_reason": event_reason,
-                        },
-                        response_payload={"reasoning": reasoning_text},
-                        triggered_by="automation",
-                        user_id=user_id
+                pending_log = ExecutionLog(
+                    id=action_id,
+                    action_type=tool_name_str,
+                    target_name=target_name_str,
+                    status="pending",
+                    request_payload={
+                        "actions": actions_list,
+                        "_user_message": f"Event trigger: {event_reason}",
+                        "_event_reason": event_reason,
+                    },
+                    response_payload={"reasoning": reasoning_text},
+                    triggered_by="automation",
+                    user_id=user_id
+                )
+                db.add(pending_log)
+                await db.commit()
+                
+                user_result = await db.execute(select(User).where(User.id == user_id))
+                user = user_result.scalar_one_or_none()
+                if user and user.push_token:
+                    # Fire single push notification for the batch
+                    await notification_service.send_push_notification(
+                        token=user.push_token,
+                        title="⚙ Artemis Automation",
+                        body=reasoning_text,
+                        data={
+                            "action_id": action_id,
+                            "action_type": tool_name_str,
+                            "target_name": target_name_str,
+                            "reasoning": reasoning_text,
+                            "reasoning_trace": "",
+                        }
                     )
-                    db.add(pending_log)
-                    await db.commit()
-                    
-                    user_result = await db.execute(select(User).where(User.id == user_id))
-                    user = user_result.scalar_one_or_none()
-                    if user and user.push_token:
-                        # Fire push notification so the user can approve
-                        await notification_service.send_push_notification(
-                            token=user.push_token,
-                            title="🤖 Artemis Automation",
-                            body=reasoning_text,
-                            data={
-                                "action_id": action_id,
-                                "action_type": tool_name,
-                                "target_name": target_name,
-                                "reasoning": reasoning_text,
-                                "reasoning_trace": "",
-                            }
-                        )
-                    print(f"Generated proactive suggestion for {user_id}: {target_name}")
+                print(f"Generated proactive suggestion for {user_id}: {target_name_str}")

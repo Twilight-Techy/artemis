@@ -39,9 +39,14 @@ export default function MCPActionModal({ visible, onClose, onExecute, proactiveA
   const targetLabel = proactiveAction?.target_name ?? 'Unknown Device';
 
   // Derive a human-readable action label from the action_type snake_case identifier
-  const actionLabel = proactiveAction?.action_type
-    ? proactiveAction.action_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  const getActionLabel = (type: string | undefined) => type
+    ? type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     : 'Action';
+
+  const actions = proactiveAction?.payload?.actions || [{
+    tool_name: proactiveAction?.action_type,
+    args: { device_name: proactiveAction?.target_name }
+  }];
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -67,19 +72,25 @@ export default function MCPActionModal({ visible, onClose, onExecute, proactiveA
             </View>
 
             {/* ═══ Tool/Device Selection (dynamic) ═══ */}
-            <View style={styles.hardwareBadge}>
-              <View style={styles.badgeLeft}>
-                <Ionicons 
-                  name={proactiveAction?.action_type === 'execute_function' ? 'flash-outline' : 'hardware-chip-outline'} 
-                  size={18} 
-                  color={Colors.secondary} 
-                />
-                <Text style={styles.badgeLabel}>
-                  {proactiveAction?.action_type === 'execute_function' ? 'FUNCTION' : actionLabel}
-                </Text>
-              </View>
-              <Text style={styles.badgeValue} numberOfLines={1}>{targetLabel}</Text>
-            </View>
+            {actions.map((action: any, index: number) => {
+              const actionLabel = getActionLabel(action.tool_name);
+              const target = action.args?.device_name || action.args?.function_name || 'Unknown Device';
+              return (
+                <View key={index} style={[styles.hardwareBadge, { marginTop: index > 0 ? Spacing.sm : 0 }]}>
+                  <View style={styles.badgeLeft}>
+                    <Ionicons 
+                      name={action.tool_name === 'execute_function' ? 'flash-outline' : 'hardware-chip-outline'} 
+                      size={18} 
+                      color={Colors.secondary} 
+                    />
+                    <Text style={styles.badgeLabel}>
+                      {action.tool_name === 'execute_function' ? 'FUNCTION' : actionLabel}
+                    </Text>
+                  </View>
+                  <Text style={styles.badgeValue} numberOfLines={1}>{target}</Text>
+                </View>
+              );
+            })}
 
             {/* ═══ Reasoning Trace (dynamic) ═══ */}
             {proactiveAction?.reasoning_trace ? (
