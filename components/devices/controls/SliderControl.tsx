@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useCallback } from 'react';
 import { View, StyleSheet, PanResponder, LayoutChangeEvent } from 'react-native';
 import { Colors, Radii } from '../../../constants/theme';
 
@@ -20,45 +20,78 @@ export function SliderControl({
   onChange, 
   trackColor = Colors.surfaceContainerHighest, 
   fillColor = Colors.primary,
-  disabled = false
+  disabled = false,
 }: Props) {
-  const [width, setWidth] = React.useState(0);
+  const trackWidth = useRef(0);
+  const trackX = useRef(0); // Absolute X of the track's left edge on screen
+  const [localValue, setLocalValue] = React.useState(value);
 
-  const panResponder = React.useRef(
+  // Keep local value in sync when prop changes externally
+  React.useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const clampAndNotify = useCallback((screenX: number) => {
+    if (trackWidth.current === 0 || disabled) return;
+    const relativeX = screenX - trackX.current;
+    const pct = Math.max(0, Math.min(1, relativeX / trackWidth.current));
+    const newVal = Math.round(min + pct * (max - min));
+    setLocalValue(newVal);
+    onChange?.(newVal);
+  }, [disabled, min, max, onChange]);
+
+  const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => !disabled,
       onMoveShouldSetPanResponder: () => !disabled,
-      onPanResponderMove: (evt, gestureState) => {
-        if (!disabled && width > 0 && onChange) {
-          // calculate value based on touch position
-          const newX = gestureState.moveX; // This is a simplistic approximation without proper inner layout measurements
-          // In a real scenario we'd track the touch localized to the view
-        }
+      onPanResponderGrant: (evt) => {
+        clampAndNotify(evt.nativeEvent.pageX);
+      },
+      onPanResponderMove: (evt) => {
+        clampAndNotify(evt.nativeEvent.pageX);
       },
     })
   ).current;
 
   const handleLayout = (e: LayoutChangeEvent) => {
-    setWidth(e.nativeEvent.layout.width);
+    const { width } = e.nativeEvent.layout;
+    trackWidth.current = width;
+  };
+
+  // Measure absolute position of the track on screen
+  const trackRef = useRef<View>(null);
+  const handleTrackLayout = () => {
+    trackRef.current?.measure((_x, _y, _w, _h, pageX) => {
+      trackX.current = pageX;
+    });
   };
 
   const span = max - min || 1;
-  const pct = ((value - min) / span) * 100;
-  const fillWidth = `${Math.max(0, Math.min(100, pct))}%`;
+  const pct = Math.max(0, Math.min(100, ((localValue - min) / span) * 100));
 
   return (
-    <View style={styles.container} onLayout={handleLayout} {...panResponder.panHandlers}>
-      <View style={[styles.track, { backgroundColor: trackColor }]}>
-        <View style={[styles.fill, { width: fillWidth as any, backgroundColor: fillColor }]} />
+    <View
+      style={styles.container}
+      onLayout={handleLayout}
+      {...panResponder.panHandlers}
+    >
+      <View
+        ref={trackRef}
+        style={[styles.track, { backgroundColor: trackColor }]}
+        onLayout={handleTrackLayout}
+      >
+        <View
+          style={[styles.fill, { width: `${pct}%`, backgroundColor: fillColor }]}
+        />
       </View>
-      <View style={[styles.thumb, { left: fillWidth as any }]} />
+      <View style={[styles.thumb, { left: `${pct}%` }]} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: 24,
+    height: 28,
     justifyContent: 'center',
     marginVertical: 8,
   },
@@ -74,12 +107,12 @@ const styles = StyleSheet.create({
   },
   thumb: {
     position: 'absolute',
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: Colors.onSurface,
-    top: 2, // 24 height / 2 = 12, thumb is 20, so offset is (24 - 20)/2 = 2
-    marginLeft: -10, // Center thumb over value
+    top: 3,
+    marginLeft: -11, // Center thumb over value position
     shadowColor: Colors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
