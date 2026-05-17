@@ -7,6 +7,7 @@ from app.database import AsyncSessionLocal
 from app.models import Automation, ExecutionLog, User, ChatMessage
 from app.services import context_engine, gemini_service, function_service, notification_service
 from app.services import executor as exec_service
+from app.routes.websockets import manager
 
 async def evaluate_event(user_id: str, event_reason: str):
     """
@@ -126,4 +127,18 @@ If no conditions are met, reply with the exact text "NO_ACTION". Do not explain.
                             "reasoning_trace": "",
                         }
                     )
+                
+                # Also push via WebSocket for instant in-app modal
+                await manager.push_to_user(
+                    user_id=user_id,
+                    payload={
+                        "type": "proactive_action",
+                        "action_id": action_id,
+                        "action_type": tool_name_str,
+                        "target_name": target_name_str,
+                        "reasoning": reasoning_text,
+                        "reasoning_trace": "",
+                    }
+                )
+
                 print(f"Generated proactive suggestion for {user_id}: {target_name_str}")

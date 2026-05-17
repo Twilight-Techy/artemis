@@ -6,6 +6,7 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 2000;
 
 type ProfileContextType = {
+  userId: string | null;
   avatarUrl: string | null;
   displayName: string | null;
   /** True only during the very first load (not on subsequent refreshes) */
@@ -16,6 +17,7 @@ type ProfileContextType = {
 };
 
 const ProfileContext = createContext<ProfileContextType>({
+  userId: null,
   avatarUrl: null,
   displayName: null,
   profileLoading: false,
@@ -27,6 +29,7 @@ export const useProfile = () => useContext(ProfileContext);
 
 export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { token } = useAuth();
+  const [userId, setUserId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
@@ -42,6 +45,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         const data = await artemisApi.getMe();
+        setUserId(data.id ?? null);
         setAvatarUrl(data.avatar_url ?? null);
         setDisplayName(data.display_name ?? null);
         setProfileError(false);
@@ -71,6 +75,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!token) {
       // Clear everything on logout so stale data never leaks to the next session
       hasFetchedRef.current = false;
+      setUserId(null);
       setAvatarUrl(null);
       setDisplayName(null);
       setProfileError(false);
@@ -78,7 +83,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [token, refreshProfile]);
 
   return (
-    <ProfileContext.Provider value={{ avatarUrl, displayName, profileLoading, profileError, refreshProfile }}>
+    <ProfileContext.Provider value={{ userId, avatarUrl, displayName, profileLoading, profileError, refreshProfile }}>
       {children}
     </ProfileContext.Provider>
   );

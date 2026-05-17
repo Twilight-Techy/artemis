@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { DeviceEventEmitter } from 'react-native';
-import { artemisApi } from '../api/artemisClient';
+import { artemisApi, BACKEND_URL } from '../api/artemisClient';
 import MCPActionModal, { ProactiveAction } from '../components/MCPActionModal';
+import { useProfile } from './ProfileContext';
 
 type MCPContextType = {
   pendingAction: ProactiveAction | null;
@@ -25,6 +26,7 @@ export const useMCP = () => {
 export const MCPProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [pendingAction, setPendingAction] = useState<ProactiveAction | null>(null);
   const [showMCPModal, setShowMCPModal] = useState(false);
+  const { userId } = useProfile();
 
   const approveAction = async () => {
     if (!pendingAction) return null;
@@ -75,6 +77,45 @@ export const MCPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error('[MCPContext] showActionFromNotification failed:', e);
     }
   }, []);
+
+  // Set up WebSocket connection for real-time proactive actions
+  React.useEffect(() => {
+    if (!userId) return;
+
+    const wsProtocol = BACKEND_URL.startsWith('https') ? 'wss' : 'ws';
+    const baseUrl = BACKEND_URL.replace(/\/api\/v1\/?$/, '');
+    const wsUrl = `${baseUrl.replace(/^http/, wsProtocol)}/ws/${userId}`;
+
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log('[MCPContext] WebSocket connected.');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (payload.type === 'proactive_action' && payload.action_id) {
+          // Fetch the full action data (just like we do for a push notification)
+          showActionFromNotification(payload.action_id);
+        }
+      } catch (err) {
+        console.error('[MCPContext] Failed to parse WS message:', err);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('[MCPContext] WebSocket error:', error);
+    };
+
+    ws.onclose = () => {
+      console.log('[MCPContext] WebSocket closed.');
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [userId, showActionFromNotification]);
 
   return (
     <MCPContext.Provider value={{

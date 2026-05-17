@@ -16,6 +16,7 @@ import { Colors, Typography, Spacing, Radii } from '../constants/theme';
 export interface ProactiveAction {
   action_id: string;
   action_type: string;
+  target_name?: string;
   payload: Record<string, any>;
   reasoning: string;
   reasoning_trace?: string | null;
