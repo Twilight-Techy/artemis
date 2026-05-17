@@ -221,6 +221,20 @@ export default function HomeScreen() {
     };
   }, [keyboardShift]);
 
+  const [userProfile, setUserProfile] = useState<any>(null);
+
+  useEffect(() => {
+    // Fetch user profile on load
+    artemisApi.getMe().then(setUserProfile).catch(console.error);
+  }, []);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning, ';
+    if (hour < 18) return 'Good Afternoon, ';
+    return 'Good Evening, ';
+  };
+
   // ── Clear Chat ─────────────────────────────────────────────────────────────
   const handleClearChat = useCallback(() => {
     setShowClearModal(true);
@@ -340,30 +354,30 @@ export default function HomeScreen() {
               {/* Greeting */}
               <View style={styles.greetingSection}>
                 <View style={styles.headlineRow}>
-                  <Text style={styles.headline}>Good Evening, </Text>
-                  <Text style={styles.headlineGradient}>Alex</Text>
+                  <Text style={styles.headline}>{getGreeting()}</Text>
+                  <Text style={styles.headlineGradient}>{userProfile?.display_name || userProfile?.username || 'User'}</Text>
                 </View>
               </View>
 
               {/* Quick Action Cards */}
               <View style={styles.cardsSection}>
                 <QuickActionCard
-                  icon="bulb-outline"
+                  icon="hardware-chip-outline"
                   iconColor={Colors.primary}
-                  title="Lights"
-                  onPress={() => console.log('Lights tapped')}
+                  title="Devices"
+                  onPress={() => navigation.navigate('Devices')}
                 />
                 <QuickActionCard
-                  icon="thermometer-outline"
+                  icon="code-working-outline"
                   iconColor={Colors.secondary}
-                  title="Climate"
-                  onPress={() => console.log('Climate tapped')}
+                  title="Functions"
+                  onPress={() => navigation.navigate('Functions')}
                 />
                 <QuickActionCard
-                  icon="lock-closed-outline"
+                  icon="git-network-outline"
                   iconColor={Colors.tertiary}
-                  title="Security"
-                  onPress={() => console.log('Security tapped')}
+                  title="Automations"
+                  onPress={() => navigation.navigate('Automations')}
                 />
               </View>
             </ScrollView>
@@ -494,7 +508,6 @@ const styles = StyleSheet.create({
     height: SCREEN_WIDTH * 0.6,
     borderRadius: SCREEN_WIDTH * 0.3,
     backgroundColor: 'rgba(116, 177, 255, 0.06)',
-  },
   },
   // ── Mode Toggle ──
   toggleBar: {

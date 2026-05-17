@@ -22,43 +22,47 @@
  * the same device/capability contract against real firmware and the simulator.
  */
 
-#include <WiFi.h>
-#include <WebServer.h>
 #include <ArduinoJson.h>
 #include <DHT.h>
 #include <ESPmDNS.h>
 #include <HTTPClient.h>
+#include <WebServer.h>
+#include <WiFi.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 
 // Configuration - update these before flashing.
-const char* WIFI_SSID     = "YOUR_WIFI_SSID";
-const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
-const char* DEVICE_NAME   = "artemis-hub";  // mDNS: http://artemis-hub.local
-const char* AUTH_TOKEN    = "";             // Optional: set to match ESP32_AUTH_TOKEN in backend .env
-const char* BACKEND_URL   = "http://192.168.1.100:8000/sensors/ingest"; // Update with your backend IP
+const char *WIFI_SSID =
+    "Twilight Techie ✨👑✨"; // Note: if your SSID has emoji, add them here
+const char *WIFI_PASSWORD = "excalibur7";
+const char *DEVICE_NAME = "artemis-hub"; // mDNS: http://artemis-hub.local
+const char *AUTH_TOKEN =
+    ""; // Optional: set to match ESP32_AUTH_TOKEN in backend .env
+const char *BACKEND_URL =
+    "https://nondepreciatively-lancelike-berneice.ngrok-free.dev/api/v1/"
+    "sensors/ingest";
 
 // Sensor pins.
-#define DHT_PIN       4
-#define DHT_TYPE      DHT22
-#define LDR_PIN       34
-#define PIR_PIN       27
+#define DHT_PIN 4
+#define DHT_TYPE DHT22
+#define LDR_PIN 34
+#define PIR_PIN 27
 
 // Physical relay GPIO pins. Most relay modules are active LOW.
-#define GPIO_NONE     -1
-#define RELAY_FAN     26
-#define RELAY_LED     25
-#define RELAY_SPARE   33
+#define GPIO_NONE -1
+#define RELAY_FAN 26
+#define RELAY_LED 25
+#define RELAY_SPARE 33
 
 struct DeviceConfig {
   int logicalPin;
   int gpioPin;
-  const char* name;
-  const char* room;
-  const char* roomId;
-  const char* deviceType;
-  const char* icon;
+  const char *name;
+  const char *room;
+  const char *roomId;
+  const char *deviceType;
+  const char *icon;
 };
 
 struct DeviceState {
@@ -74,18 +78,27 @@ struct DeviceState {
 };
 
 const DeviceConfig DEVICES[] = {
-  {10, GPIO_NONE,   "Ceiling Light",      "Living Room", "room-living",  "light",    "fa-lightbulb"},
-  {11, GPIO_NONE,   "Ambient LED Strip",  "Living Room", "room-living",  "light",    "fa-wand-magic-sparkles"},
-  {12, GPIO_NONE,   "AC Unit",            "Living Room", "room-living",  "climate",  "fa-snowflake"},
-  {13, GPIO_NONE,   "Smart TV",           "Living Room", "room-living",  "media",    "fa-tv"},
-  {20, GPIO_NONE,   "Bedside Lamp",       "Bedroom",     "room-bedroom", "light",    "fa-lightbulb"},
-  {21, GPIO_NONE,   "Ceiling Fan",        "Bedroom",     "room-bedroom", "fan",      "fa-fan"},
-  {22, GPIO_NONE,   "Security Camera",    "Bedroom",     "room-bedroom", "security", "fa-video"},
-  {30, GPIO_NONE,   "Kitchen Downlights", "Kitchen",     "room-kitchen", "light",    "fa-lightbulb"},
-  {31, GPIO_NONE,   "Coffee Maker Plug",  "Kitchen",     "room-kitchen", "switch",   "fa-plug"},
-  {40, RELAY_FAN,   "Studio Fan",         "Studio",      "room-studio",  "fan",      "fa-fan"},
-  {41, RELAY_LED,   "Desk RGB Strip",     "Studio",      "room-studio",  "light",    "fa-wand-magic-sparkles"},
-  {42, RELAY_SPARE, "Spare Relay",        "Studio",      "room-studio",  "switch",   "fa-plug"},
+    {10, GPIO_NONE, "Ceiling Light", "Living Room", "room-living", "light",
+     "fa-lightbulb"},
+    {11, GPIO_NONE, "Ambient LED Strip", "Living Room", "room-living", "light",
+     "fa-wand-magic-sparkles"},
+    {12, GPIO_NONE, "AC Unit", "Living Room", "room-living", "climate",
+     "fa-snowflake"},
+    {13, GPIO_NONE, "Smart TV", "Living Room", "room-living", "media", "fa-tv"},
+    {20, GPIO_NONE, "Bedside Lamp", "Bedroom", "room-bedroom", "light",
+     "fa-lightbulb"},
+    {21, GPIO_NONE, "Ceiling Fan", "Bedroom", "room-bedroom", "fan", "fa-fan"},
+    {22, GPIO_NONE, "Security Camera", "Bedroom", "room-bedroom", "security",
+     "fa-video"},
+    {30, GPIO_NONE, "Kitchen Downlights", "Kitchen", "room-kitchen", "light",
+     "fa-lightbulb"},
+    {31, GPIO_NONE, "Coffee Maker Plug", "Kitchen", "room-kitchen", "switch",
+     "fa-plug"},
+    {40, RELAY_FAN, "Studio Fan", "Studio", "room-studio", "fan", "fa-fan"},
+    {41, RELAY_LED, "Desk RGB Strip", "Studio", "room-studio", "light",
+     "fa-wand-magic-sparkles"},
+    {42, RELAY_SPARE, "Spare Relay", "Studio", "room-studio", "switch",
+     "fa-plug"},
 };
 
 const int NUM_DEVICES = sizeof(DEVICES) / sizeof(DEVICES[0]);
@@ -95,10 +108,10 @@ DHT dht(DHT_PIN, DHT_TYPE);
 DeviceState deviceStates[NUM_DEVICES];
 
 float lastTemperature = 0.0;
-float lastHumidity    = 0.0;
-int   lastLightLevel  = 0;
-bool  lastMotion      = false;
-int   lastSmokePpm    = 0;
+float lastHumidity = 0.0;
+int lastLightLevel = 0;
+bool lastMotion = false;
+int lastSmokePpm = 0;
 unsigned long bootTime = 0;
 unsigned long lastSensorRead = 0;
 const unsigned long SENSOR_INTERVAL = 2000;
@@ -106,11 +119,13 @@ const unsigned long SENSOR_INTERVAL = 2000;
 void setCORSHeaders() {
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.sendHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  server.sendHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  server.sendHeader("Access-Control-Allow-Headers",
+                    "Content-Type, Authorization");
 }
 
 bool checkAuth() {
-  if (strlen(AUTH_TOKEN) == 0) return true;
+  if (strlen(AUTH_TOKEN) == 0)
+    return true;
 
   String authHeader = server.header("Authorization");
   if (authHeader.startsWith("Bearer ")) {
@@ -125,61 +140,72 @@ void sendUnauthorized() {
   server.send(401, "application/json", "{\"error\":\"Unauthorized\"}");
 }
 
-bool isType(int index, const char* type) {
+bool isType(int index, const char *type) {
   return strcmp(DEVICES[index].deviceType, type) == 0;
 }
 
 int clampInt(int value, int minimum, int maximum) {
-  if (value < minimum) return minimum;
-  if (value > maximum) return maximum;
+  if (value < minimum)
+    return minimum;
+  if (value > maximum)
+    return maximum;
   return value;
 }
 
 int findDeviceByPin(int pin) {
   for (int i = 0; i < NUM_DEVICES; i++) {
-    if (DEVICES[i].logicalPin == pin) return i;
+    if (DEVICES[i].logicalPin == pin)
+      return i;
   }
 
   // Backward compatibility for old direct-GPIO calls such as /api/relay/26.
   for (int i = 0; i < NUM_DEVICES; i++) {
-    if (DEVICES[i].gpioPin == pin) return i;
+    if (DEVICES[i].gpioPin == pin)
+      return i;
   }
 
   return -1;
 }
 
-String powerState(int index) {
-  return deviceStates[index].isOn ? "on" : "off";
-}
+String powerState(int index) { return deviceStates[index].isOn ? "on" : "off"; }
 
 bool jsonToBool(JsonVariantConst value, bool fallback) {
-  if (value.is<bool>()) return value.as<bool>();
-  if (value.is<int>()) return value.as<int>() != 0;
+  if (value.is<bool>())
+    return value.as<bool>();
+  if (value.is<int>())
+    return value.as<int>() != 0;
 
   String text = value.as<String>();
   text.toLowerCase();
-  if (text == "true" || text == "on" || text == "1" || text == "activate") return true;
-  if (text == "false" || text == "off" || text == "0" || text == "deactivate") return false;
+  if (text == "true" || text == "on" || text == "1" || text == "activate")
+    return true;
+  if (text == "false" || text == "off" || text == "0" || text == "deactivate")
+    return false;
   return fallback;
 }
 
 int jsonToInt(JsonVariantConst value, int fallback) {
-  if (value.is<int>()) return value.as<int>();
-  if (value.is<float>()) return (int)round(value.as<float>());
+  if (value.is<int>())
+    return value.as<int>();
+  if (value.is<float>())
+    return (int)round(value.as<float>());
 
   String text = value.as<String>();
-  if (text.length() == 0) return fallback;
+  if (text.length() == 0)
+    return fallback;
   return text.toInt();
 }
 
-String jsonToString(JsonVariantConst value, const String& fallback) {
-  if (value.isNull()) return fallback;
+String jsonToString(JsonVariantConst value, const String &fallback) {
+  if (value.isNull())
+    return fallback;
   return value.as<String>();
 }
 
 void syncPhysicalRelay(int index) {
   int gpio = DEVICES[index].gpioPin;
-  if (gpio == GPIO_NONE) return;
+  if (gpio == GPIO_NONE)
+    return;
   digitalWrite(gpio, deviceStates[index].isOn ? LOW : HIGH);
 }
 
@@ -196,17 +222,33 @@ void initializeDeviceStates() {
     deviceStates[i].armed = false;
   }
 
-  deviceStates[0].isOn = true;  deviceStates[0].brightness = 80; deviceStates[0].colorTemp = 4000;
-  deviceStates[1].isOn = true;  deviceStates[1].brightness = 60; deviceStates[1].color = "#74b1ff";
-  deviceStates[2].isOn = true;  deviceStates[2].temperature = 22; deviceStates[2].mode = "cool";
-  deviceStates[3].isOn = false; deviceStates[3].volume = 35;
-  deviceStates[4].isOn = false; deviceStates[4].brightness = 40; deviceStates[4].color = "#FF716C";
-  deviceStates[5].isOn = true;  deviceStates[5].speed = 2;
-  deviceStates[6].isOn = true;  deviceStates[6].armed = true;
-  deviceStates[7].isOn = true;  deviceStates[7].brightness = 2;
+  deviceStates[0].isOn = true;
+  deviceStates[0].brightness = 80;
+  deviceStates[0].colorTemp = 4000;
+  deviceStates[1].isOn = true;
+  deviceStates[1].brightness = 60;
+  deviceStates[1].color = "#74b1ff";
+  deviceStates[2].isOn = true;
+  deviceStates[2].temperature = 22;
+  deviceStates[2].mode = "cool";
+  deviceStates[3].isOn = false;
+  deviceStates[3].volume = 35;
+  deviceStates[4].isOn = false;
+  deviceStates[4].brightness = 40;
+  deviceStates[4].color = "#FF716C";
+  deviceStates[5].isOn = true;
+  deviceStates[5].speed = 2;
+  deviceStates[6].isOn = true;
+  deviceStates[6].armed = true;
+  deviceStates[7].isOn = true;
+  deviceStates[7].brightness = 2;
   deviceStates[8].isOn = false;
-  deviceStates[9].isOn = false; deviceStates[9].speed = 35;
-  deviceStates[10].isOn = true; deviceStates[10].brightness = 75; deviceStates[10].color = "#b884ff"; deviceStates[10].colorTemp = 4000;
+  deviceStates[9].isOn = false;
+  deviceStates[9].speed = 35;
+  deviceStates[10].isOn = true;
+  deviceStates[10].brightness = 75;
+  deviceStates[10].color = "#b884ff";
+  deviceStates[10].colorTemp = 4000;
   deviceStates[11].isOn = false;
 }
 
@@ -229,7 +271,8 @@ void writeCapabilities(JsonObject caps, int index) {
     if (DEVICES[index].logicalPin == 10 || DEVICES[index].logicalPin == 41) {
       caps["color_temp"] = true;
     }
-    if (DEVICES[index].logicalPin == 11 || DEVICES[index].logicalPin == 20 || DEVICES[index].logicalPin == 41) {
+    if (DEVICES[index].logicalPin == 11 || DEVICES[index].logicalPin == 20 ||
+        DEVICES[index].logicalPin == 41) {
       caps["rgb_color"] = true;
     }
     return;
@@ -283,7 +326,8 @@ void writeDeviceState(JsonObject state, int index) {
     if (DEVICES[index].logicalPin == 10 || DEVICES[index].logicalPin == 41) {
       state["color_temp"] = deviceStates[index].colorTemp;
     }
-    if (DEVICES[index].logicalPin == 11 || DEVICES[index].logicalPin == 20 || DEVICES[index].logicalPin == 41) {
+    if (DEVICES[index].logicalPin == 11 || DEVICES[index].logicalPin == 20 ||
+        DEVICES[index].logicalPin == 41) {
       state["color"] = deviceStates[index].color;
     }
     return;
@@ -311,7 +355,7 @@ void writeDeviceState(JsonObject state, int index) {
 }
 
 void writeRelayPayload(JsonObject target, int index) {
-  const DeviceConfig& device = DEVICES[index];
+  const DeviceConfig &device = DEVICES[index];
   target["pin"] = device.logicalPin;
   target["name"] = device.name;
   target["room"] = device.room;
@@ -321,7 +365,8 @@ void writeRelayPayload(JsonObject target, int index) {
   target["type"] = device.deviceType;
   target["icon"] = device.icon;
   target["wired"] = device.gpioPin != GPIO_NONE;
-  if (device.gpioPin != GPIO_NONE) target["gpio_pin"] = device.gpioPin;
+  if (device.gpioPin != GPIO_NONE)
+    target["gpio_pin"] = device.gpioPin;
 
   JsonObject caps = target["capabilities"].to<JsonObject>();
   writeCapabilities(caps, index);
@@ -331,7 +376,7 @@ void writeRelayPayload(JsonObject target, int index) {
 }
 
 void writeBackendDevice(JsonObject target, int index) {
-  const DeviceConfig& device = DEVICES[index];
+  const DeviceConfig &device = DEVICES[index];
   target["id"] = String("esp32-") + String(device.logicalPin);
   target["name"] = device.name;
   target["device_type"] = device.deviceType;
@@ -349,7 +394,10 @@ void writeBackendDevice(JsonObject target, int index) {
   writeDeviceState(state, index);
 }
 
-void writeSensorBackendDevice(JsonObject target, const char* id, const char* name, const char* roomId, float reading, const char* unit, const char* readingType) {
+void writeSensorBackendDevice(JsonObject target, const char *id,
+                              const char *name, const char *roomId,
+                              float reading, const char *unit,
+                              const char *readingType) {
   target["id"] = id;
   target["name"] = name;
   target["device_type"] = "sensor";
@@ -370,7 +418,7 @@ void writeSensorBackendDevice(JsonObject target, const char* id, const char* nam
   state["unit"] = unit;
 }
 
-void applyPayloadValue(int index, const char* key, JsonVariantConst value) {
+void applyPayloadValue(int index, const char *key, JsonVariantConst value) {
   if (strcmp(key, "is_on") == 0) {
     deviceStates[index].isOn = jsonToBool(value, deviceStates[index].isOn);
     return;
@@ -379,12 +427,15 @@ void applyPayloadValue(int index, const char* key, JsonVariantConst value) {
   if (strcmp(key, "brightness") == 0 && isType(index, "light")) {
     int maxBrightness = DEVICES[index].logicalPin == 30 ? 3 : 100;
     int minBrightness = DEVICES[index].logicalPin == 30 ? 1 : 0;
-    deviceStates[index].brightness = clampInt(jsonToInt(value, deviceStates[index].brightness), minBrightness, maxBrightness);
+    deviceStates[index].brightness =
+        clampInt(jsonToInt(value, deviceStates[index].brightness),
+                 minBrightness, maxBrightness);
     return;
   }
 
   if (strcmp(key, "color_temp") == 0 && isType(index, "light")) {
-    deviceStates[index].colorTemp = clampInt(jsonToInt(value, deviceStates[index].colorTemp), 2700, 6500);
+    deviceStates[index].colorTemp =
+        clampInt(jsonToInt(value, deviceStates[index].colorTemp), 2700, 6500);
     return;
   }
 
@@ -396,17 +447,20 @@ void applyPayloadValue(int index, const char* key, JsonVariantConst value) {
   if (strcmp(key, "speed") == 0 && isType(index, "fan")) {
     int maxSpeed = DEVICES[index].logicalPin == 40 ? 100 : 3;
     int minSpeed = DEVICES[index].logicalPin == 40 ? 0 : 1;
-    deviceStates[index].speed = clampInt(jsonToInt(value, deviceStates[index].speed), minSpeed, maxSpeed);
+    deviceStates[index].speed = clampInt(
+        jsonToInt(value, deviceStates[index].speed), minSpeed, maxSpeed);
     return;
   }
 
   if (strcmp(key, "temperature") == 0 && isType(index, "climate")) {
-    deviceStates[index].temperature = clampInt(jsonToInt(value, deviceStates[index].temperature), 16, 30);
+    deviceStates[index].temperature =
+        clampInt(jsonToInt(value, deviceStates[index].temperature), 16, 30);
     return;
   }
 
   if (strcmp(key, "volume") == 0 && isType(index, "media")) {
-    deviceStates[index].volume = clampInt(jsonToInt(value, deviceStates[index].volume), 0, 100);
+    deviceStates[index].volume =
+        clampInt(jsonToInt(value, deviceStates[index].volume), 0, 100);
     return;
   }
 
@@ -426,7 +480,7 @@ void applyPayloadObject(int index, JsonObjectConst payload) {
   }
 }
 
-void applyScalarValue(int index, const String& action, JsonVariantConst value) {
+void applyScalarValue(int index, const String &action, JsonVariantConst value) {
   if (action == "set_brightness") {
     applyPayloadValue(index, "brightness", value);
   } else if (action == "set_color") {
@@ -453,6 +507,7 @@ void applyScalarValue(int index, const String& action, JsonVariantConst value) {
 void pushSensorData(float t, float h, int light, bool motion) {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
+    http.setInsecure(); // Skip cert validation for ngrok HTTPS (dev only)
     http.begin(BACKEND_URL);
     http.addHeader("Content-Type", "application/json");
 
@@ -467,16 +522,19 @@ void pushSensorData(float t, float h, int light, bool motion) {
 
     int httpResponseCode = http.POST(payload);
     if (httpResponseCode > 0) {
-      Serial.printf("[Artemis] Pushed sensor data. Response: %d\n", httpResponseCode);
+      Serial.printf("[Artemis] Pushed sensor data. Response: %d\n",
+                    httpResponseCode);
     } else {
-      Serial.printf("[Artemis] Error pushing sensor data: %s\n", http.errorToString(httpResponseCode).c_str());
+      Serial.printf("[Artemis] Error pushing sensor data: %s\n",
+                    http.errorToString(httpResponseCode).c_str());
     }
     http.end();
   }
 }
 
 void readSensors() {
-  if (millis() - lastSensorRead < SENSOR_INTERVAL) return;
+  if (millis() - lastSensorRead < SENSOR_INTERVAL)
+    return;
   lastSensorRead = millis();
 
   float t = dht.readTemperature();
@@ -510,7 +568,10 @@ void readSensors() {
 
 void handleGetSensors() {
   setCORSHeaders();
-  if (!checkAuth()) { sendUnauthorized(); return; }
+  if (!checkAuth()) {
+    sendUnauthorized();
+    return;
+  }
 
   JsonDocument doc;
 
@@ -543,7 +604,10 @@ void handleGetSensors() {
 
 void handleGetStatus() {
   setCORSHeaders();
-  if (!checkAuth()) { sendUnauthorized(); return; }
+  if (!checkAuth()) {
+    sendUnauthorized();
+    return;
+  }
 
   JsonDocument doc;
   doc["device"] = DEVICE_NAME;
@@ -566,7 +630,10 @@ void handleGetStatus() {
 
 void handleGetRelays() {
   setCORSHeaders();
-  if (!checkAuth()) { sendUnauthorized(); return; }
+  if (!checkAuth()) {
+    sendUnauthorized();
+    return;
+  }
 
   JsonDocument doc;
   for (int i = 0; i < NUM_DEVICES; i++) {
@@ -583,7 +650,10 @@ void handleGetRelays() {
 
 void handleGetDevices() {
   setCORSHeaders();
-  if (!checkAuth()) { sendUnauthorized(); return; }
+  if (!checkAuth()) {
+    sendUnauthorized();
+    return;
+  }
 
   JsonDocument doc;
   JsonArray devices = doc.to<JsonArray>();
@@ -593,7 +663,9 @@ void handleGetDevices() {
   }
 
   JsonObject tempSensor = devices.add<JsonObject>();
-  writeSensorBackendDevice(tempSensor, "esp32-temp-sensor", "Temp Sensor", "room-living", lastTemperature, "deg C", "temperature");
+  writeSensorBackendDevice(tempSensor, "esp32-temp-sensor", "Temp Sensor",
+                           "room-living", lastTemperature, "deg C",
+                           "temperature");
   JsonObject tempCaps = tempSensor["capabilities"].as<JsonObject>();
   JsonArray tempReadings = tempCaps["reading_types"].as<JsonArray>();
   tempReadings.add("humidity");
@@ -601,7 +673,9 @@ void handleGetDevices() {
   tempSensorState["humidity"] = lastHumidity;
 
   JsonObject smokeSensor = devices.add<JsonObject>();
-  writeSensorBackendDevice(smokeSensor, "esp32-smoke-detector", "Smoke Detector", "room-kitchen", lastSmokePpm, "ppm", "smoke");
+  writeSensorBackendDevice(smokeSensor, "esp32-smoke-detector",
+                           "Smoke Detector", "room-kitchen", lastSmokePpm,
+                           "ppm", "smoke");
 
   String output;
   serializeJson(doc, output);
@@ -610,7 +684,10 @@ void handleGetDevices() {
 
 void handlePostRelay() {
   setCORSHeaders();
-  if (!checkAuth()) { sendUnauthorized(); return; }
+  if (!checkAuth()) {
+    sendUnauthorized();
+    return;
+  }
 
   String uri = server.uri();
   int lastSlash = uri.lastIndexOf('/');
@@ -618,7 +695,8 @@ void handlePostRelay() {
   int index = findDeviceByPin(requestedPin);
 
   if (index < 0) {
-    server.send(400, "application/json", "{\"error\":\"Invalid Artemis logical pin\"}");
+    server.send(400, "application/json",
+                "{\"error\":\"Invalid Artemis logical pin\"}");
     return;
   }
 
@@ -680,7 +758,8 @@ void setup() {
 
   initializeDeviceStates();
   for (int i = 0; i < NUM_DEVICES; i++) {
-    if (DEVICES[i].gpioPin == GPIO_NONE) continue;
+    if (DEVICES[i].gpioPin == GPIO_NONE)
+      continue;
     pinMode(DEVICES[i].gpioPin, OUTPUT);
     syncPhysicalRelay(i);
   }
@@ -691,14 +770,15 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-  Serial.printf("\n[Artemis] Connected! IP: %s\n", WiFi.localIP().toString().c_str());
+  Serial.printf("\n[Artemis] Connected! IP: %s\n",
+                WiFi.localIP().toString().c_str());
 
   if (MDNS.begin(DEVICE_NAME)) {
     Serial.printf("[Artemis] mDNS started: http://%s.local\n", DEVICE_NAME);
     MDNS.addService("http", "tcp", 80);
   }
 
-  const char* headerKeys[] = { "Authorization" };
+  const char *headerKeys[] = {"Authorization"};
   server.collectHeaders(headerKeys, 1);
 
   server.on("/api/sensors", HTTP_GET, handleGetSensors);
@@ -718,7 +798,8 @@ void setup() {
         handleOptions();
       } else {
         setCORSHeaders();
-        server.send(405, "application/json", "{\"error\":\"Method not allowed\"}");
+        server.send(405, "application/json",
+                    "{\"error\":\"Method not allowed\"}");
       }
     } else {
       setCORSHeaders();

@@ -31,6 +31,11 @@ export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   MainTabs: undefined;
+  // Tab screens — included so HomeScreen can navigate to sibling tabs
+  Home: undefined;
+  Devices: undefined;
+  Functions: undefined;
+  Automations: undefined;
   Settings: undefined;
   History: undefined;
   AALEditor: { mode?: 'add' | 'edit'; automationId?: string } | undefined;
