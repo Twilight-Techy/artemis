@@ -13,6 +13,9 @@ import asyncio
 
 router = APIRouter(prefix="/devices", tags=["Devices"])
 
+import httpx
+from app.config import get_settings
+
 @router.get("/discover")
 async def discover_devices(
     current_user: User = Depends(get_current_user),
@@ -21,26 +24,26 @@ async def discover_devices(
     Scans the local network for available hardware nodes.
     Filters out any devices that are already registered in the database.
     """
-    # Simulate network sweep delay
-    await asyncio.sleep(2.5) 
+    settings = get_settings()
+    network_nodes = []
     
-    # 1. Mock physical devices discovered on the network
-    network_nodes = [
-       {
-           "id": "esp32-node-b49",
-           "name": "ESP32 Relay Node",
-           "device_type": "switch",
-           "protocol": "http",
-           "endpoint": "http://10.27.73.155:80"
-       },
-       {
-           "id": "zigbee-bridge-1",
-           "name": "Lumina Smart Bulb",
-           "device_type": "light",
-           "protocol": "mqtt",
-           "endpoint": "mqtt://10.27.73.100:1883"
-       }
-    ]
+    # 1. Fetch live physical devices exposed by the ESP32 firmware
+    try:
+        headers = {}
+        if settings.esp32_auth_token:
+            headers["Authorization"] = f"Bearer {settings.esp32_auth_token}"
+            
+        async with httpx.AsyncClient() as client:
+            # We timeout quickly so the scan doesn't hang if the device is offline
+            response = await client.get(f"{settings.esp32_base_url}/api/devices", headers=headers, timeout=3.0)
+            if response.status_code == 200:
+                network_nodes = response.json()
+    except Exception as e:
+        print(f"Failed to scan ESP32 local endpoint: {e}")
+
+    # Fallback to empty if nothing was found or if ESP32 is offline
+    if not isinstance(network_nodes, list):
+        network_nodes = []
 
     # 2. Get currently registered device endpoints
     result = await db.execute(select(Device.endpoint).where(Device.owner_id == current_user.id))
@@ -49,11 +52,10 @@ async def discover_devices(
     # 3. Filter out nodes we already know about
     unregistered_nodes = [
         node for node in network_nodes
-        if node["endpoint"] not in registered_endpoints
+        if node.get("endpoint") not in registered_endpoints
     ]
 
     return unregistered_nodes
-
 
 @router.get("/", response_model=list[DeviceOut])
 async def list_devices(

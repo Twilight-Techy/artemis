@@ -172,7 +172,7 @@ export default function AddDeviceScreen() {
           <TouchableOpacity 
             style={styles.addManuallyBtn} 
             activeOpacity={0.8}
-            onPress={() => navigation.navigate('EditDevice', {})}
+            onPress={() => navigation.navigate('EditDevice', { endpoint: manualAddress ? manualAddress.trim() : undefined })}
           >
             <Ionicons name="link-outline" size={18} color={Colors.onSurface} />
             <Text style={styles.addManuallyText}>ADD MANUALLY</Text>
