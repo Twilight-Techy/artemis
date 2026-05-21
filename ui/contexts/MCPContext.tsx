@@ -23,6 +23,8 @@ export const useMCP = () => {
   return ctx;
 };
 
+export const useMCPContext = useMCP;
+
 export const MCPProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [pendingAction, setPendingAction] = useState<ProactiveAction | null>(null);
   const [showMCPModal, setShowMCPModal] = useState(false);
@@ -82,9 +84,12 @@ export const MCPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   React.useEffect(() => {
     if (!userId) return;
 
-    const wsProtocol = BACKEND_URL.startsWith('https') ? 'wss' : 'ws';
-    const baseUrl = BACKEND_URL.replace(/\/api\/v1\/?$/, '');
-    const wsUrl = `${baseUrl.replace(/^http/, wsProtocol)}/ws/${userId}`;
+    const baseUrl = new URL(BACKEND_URL.replace(/\/api\/v1\/?$/, ''));
+    baseUrl.protocol = baseUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+    baseUrl.pathname = `${baseUrl.pathname.replace(/\/$/, '')}/ws/${encodeURIComponent(userId)}`;
+    baseUrl.search = '';
+    baseUrl.hash = '';
+    const wsUrl = baseUrl.toString();
 
     const ws = new WebSocket(wsUrl);
 

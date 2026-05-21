@@ -32,16 +32,21 @@
 #include <stdio.h>
 #include <string.h>
 
-// Configuration - update these before flashing.
-const char *WIFI_SSID =
-    "Twilight Techie ✨👑✨"; // Note: if your SSID has emoji, add them here
-const char *WIFI_PASSWORD = "excalibur7";
-const char *DEVICE_NAME = "artemis-hub"; // mDNS: http://artemis-hub.local
-const char *AUTH_TOKEN =
-    ""; // Optional: set to match ESP32_AUTH_TOKEN in backend .env
-const char *BACKEND_URL =
-    "https://nondepreciatively-lancelike-berneice.ngrok-free.dev/api/v1/"
-    "sensors/ingest";
+#if __has_include("config.local.h")
+#include "config.local.h"
+#else
+#include "config.example.h"
+#endif
+
+#ifndef ARTEMIS_TLS_INSECURE
+#define ARTEMIS_TLS_INSECURE 0
+#endif
+
+const char *WIFI_SSID = ARTEMIS_WIFI_SSID;
+const char *WIFI_PASSWORD = ARTEMIS_WIFI_PASSWORD;
+const char *DEVICE_NAME = ARTEMIS_DEVICE_NAME; // mDNS: http://artemis-hub.local
+const char *AUTH_TOKEN = ARTEMIS_AUTH_TOKEN;
+const char *BACKEND_URL = ARTEMIS_BACKEND_URL;
 
 // Sensor pins.
 #define DHT_PIN 4
@@ -507,7 +512,9 @@ void applyScalarValue(int index, const String &action, JsonVariantConst value) {
 void pushSensorData(float t, float h, int light, bool motion) {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
-    http.setInsecure(); // Skip cert validation for ngrok HTTPS (dev only)
+#if ARTEMIS_TLS_INSECURE
+    http.setInsecure();
+#endif
     http.begin(BACKEND_URL);
     http.addHeader("Content-Type", "application/json");
 

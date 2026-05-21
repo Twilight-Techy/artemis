@@ -44,6 +44,7 @@ yarn-error.*
 .pio/
 .pio-core/
 .pio-build/
+firmware/**/config.local.h
 
 # generated native folders
 ios/

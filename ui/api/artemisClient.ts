@@ -1,9 +1,12 @@
 import { Platform } from 'react-native';
 
-// For Android emulator, use 10.0.2.2 instead of localhost
-// For iOS simulator, localhost works
-// For physical device, use your machine's local IP (e.g. 192.168.x.x)
-export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:8000/api/v1';
+const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
+
+if (!backendUrl) {
+    throw new Error('EXPO_PUBLIC_BACKEND_URL is required. Add it to ui/.env.');
+}
+
+export const BACKEND_URL = backendUrl;
 
 export const artemisApi = {
     _token: null as string | null,

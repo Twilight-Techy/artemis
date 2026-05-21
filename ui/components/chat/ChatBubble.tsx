@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Speech from 'expo-speech';
 import { Colors, Typography, Spacing, Radii } from '../../constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMCPContext } from '../../contexts/MCPContext';
@@ -25,6 +26,24 @@ type Props = {
 
 export default function ChatBubble({ message }: Props) {
   const { showActionFromNotification } = useMCPContext();
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const handlePlay = async () => {
+    if (isSpeaking) {
+      Speech.stop();
+      setIsSpeaking(false);
+      return;
+    }
+    
+    Speech.stop();
+    setIsSpeaking(true);
+    
+    Speech.speak(message.text, {
+      onDone: () => setIsSpeaking(false),
+      onStopped: () => setIsSpeaking(false),
+      onError: () => setIsSpeaking(false),
+    });
+  };
 
   // ── Action Execution Log ──
   if (message.role === 'action') {
@@ -127,9 +146,21 @@ export default function ChatBubble({ message }: Props) {
             {message.text}
           </Text>
         </View>
-        <Text style={[styles.timestamp, isUser ? styles.tsRight : styles.tsLeft]}>
-          {message.timestamp}
-        </Text>
+        <View style={[styles.tsRow, isUser ? styles.tsRight : styles.tsLeft]}>
+          {isUser && (
+            <TouchableOpacity onPress={handlePlay} style={styles.playButton} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name={isSpeaking ? "stop-circle" : "volume-medium"} size={14} color="rgba(255, 255, 255, 0.45)" />
+            </TouchableOpacity>
+          )}
+          <Text style={styles.timestamp}>
+            {message.timestamp}
+          </Text>
+          {!isUser && (
+            <TouchableOpacity onPress={handlePlay} style={styles.playButton} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name={isSpeaking ? "stop-circle" : "volume-medium"} size={14} color="rgba(255, 255, 255, 0.45)" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {isUser && (
@@ -228,8 +259,15 @@ const styles = StyleSheet.create({
     fontFamily: Typography.families.label,
     fontSize: Typography.sizes.labelXs,
     color: 'rgba(255, 255, 255, 0.25)',
-    marginTop: 4,
     paddingHorizontal: 4,
+  },
+  tsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  playButton: {
+    paddingHorizontal: 2,
   },
   tsRight: { alignSelf: 'flex-end' },
   tsLeft: { alignSelf: 'flex-start' },

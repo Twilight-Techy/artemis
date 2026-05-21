@@ -1,5 +1,10 @@
-from pydantic_settings import BaseSettings
 from functools import lru_cache
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+BACKEND_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
 
 class Settings(BaseSettings):
@@ -9,31 +14,36 @@ class Settings(BaseSettings):
     """
 
     # ── Database ──
-    database_url: str = "postgresql+asyncpg://localhost/artemis"
+    database_url: str
 
     # ── Auth ──
-    secret_key: str = "change-me-in-production"
+    secret_key: str
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440  # 24 hours
 
     # ── CORS ──
-    allowed_origins: str = "http://localhost:8081"
+    allowed_origins: str
 
     # ── Gemini API (MCP Core) ──
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.0-flash"
 
+    # ── Notifications ──
+    expo_push_url: str
+
     # ── ESP32 Hardware Bridge ──
-    esp32_base_url: str = "http://192.168.1.50"
+    esp32_base_url: str = ""
     esp32_auth_token: str = ""
 
     @property
     def cors_origins(self) -> list[str]:
         return [o.strip() for o in self.allowed_origins.split(",")]
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(
+        env_file=BACKEND_ENV_FILE,
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
 
 @lru_cache()

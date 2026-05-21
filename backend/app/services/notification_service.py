@@ -5,9 +5,10 @@ Docs: https://docs.expo.dev/push-notifications/sending-notifications/
 import httpx
 import logging
 
-logger = logging.getLogger(__name__)
+from app.config import get_settings
 
-EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
+logger = logging.getLogger(__name__)
+settings = get_settings()
 
 
 async def send_push_notification(
@@ -35,7 +36,7 @@ async def send_push_notification(
 
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
-            resp = await client.post(EXPO_PUSH_URL, json=payload)
+            resp = await client.post(settings.expo_push_url, json=payload)
             resp.raise_for_status()
             result = resp.json()
             # Expo wraps the response in a `data` array

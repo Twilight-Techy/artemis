@@ -1,23 +1,52 @@
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
+import { isRunningInExpoGo } from 'expo';
 import { Platform } from 'react-native';
 import { artemisApi } from '../api/artemisClient';
 
-// Configure how notifications appear when the app is in the foreground
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+type NotificationsModule = typeof import('expo-notifications');
+type NotificationSubscription = { remove: () => void };
+
+let notificationHandlerConfigured = false;
+let didLogExpoGoSkip = false;
+
+async function getNotificationsModule(): Promise<NotificationsModule | null> {
+  if (isRunningInExpoGo()) {
+    if (!didLogExpoGoSkip) {
+      didLogExpoGoSkip = true;
+      console.log(
+        '[Notifications] Push notifications are disabled in Expo Go. Use a development build to test remote notifications.'
+      );
+    }
+    return null;
+  }
+
+  const Notifications = await import('expo-notifications');
+
+  if (!notificationHandlerConfigured) {
+    notificationHandlerConfigured = true;
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+  }
+
+  return Notifications;
+}
 
 /**
  * Requests push notification permissions and registers the Expo push token
  * with the backend. Should be called once after a successful login.
  */
 export async function registerForPushNotifications(): Promise<string | null> {
+  const Notifications = await getNotificationsModule();
+  if (!Notifications) return null;
+
   if (!Device.isDevice) {
     console.warn('[Notifications] Push notifications require a physical device.');
     return null;
@@ -68,4 +97,18 @@ export async function registerForPushNotifications(): Promise<string | null> {
     console.error('[Notifications] Failed to get/register push token:', err);
     return null;
   }
+}
+
+export async function addNotificationResponseListener(
+  onActionNotification: (actionId: string) => void
+): Promise<NotificationSubscription | null> {
+  const Notifications = await getNotificationsModule();
+  if (!Notifications) return null;
+
+  return Notifications.addNotificationResponseReceivedListener(response => {
+    const data = response.notification.request.content.data as { action_id?: unknown };
+    if (typeof data?.action_id === 'string') {
+      onActionNotification(data.action_id);
+    }
+  });
 }

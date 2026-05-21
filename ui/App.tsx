@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DarkTheme } from '@react-navigation/native';
@@ -26,8 +26,6 @@ import { ProfileProvider } from './contexts/ProfileContext';
 import { HistoryProvider } from './contexts/HistoryContext';
 import { MCPProvider } from './contexts/MCPContext';
 import { useMCP } from './contexts/MCPContext';
-import { registerForPushNotifications } from './services/notificationService';
-import * as Notifications from 'expo-notifications';
 
 /**
  * Inner component that lives inside MCPProvider so it can access useMCP().
@@ -35,22 +33,41 @@ import * as Notifications from 'expo-notifications';
  */
 function NotificationBridge() {
   const { showActionFromNotification } = useMCP();
-  const responseListener = useRef<Notifications.EventSubscription>();
 
   useEffect(() => {
-    // Register token after login (best-effort — fails gracefully on simulator)
-    registerForPushNotifications();
+    // Set up notification registration and tap handling.
+    let isMounted = true;
+    let removeNotificationListener: (() => void) | null = null;
 
-    // Fired when the user TAPS a notification (foreground or background)
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
-      const data = response.notification.request.content.data as any;
-      if (data?.action_id) {
-        showActionFromNotification(data.action_id);
+    async function setupNotifications() {
+      const {
+        addNotificationResponseListener,
+        registerForPushNotifications,
+      } = await import('./services/notificationService');
+
+      if (!isMounted) return;
+
+      // Register token after login. This is best-effort and no-ops in Expo Go.
+      void registerForPushNotifications().catch(err => {
+        console.error('[Notifications] Registration failed:', err);
+      });
+
+      const subscription = await addNotificationResponseListener(showActionFromNotification);
+      if (!isMounted) {
+        subscription?.remove();
+        return;
       }
+
+      removeNotificationListener = () => subscription?.remove();
+    }
+
+    setupNotifications().catch(err => {
+      console.error('[Notifications] Setup failed:', err);
     });
 
     return () => {
-      responseListener.current?.remove();
+      isMounted = false;
+      removeNotificationListener?.();
     };
   }, [showActionFromNotification]);
 

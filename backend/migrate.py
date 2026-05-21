@@ -4,17 +4,31 @@ Safe to re-run — uses ADD COLUMN IF NOT EXISTS.
 """
 import asyncio
 import asyncpg
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+from app.config import get_settings
 
 
-DATABASE_URL = (
-    "postgresql://neondb_owner:npg_udYir7gHlT4v"
-    "@ep-aged-meadow-aeaskra7-pooler.c-2.us-east-2.aws.neon.tech"
-    "/neondb?sslmode=require"
-)
+def get_asyncpg_database_url() -> str:
+    database_url = get_settings().database_url
+    database_url = database_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+
+    parsed = urlsplit(database_url)
+    if parsed.scheme not in {"postgres", "postgresql"}:
+        raise RuntimeError("DATABASE_URL must be a PostgreSQL connection URL for migrations.")
+
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    if query.get("ssl") == "require" and "sslmode" not in query:
+        query["sslmode"] = query.pop("ssl")
+        database_url = urlunsplit(
+            (parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment)
+        )
+
+    return database_url
 
 
 async def migrate():
-    conn = await asyncpg.connect(DATABASE_URL)
+    conn = await asyncpg.connect(get_asyncpg_database_url())
     try:
         await conn.execute("""
             ALTER TABLE devices
@@ -22,6 +36,12 @@ async def migrate():
                 ADD COLUMN IF NOT EXISTS protocol VARCHAR(30) DEFAULT 'http';
         """)
         print("Migration successful: 'pin' and 'protocol' columns added (or already existed).")
+        
+        await conn.execute("""
+            ALTER TABLE users
+                ADD COLUMN IF NOT EXISTS push_token VARCHAR(512);
+        """)
+        print("Migration successful: 'push_token' column added to users (or already existed).")
         
         await conn.execute("""
             ALTER TABLE functions
