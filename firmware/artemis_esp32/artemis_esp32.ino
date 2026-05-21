@@ -517,6 +517,9 @@ void pushSensorData(float t, float h, int light, bool motion) {
 #endif
     http.begin(BACKEND_URL);
     http.addHeader("Content-Type", "application/json");
+    if (strlen(AUTH_TOKEN) > 0) {
+      http.addHeader("Authorization", String("Bearer ") + AUTH_TOKEN);
+    }
 
     JsonDocument doc;
     doc["temperature"] = t;

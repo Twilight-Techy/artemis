@@ -11,20 +11,25 @@ from app.config import get_settings
 
 settings = get_settings()
 
-# Shared async client with reasonable timeouts for local network
-_client = httpx.AsyncClient(
-    base_url=settings.esp32_base_url,
-    timeout=httpx.Timeout(connect=3.0, read=5.0, write=5.0, pool=5.0),
-    headers={"Authorization": f"Bearer {settings.esp32_auth_token}"} if settings.esp32_auth_token else {},
-)
-
-
 class HardwareError(Exception):
     """Raised when ESP32 communication fails."""
     def __init__(self, message: str, status_code: int | None = None):
         self.message = message
         self.status_code = status_code
         super().__init__(message)
+
+
+def esp32_client() -> httpx.AsyncClient:
+    if not settings.esp32_base_url:
+        raise HardwareError(
+            "ESP32_BASE_URL is not configured. For cloud deployments, set it to a public HTTPS tunnel/proxy URL for the ESP32, or use an outbound device channel."
+        )
+
+    return httpx.AsyncClient(
+        base_url=settings.esp32_base_url.rstrip("/"),
+        timeout=httpx.Timeout(connect=3.0, read=5.0, write=5.0, pool=5.0),
+        headers={"Authorization": f"Bearer {settings.esp32_auth_token}"} if settings.esp32_auth_token else {},
+    )
 
 
 # ═══════════════════════════════════════════════
@@ -36,7 +41,8 @@ async def get_sensors() -> dict:
     Returns dict with temperature, humidity, light_level, motion.
     """
     try:
-        response = await _client.get("/api/sensors")
+        async with esp32_client() as client:
+            response = await client.get("/api/sensors")
         response.raise_for_status()
         return response.json()
     except httpx.ConnectError:
@@ -55,9 +61,17 @@ async def get_status() -> dict:
     Fetch ESP32 health info (uptime, memory, Wi-Fi signal).
     """
     try:
-        response = await _client.get("/api/status")
+        async with esp32_client() as client:
+            response = await client.get("/api/status")
         response.raise_for_status()
         return response.json()
+    except HardwareError as e:
+        return {
+            "device": "artemis-hub",
+            "status": "offline",
+            "error": e.message,
+            "checked_at": datetime.utcnow().isoformat(),
+        }
     except (httpx.ConnectError, httpx.TimeoutException):
         return {
             "device": "artemis-hub",
@@ -75,7 +89,8 @@ async def get_relays() -> dict:
     Get the current state of all relays.
     """
     try:
-        response = await _client.get("/api/relays")
+        async with esp32_client() as client:
+            response = await client.get("/api/relays")
         response.raise_for_status()
         return response.json()
     except httpx.ConnectError:
@@ -156,10 +171,11 @@ async def send_command(device_name: str, action: str, value: str | int | float |
         command_body["state"] = state
 
     try:
-        response = await _client.post(
-            f"/api/relay/{pin}",
-            json=command_body,
-        )
+        async with esp32_client() as client:
+            response = await client.post(
+                f"/api/relay/{pin}",
+                json=command_body,
+            )
         response.raise_for_status()
         return response.json()
     except httpx.ConnectError:
@@ -173,7 +189,8 @@ async def send_command(device_name: str, action: str, value: str | int | float |
 async def is_online() -> bool:
     """Quick check if the ESP32 is reachable."""
     try:
-        response = await _client.get("/api/status")
+        async with esp32_client() as client:
+            response = await client.get("/api/status")
         return response.status_code == 200
-    except (httpx.ConnectError, httpx.TimeoutException):
+    except (HardwareError, httpx.ConnectError, httpx.TimeoutException):
         return False

@@ -1,4 +1,4 @@
-from .models import User, Room, Device, DeviceType, SensorReading, Function, Automation, ChatMessage, ExecutionLog
+from .models import User, Room, Device, DeviceType, SensorReading, Function, Automation, ChatMessage, ExecutionLog, BridgeCommand
 
 __all__ = [
     "User",
@@ -10,4 +10,5 @@ __all__ = [
     "Automation",
     "ChatMessage",
     "ExecutionLog",
+    "BridgeCommand",
 ]

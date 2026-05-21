@@ -28,6 +28,9 @@ async def discover_devices(
     network_nodes = []
     
     # 1. Fetch live physical devices exposed by the ESP32 firmware
+    if not settings.esp32_base_url:
+        return network_nodes
+
     try:
         headers = {}
         if settings.esp32_auth_token:
@@ -35,7 +38,11 @@ async def discover_devices(
             
         async with httpx.AsyncClient() as client:
             # We timeout quickly so the scan doesn't hang if the device is offline
-            response = await client.get(f"{settings.esp32_base_url}/api/devices", headers=headers, timeout=3.0)
+            response = await client.get(
+                f"{settings.esp32_base_url.rstrip('/')}/api/devices",
+                headers=headers,
+                timeout=3.0,
+            )
             if response.status_code == 200:
                 network_nodes = response.json()
     except Exception as e:

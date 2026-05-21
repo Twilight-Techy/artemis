@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import User
 from app.services.auth_service import get_current_user
 from app.services import hardware_service, sensor_service
 from app.services.hardware_service import HardwareError
+from app.config import get_settings
 
 router = APIRouter(prefix="/sensors", tags=["Sensors & ESP32"])
 
@@ -42,13 +43,23 @@ async def poll_sensors(
 @router.post("/ingest")
 async def ingest_sensors(
     payload: dict,
+    authorization: str | None = Header(default=None),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Push endpoint for the ESP32 to report readings directly.
-    No auth required (used by the microcontroller on the LAN).
+    Uses ESP32_AUTH_TOKEN when configured.
     """
-    # Since this is an unauthenticated push from the LAN, we need an owner_id 
+    settings = get_settings()
+    if settings.esp32_auth_token:
+        expected = f"Bearer {settings.esp32_auth_token}"
+        if authorization != expected:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid ESP32 authorization token",
+            )
+
+    # The firmware sends sensor data without a user session, so we need an owner_id
     # to evaluate automations against. For simplicity, we grab the first user
     # (assuming single-tenant local hub for now).
     from app.models import User
