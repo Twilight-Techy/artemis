@@ -2,11 +2,24 @@ import asyncio
 import json
 import random
 import time
+import os
+from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
+
+env_path = Path(__file__).parent.parent / "backend" / ".env"
+try:
+    with open(env_path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ[k.strip()] = v.strip()
+except Exception:
+    pass
 
 app = FastAPI(title="Artemis Hardware Simulator")
 
@@ -211,7 +224,74 @@ async def startup_event():
             sync_sensor_devices()
             await asyncio.sleep(2)
 
+    async def mqtt_listener():
+        try:
+            import aiomqtt
+        except ImportError:
+            print("aiomqtt not installed. Simulator MQTT listener disabled.")
+            return
+
+        broker = os.environ.get("MQTT_BROKER")
+        port = int(os.environ.get("MQTT_PORT", 8883))
+        user = os.environ.get("MQTT_USER")
+        password = os.environ.get("MQTT_PASS")
+
+        if not broker:
+            print("No MQTT_BROKER found in backend/.env. Simulator MQTT listener disabled.")
+            return
+
+        print(f"Simulator connecting to MQTT {broker}:{port}...")
+        while True:
+            try:
+                tls_params = aiomqtt.TLSParameters() if port in (8883, 8884) else None
+                async with aiomqtt.Client(
+                    hostname=broker,
+                    port=port,
+                    username=user or None,
+                    password=password or None,
+                    tls_params=tls_params,
+                    identifier=f"artemis-sim-{int(time.time())}"
+                ) as client:
+                    print("Simulator MQTT connected!")
+                    await client.subscribe("artemis/esp32/commands")
+                    async for message in client.messages:
+                        if message.topic.matches("artemis/esp32/commands"):
+                            try:
+                                payload = message.payload.decode()
+                                data = json.loads(payload)
+                                pin = str(data.get("pin"))
+                                cmd_id = data.get("command_id", "")
+                                
+                                if pin in devices:
+                                    cmd = RelayCommand(
+                                        action=data.get("action"),
+                                        value=data.get("value"),
+                                        payload=data.get("payload")
+                                    )
+                                    apply_command(devices[pin], cmd)
+                                    
+                                    if cmd_id:
+                                        res_payload = {
+                                            "command_id": cmd_id,
+                                            "status": "success"
+                                        }
+                                        await client.publish("artemis/esp32/results", payload=json.dumps(res_payload))
+                                else:
+                                    if cmd_id:
+                                        res_payload = {
+                                            "command_id": cmd_id,
+                                            "status": "failed",
+                                            "error": "Invalid pin"
+                                        }
+                                        await client.publish("artemis/esp32/results", payload=json.dumps(res_payload))
+                            except Exception as e:
+                                print(f"MQTT message processing error: {e}")
+            except Exception as e:
+                print(f"Simulator MQTT connection failed: {e}. Retrying in 5 seconds...")
+                await asyncio.sleep(5)
+
     asyncio.create_task(sensor_fluctuation())
+    asyncio.create_task(mqtt_listener())
 
 
 class RelayCommand(BaseModel):
