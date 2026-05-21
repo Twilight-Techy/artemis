@@ -80,18 +80,17 @@ export const MCPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  // Set up WebSocket connection for real-time proactive actions
-  React.useEffect(() => {
-    if (!userId) return;
-
-    const baseUrl = new URL(BACKEND_URL.replace(/\/api\/v1\/?$/, ''));
-    baseUrl.protocol = baseUrl.protocol === 'https:' ? 'wss:' : 'ws:';
-    baseUrl.pathname = `${baseUrl.pathname.replace(/\/$/, '')}/ws/${encodeURIComponent(userId)}`;
-    baseUrl.search = '';
-    baseUrl.hash = '';
-    const wsUrl = baseUrl.toString();
-
-    const ws = new WebSocket(wsUrl);
+    // Set up WebSocket connection for real-time proactive actions
+    React.useEffect(() => {
+      if (!userId) return;
+  
+      const baseString = BACKEND_URL.replace(/\/api\/v1\/?$/, '');
+      const isHttps = baseString.startsWith('https://');
+      const wsProtocol = isHttps ? 'wss://' : 'ws://';
+      const cleanBase = baseString.replace(/^https?:\/\//, '');
+      const wsUrl = `${wsProtocol}${cleanBase}/ws/${encodeURIComponent(userId)}`;
+  
+      const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
       console.log('[MCPContext] WebSocket connected.');

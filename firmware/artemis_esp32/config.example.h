@@ -8,6 +8,8 @@
 #define ARTEMIS_DEVICE_NAME "artemis-hub"
 #define ARTEMIS_AUTH_TOKEN "your-shared-esp32-token"
 #define ARTEMIS_BACKEND_URL "http://YOUR_BACKEND_HOST:8000/api/v1/sensors/ingest"
+#define ARTEMIS_COMMANDS_URL "http://YOUR_BACKEND_HOST:8000/api/v1/bridge/commands"
+#define ARTEMIS_COMMAND_POLL_INTERVAL_MS 2000
 
 // Set to 1 only for temporary development tunnels with untrusted certificates.
 #define ARTEMIS_TLS_INSECURE 0

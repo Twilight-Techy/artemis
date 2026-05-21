@@ -47,6 +47,7 @@ const char *WIFI_PASSWORD = ARTEMIS_WIFI_PASSWORD;
 const char *DEVICE_NAME = ARTEMIS_DEVICE_NAME; // mDNS: http://artemis-hub.local
 const char *AUTH_TOKEN = ARTEMIS_AUTH_TOKEN;
 const char *BACKEND_URL = ARTEMIS_BACKEND_URL;
+const char *COMMANDS_URL = ARTEMIS_COMMANDS_URL;
 
 // Sensor pins.
 #define DHT_PIN 4
@@ -119,7 +120,9 @@ bool lastMotion = false;
 int lastSmokePpm = 0;
 unsigned long bootTime = 0;
 unsigned long lastSensorRead = 0;
+unsigned long lastCommandPoll = 0;
 const unsigned long SENSOR_INTERVAL = 2000;
+const unsigned long COMMAND_POLL_INTERVAL = ARTEMIS_COMMAND_POLL_INTERVAL_MS;
 
 void setCORSHeaders() {
   server.sendHeader("Access-Control-Allow-Origin", "*");
@@ -576,6 +579,94 @@ void readSensors() {
   }
 }
 
+void pollBackendForCommands() {
+  if (millis() - lastCommandPoll < COMMAND_POLL_INTERVAL)
+    return;
+  lastCommandPoll = millis();
+
+  if (WiFi.status() != WL_CONNECTED || strlen(COMMANDS_URL) == 0)
+    return;
+
+  HTTPClient http;
+#if ARTEMIS_TLS_INSECURE
+  http.setInsecure();
+#endif
+
+  String nextUrl = String(COMMANDS_URL) + "/next";
+  http.begin(nextUrl);
+  if (strlen(AUTH_TOKEN) > 0) {
+    http.addHeader("Authorization", String("Bearer ") + AUTH_TOKEN);
+  }
+
+  int httpCode = http.GET();
+  if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
+    String response = http.getString();
+    
+    JsonDocument doc;
+    DeserializationError err = deserializeJson(doc, response);
+    
+    if (!err && !doc["command"].isNull()) {
+      JsonObject cmd = doc["command"].as<JsonObject>();
+      String cmdId = cmd["id"].as<String>();
+      int pin = cmd["pin"].as<int>();
+      String action = cmd["action"].as<String>();
+      action.toLowerCase();
+      
+      int index = findDeviceByPin(pin);
+      
+      String resultStatus = "failed";
+      String resultError = "";
+      
+      if (index < 0) {
+        resultError = "Invalid Artemis logical pin";
+      } else {
+        if (action == "on" || action == "activate") {
+          deviceStates[index].isOn = true;
+        } else if (action == "off" || action == "deactivate") {
+          deviceStates[index].isOn = false;
+        }
+
+        JsonObjectConst payload = cmd["payload"].as<JsonObjectConst>();
+        if (!payload.isNull()) {
+          applyPayloadObject(index, payload);
+        } else {
+          JsonVariantConst value = cmd["value"];
+          if (!value.isNull()) {
+            applyScalarValue(index, action, value);
+          }
+        }
+
+        syncPhysicalRelay(index);
+        resultStatus = "success";
+      }
+      
+      // POST result back
+      String resultUrl = String(COMMANDS_URL) + "/" + cmdId + "/result";
+      HTTPClient postHttp;
+#if ARTEMIS_TLS_INSECURE
+      postHttp.setInsecure();
+#endif
+      postHttp.begin(resultUrl);
+      postHttp.addHeader("Content-Type", "application/json");
+      if (strlen(AUTH_TOKEN) > 0) {
+        postHttp.addHeader("Authorization", String("Bearer ") + AUTH_TOKEN);
+      }
+      
+      JsonDocument resDoc;
+      resDoc["status"] = resultStatus;
+      if (resultError.length() > 0) {
+        resDoc["error"] = resultError;
+      }
+      
+      String resPayload;
+      serializeJson(resDoc, resPayload);
+      postHttp.POST(resPayload);
+      postHttp.end();
+    }
+  }
+  http.end();
+}
+
 void handleGetSensors() {
   setCORSHeaders();
   if (!checkAuth()) {
@@ -832,4 +923,5 @@ void setup() {
 void loop() {
   server.handleClient();
   readSensors();
+  pollBackendForCommands();
 }

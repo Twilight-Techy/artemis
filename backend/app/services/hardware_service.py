@@ -8,6 +8,8 @@ Handles sensor reading, relay control, and device health checks.
 import httpx
 from datetime import datetime
 from app.config import get_settings
+from app.database import AsyncSessionLocal
+from app.models import BridgeCommand
 
 settings = get_settings()
 
@@ -169,6 +171,28 @@ async def send_command(device_name: str, action: str, value: str | int | float |
     }
     if state is not None:
         command_body["state"] = state
+
+    if not settings.esp32_base_url:
+        async with AsyncSessionLocal() as db:
+            queued = BridgeCommand(
+                target_name=device_name,
+                pin=pin,
+                action=action,
+                value=None if isinstance(value, dict) or value is None else str(value),
+                payload=payload,
+                status="pending",
+            )
+            db.add(queued)
+            await db.commit()
+            await db.refresh(queued)
+
+        return {
+            "result": "queued",
+            "queued": True,
+            "command_id": queued.id,
+            "pin": pin,
+            "target_name": device_name,
+        }
 
     try:
         async with esp32_client() as client:

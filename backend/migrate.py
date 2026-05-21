@@ -50,6 +50,28 @@ async def migrate():
                 ADD COLUMN IF NOT EXISTS conditions JSON;
         """)
         print("Migration successful: 'device_actions', 'triggers', 'conditions' columns added to functions (or already existed).")
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS bridge_commands (
+                id VARCHAR(36) PRIMARY KEY,
+                target_name VARCHAR(100) NOT NULL,
+                pin INTEGER NOT NULL,
+                action VARCHAR(50) NOT NULL,
+                value VARCHAR(255),
+                payload JSON,
+                status VARCHAR(20) DEFAULT 'pending',
+                result JSON,
+                error TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                dispatched_at TIMESTAMP,
+                completed_at TIMESTAMP
+            );
+        """)
+        await conn.execute("""
+            CREATE INDEX IF NOT EXISTS ix_bridge_commands_status_created_at
+            ON bridge_commands (status, created_at);
+        """)
+        print("Migration successful: 'bridge_commands' table created (or already existed).")
     finally:
         await conn.close()
 
