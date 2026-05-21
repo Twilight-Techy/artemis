@@ -254,8 +254,13 @@ async def startup_event():
                 ) as client:
                     print("Simulator MQTT connected!")
                     await client.subscribe("artemis/esp32/commands")
+                    await client.subscribe("artemis/esp32/discovery/request")
                     async for message in client.messages:
-                        if message.topic.matches("artemis/esp32/commands"):
+                        if message.topic.matches("artemis/esp32/discovery/request"):
+                            response = get_devices()
+                            await client.publish("artemis/esp32/discovery/response", payload=json.dumps(response))
+                        
+                        elif message.topic.matches("artemis/esp32/commands"):
                             try:
                                 payload = message.payload.decode()
                                 data = json.loads(payload)

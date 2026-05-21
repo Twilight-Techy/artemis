@@ -27,26 +27,31 @@ async def discover_devices(
     settings = get_settings()
     network_nodes = []
     
-    # 1. Fetch live physical devices exposed by the ESP32 firmware
-    if not settings.esp32_base_url:
-        return network_nodes
-
-    try:
-        headers = {}
-        if settings.esp32_auth_token:
-            headers["Authorization"] = f"Bearer {settings.esp32_auth_token}"
+    # 1. Fetch live devices over MQTT first if configured
+    if settings.mqtt_broker:
+        try:
+            network_nodes = await hardware_service.discover_devices_mqtt(timeout=3.0)
+        except Exception as e:
+            print(f"Failed to scan devices over MQTT: {e}")
             
-        async with httpx.AsyncClient() as client:
-            # We timeout quickly so the scan doesn't hang if the device is offline
-            response = await client.get(
-                f"{settings.esp32_base_url.rstrip('/')}/api/devices",
-                headers=headers,
-                timeout=3.0,
-            )
-            if response.status_code == 200:
-                network_nodes = response.json()
-    except Exception as e:
-        print(f"Failed to scan ESP32 local endpoint: {e}")
+    # 2. Fallback to HTTP if nothing found and esp32_base_url is configured
+    if not network_nodes and settings.esp32_base_url:
+        try:
+            headers = {}
+            if settings.esp32_auth_token:
+                headers["Authorization"] = f"Bearer {settings.esp32_auth_token}"
+                
+            async with httpx.AsyncClient() as client:
+                # We timeout quickly so the scan doesn't hang if the device is offline
+                response = await client.get(
+                    f"{settings.esp32_base_url.rstrip('/')}/api/devices",
+                    headers=headers,
+                    timeout=3.0,
+                )
+                if response.status_code == 200:
+                    network_nodes = response.json()
+        except Exception as e:
+            print(f"Failed to scan ESP32 local endpoint: {e}")
 
     # Fallback to empty if nothing was found or if ESP32 is offline
     if not isinstance(network_nodes, list):

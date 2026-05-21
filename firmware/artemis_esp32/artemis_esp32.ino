@@ -490,6 +490,37 @@ void applyPayloadValue(int index, const char *key, JsonVariantConst value) {
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.printf("[Artemis] MQTT message arrived on topic: %s\n", topic);
   
+  if (strcmp(topic, "artemis/esp32/discovery/request") == 0) {
+    Serial.println("[Artemis] MQTT Discovery Request received");
+    JsonDocument doc;
+    JsonArray devices = doc.to<JsonArray>();
+    for (int i = 0; i < NUM_DEVICES; i++) {
+      JsonObject item = devices.add<JsonObject>();
+      writeBackendDevice(item, i);
+    }
+
+    JsonObject tempSensor = devices.add<JsonObject>();
+    writeSensorBackendDevice(tempSensor, "esp32-temp-sensor", "Temp Sensor",
+                             "room-living", lastTemperature, "deg C",
+                             "temperature");
+    JsonObject tempCaps = tempSensor["capabilities"].as<JsonObject>();
+    JsonArray tempReadings = tempCaps["reading_types"].as<JsonArray>();
+    tempReadings.add("humidity");
+    JsonObject tempSensorState = tempSensor["state"].as<JsonObject>();
+    tempSensorState["humidity"] = lastHumidity;
+
+    JsonObject smokeSensor = devices.add<JsonObject>();
+    writeSensorBackendDevice(smokeSensor, "esp32-smoke-detector",
+                             "Smoke Detector", "room-kitchen", lastSmokePpm,
+                             "ppm", "smoke");
+
+    String output;
+    serializeJson(doc, output);
+    bool pubSuccess = mqttClient.publish("artemis/esp32/discovery/response", output.c_str());
+    Serial.printf("[Artemis] MQTT Discovery Response published, size: %d, success: %d\n", output.length(), pubSuccess);
+    return;
+  }
+  
   // We expect JSON payload on artemis/esp32/commands
   JsonDocument doc;
   DeserializationError err = deserializeJson(doc, payload, length);
@@ -551,6 +582,7 @@ void reconnectMqtt() {
     if (mqttClient.connect(ARTEMIS_MQTT_CLIENT_ID, ARTEMIS_MQTT_USER, ARTEMIS_MQTT_PASS)) {
       Serial.println("connected");
       mqttClient.subscribe("artemis/esp32/commands");
+      mqttClient.subscribe("artemis/esp32/discovery/request");
     } else {
       Serial.print("failed, rc=");
       Serial.print(mqttClient.state());
@@ -961,6 +993,7 @@ void setup() {
 #endif
 
   mqttClient.setServer(ARTEMIS_MQTT_BROKER, ARTEMIS_MQTT_PORT);
+  mqttClient.setBufferSize(4096);
   mqttClient.setCallback(mqttCallback);
 
   const char *headerKeys[] = {"Authorization"};

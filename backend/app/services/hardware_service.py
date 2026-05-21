@@ -9,6 +9,7 @@ import httpx
 import asyncio
 import json
 import aiomqtt
+import uuid
 from datetime import datetime
 from app.config import get_settings
 from app.database import AsyncSessionLocal
@@ -137,6 +138,47 @@ DEVICE_PIN_MAP = {
     "light": 10,
     "spare": 42,
 }
+
+
+async def discover_devices_mqtt(timeout: float = 3.0) -> list:
+    if not settings.mqtt_broker:
+        return []
+
+    response_data = None
+
+    async def listen_for_response():
+        nonlocal response_data
+        tls_params = aiomqtt.TLSParameters() if settings.mqtt_port in (8883, 8884) else None
+        
+        try:
+            async with aiomqtt.Client(
+                hostname=settings.mqtt_broker,
+                port=settings.mqtt_port,
+                username=settings.mqtt_user or None,
+                password=settings.mqtt_pass or None,
+                tls_params=tls_params,
+                identifier=f"artemis-backend-discovery-{uuid.uuid4().hex[:8]}"
+            ) as client:
+                await client.subscribe("artemis/esp32/discovery/response")
+                await client.publish("artemis/esp32/discovery/request", payload=b"{}")
+                
+                async for message in client.messages:
+                    if message.topic.matches("artemis/esp32/discovery/response"):
+                        payload = message.payload.decode()
+                        try:
+                            response_data = json.loads(payload)
+                        except json.JSONDecodeError:
+                            pass
+                        return # stop after first response
+        except Exception as e:
+            print(f"MQTT Discovery Error: {e}")
+
+    try:
+        await asyncio.wait_for(listen_for_response(), timeout=timeout)
+    except asyncio.TimeoutError:
+        print("MQTT discovery timed out.")
+
+    return response_data if isinstance(response_data, list) else []
 
 
 async def send_command(device_name: str, action: str, value: str | int | float | bool | dict | None = None) -> dict:
