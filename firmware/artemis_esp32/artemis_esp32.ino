@@ -28,6 +28,8 @@
 #include <HTTPClient.h>
 #include <WebServer.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <PubSubClient.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -112,6 +114,9 @@ const int NUM_DEVICES = sizeof(DEVICES) / sizeof(DEVICES[0]);
 WebServer server(80);
 DHT dht(DHT_PIN, DHT_TYPE);
 DeviceState deviceStates[NUM_DEVICES];
+
+WiFiClientSecure secureClient;
+PubSubClient mqttClient(secureClient);
 
 float lastTemperature = 0.0;
 float lastHumidity = 0.0;
@@ -479,6 +484,78 @@ void applyPayloadValue(int index, const char *key, JsonVariantConst value) {
 
   if (strcmp(key, "armed") == 0 && isType(index, "security")) {
     deviceStates[index].armed = jsonToBool(value, deviceStates[index].armed);
+  }
+}
+
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  Serial.printf("[Artemis] MQTT message arrived on topic: %s\n", topic);
+  
+  // We expect JSON payload on artemis/esp32/commands
+  JsonDocument doc;
+  DeserializationError err = deserializeJson(doc, payload, length);
+  if (err) {
+    Serial.println("[Artemis] MQTT Payload parse failed");
+    return;
+  }
+  
+  String cmdId = doc["command_id"] | "";
+  int pin = doc["pin"] | -1;
+  String action = doc["action"] | "";
+  action.toLowerCase();
+  
+  int index = findDeviceByPin(pin);
+  String resultStatus = "failed";
+  String resultError = "";
+  
+  if (index < 0) {
+    resultError = "Invalid Artemis logical pin";
+  } else {
+    if (action == "on" || action == "activate") {
+      deviceStates[index].isOn = true;
+    } else if (action == "off" || action == "deactivate") {
+      deviceStates[index].isOn = false;
+    }
+
+    JsonObjectConst pLoad = doc["payload"].as<JsonObjectConst>();
+    if (!pLoad.isNull()) {
+      applyPayloadObject(index, pLoad);
+    } else {
+      JsonVariantConst value = doc["value"];
+      if (!value.isNull()) {
+        applyScalarValue(index, action, value);
+      }
+    }
+
+    syncPhysicalRelay(index);
+    resultStatus = "success";
+  }
+  
+  if (cmdId.length() > 0) {
+    JsonDocument resDoc;
+    resDoc["command_id"] = cmdId;
+    resDoc["status"] = resultStatus;
+    if (resultError.length() > 0) {
+      resDoc["error"] = resultError;
+    }
+    
+    String resPayload;
+    serializeJson(resDoc, resPayload);
+    mqttClient.publish("artemis/esp32/results", resPayload.c_str());
+  }
+}
+
+void reconnectMqtt() {
+  if (!mqttClient.connected()) {
+    Serial.print("[Artemis] Attempting MQTT connection...");
+    
+    if (mqttClient.connect(ARTEMIS_MQTT_CLIENT_ID, ARTEMIS_MQTT_USER, ARTEMIS_MQTT_PASS)) {
+      Serial.println("connected");
+      mqttClient.subscribe("artemis/esp32/commands");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(mqttClient.state());
+      Serial.println(" try again in 5 seconds");
+    }
   }
 }
 
@@ -879,6 +956,13 @@ void setup() {
     MDNS.addService("http", "tcp", 80);
   }
 
+#if ARTEMIS_TLS_INSECURE
+  secureClient.setInsecure();
+#endif
+
+  mqttClient.setServer(ARTEMIS_MQTT_BROKER, ARTEMIS_MQTT_PORT);
+  mqttClient.setCallback(mqttCallback);
+
   const char *headerKeys[] = {"Authorization"};
   server.collectHeaders(headerKeys, 1);
 
@@ -924,4 +1008,16 @@ void loop() {
   server.handleClient();
   readSensors();
   pollBackendForCommands();
+  
+  if (WiFi.status() == WL_CONNECTED) {
+    if (!mqttClient.connected()) {
+      static unsigned long lastMqttReconnect = 0;
+      if (millis() - lastMqttReconnect > 5000) {
+        lastMqttReconnect = millis();
+        reconnectMqtt();
+      }
+    } else {
+      mqttClient.loop();
+    }
+  }
 }

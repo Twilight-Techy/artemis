@@ -35,6 +35,12 @@ class Settings(BaseSettings):
     esp32_base_url: str = ""
     esp32_auth_token: str = ""
 
+    # ── MQTT ──
+    mqtt_broker: str = ""
+    mqtt_port: int = 8883
+    mqtt_user: str = ""
+    mqtt_pass: str = ""
+
     @property
     def cors_origins(self) -> list[str]:
         return [o.strip() for o in self.allowed_origins.split(",")]
