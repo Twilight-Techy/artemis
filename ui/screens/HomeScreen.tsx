@@ -56,6 +56,8 @@ export default function HomeScreen() {
   const refreshAvatarRef = useRef<(() => Promise<void>) | null>(null);
   const { setPendingAction, setShowMCPModal } = useMCP();
   const [orbState, setOrbState] = useState<OrbState>('idle');
+  const [isRecording, setIsRecording] = useState(false);
+  const [isRecordingPaused, setIsRecordingPaused] = useState(false);
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const isRecordingRef = useRef(false);
 
@@ -100,12 +102,14 @@ export default function HomeScreen() {
     setIsRefreshingDashboard(false);
   }, []);
 
-  const handleMicPressIn = async () => {
+  const handleStartRecording = async () => {
     try {
       setOrbState('listening');
       const status = await AudioModule.requestRecordingPermissionsAsync();
       if (status.granted) {
         await audioRecorder.record();
+        setIsRecording(true);
+        setIsRecordingPaused(false);
         isRecordingRef.current = true;
       } else {
         console.warn('Microphone permission denied.');
@@ -117,14 +121,28 @@ export default function HomeScreen() {
     }
   };
 
-  const handleMicPressOut = async () => {
-    // Guard: only stop if recording actually started (i.e. permission was granted)
-    if (!isRecordingRef.current) {
+  const handlePauseRecording = () => {
+    if (isRecordingRef.current && !isRecordingPaused) {
+      audioRecorder.pause();
+      setIsRecordingPaused(true);
       setOrbState('idle');
-      return;
     }
+  };
+
+  const handleResumeRecording = () => {
+    if (isRecordingRef.current && isRecordingPaused) {
+      audioRecorder.record();
+      setIsRecordingPaused(false);
+      setOrbState('listening');
+    }
+  };
+
+  const handleStopAndSendRecording = async () => {
+    if (!isRecordingRef.current) return;
 
     setOrbState('processing');
+    setIsRecording(false);
+    setIsRecordingPaused(false);
     isRecordingRef.current = false;
 
     try {
@@ -431,9 +449,12 @@ export default function HomeScreen() {
             <CommandBar 
               onSend={handleSendMessage} 
               isSending={isSending} 
-              isListening={orbState === 'listening'}
-              onMicPressIn={handleMicPressIn}
-              onMicPressOut={handleMicPressOut}
+              onStartRecording={handleStartRecording}
+              onPauseRecording={handlePauseRecording}
+              onResumeRecording={handleResumeRecording}
+              onStopAndSendRecording={handleStopAndSendRecording}
+              isRecording={isRecording}
+              isRecordingPaused={isRecordingPaused}
             />
           </View>
         </View>
