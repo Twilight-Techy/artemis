@@ -263,6 +263,7 @@ async def chat_endpoint(
                     triggered_by="mcp",
                     generate_summary=(idx == len(actions_list) - 1), # Only ask LLM to summarize on the last one
                     original_message=body.message,
+                    history=history,
                 )
                 
                 # If we're not generating a summary for this step, just append a basic success msg
@@ -333,6 +334,9 @@ async def approve_action(
     combined_responses = []
     final_status = "success"
 
+    # Fetch history for context
+    history = await context_engine.get_recent_history(db, current_user.id, limit=5)
+    
     for idx, action in enumerate(actions_to_run):
         result = await exec_service.run_tool(
             db=db,
@@ -342,6 +346,7 @@ async def approve_action(
             triggered_by="mcp",
             generate_summary=(idx == len(actions_to_run) - 1), # Only summarize on the last one
             original_message=args.get("_user_message", f"{log.action_type} {log.target_name}"),
+            history=history,
         )
         
         if not result.get("summary"):

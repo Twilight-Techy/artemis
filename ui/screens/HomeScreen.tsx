@@ -13,6 +13,8 @@ import {
   Platform,
   Dimensions,
   DeviceEventEmitter,
+  Alert,
+  Modal,
 } from 'react-native';
 import { useAudioRecorder, AudioModule, RecordingPresets } from 'expo-audio';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,6 +32,7 @@ import ChatBubble, { ChatMessage } from '../components/chat/ChatBubble';
 import TypingIndicator from '../components/chat/TypingIndicator';
 import { ArtemisPullLoader } from '../components/ArtemisPullLoader';
 import ConfirmModal from '../components/ConfirmModal';
+import { useArtemisAlert } from '../components/ArtemisAlert';
 import { useNetwork } from '../contexts/NetworkContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { artemisApi } from '../api/artemisClient';
@@ -45,6 +48,7 @@ export default function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isOffline } = useNetwork();
   const { displayName } = useProfile();
+  const artemisAlert = useArtemisAlert();
   const [mode, setMode] = useState<HomeMode>('dashboard');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showClearModal, setShowClearModal] = useState(false);
@@ -58,6 +62,8 @@ export default function HomeScreen() {
   const [orbState, setOrbState] = useState<OrbState>('idle');
   const [isRecording, setIsRecording] = useState(false);
   const [isRecordingPaused, setIsRecordingPaused] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [showChatMenu, setShowChatMenu] = useState(false);
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const isRecordingRef = useRef(false);
 
@@ -90,6 +96,15 @@ export default function HomeScreen() {
     return () => sub.remove();
   }, [loadChatHistory]);
 
+  // Auto-scroll to bottom when new messages arrive or indicators show
+  useEffect(() => {
+    if (mode === 'chat' && (messages.length > 0 || isSending || isTranscribing)) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [messages, isSending, isTranscribing, mode]);
+
   const handleChatRefresh = useCallback(async () => {
     setIsRefreshingChat(true);
     await loadChatHistory();
@@ -107,7 +122,8 @@ export default function HomeScreen() {
       setOrbState('listening');
       const status = await AudioModule.requestRecordingPermissionsAsync();
       if (status.granted) {
-        await audioRecorder.record();
+        await audioRecorder.prepareToRecordAsync(RecordingPresets.HIGH_QUALITY);
+        audioRecorder.record();
         setIsRecording(true);
         setIsRecordingPaused(false);
         isRecordingRef.current = true;
@@ -144,24 +160,63 @@ export default function HomeScreen() {
     setIsRecording(false);
     setIsRecordingPaused(false);
     isRecordingRef.current = false;
+    
+    // Switch to chat mode and show typing indicator for user
+    setMode('chat');
+    setIsTranscribing(true);
 
     try {
       await audioRecorder.stop();
       const uri = audioRecorder.uri;
 
       if (uri) {
-        const { transcript } = await artemisApi.transcribeAudio(uri);
+        const response = await artemisApi.transcribeAudio(uri);
+        // It could return { transcript: '...' } or { text: '...' } depending on backend
+        const transcript = response.transcript || response.text || '';
+        setIsTranscribing(false);
         if (transcript) {
           handleSendMessage(transcript);
         } else {
+          artemisAlert.show({
+            title: 'Transcription Failed',
+            message: 'No transcript was returned from the server.',
+            variant: 'error',
+          });
           setOrbState('idle');
         }
       } else {
+        artemisAlert.show({
+          title: 'Recording Failed',
+          message: 'No audio URI was found. The recording may have failed to start or save.',
+          variant: 'error',
+        });
+        setIsTranscribing(false);
         setOrbState('idle');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to stop recording or transcribe', err);
+      artemisAlert.show({
+        title: 'Error',
+        message: `Transcription failed: ${err.message || err}`,
+        variant: 'error',
+      });
+      setIsTranscribing(false);
       setOrbState('idle');
+    }
+  };
+
+  const handleCancelRecording = async () => {
+    if (!isRecordingRef.current) return;
+
+    setIsRecording(false);
+    setIsRecordingPaused(false);
+    isRecordingRef.current = false;
+    setOrbState('idle');
+
+    try {
+      await audioRecorder.stop();
+    } catch (err) {
+      console.error('Failed to cancel recording', err);
     }
   };
 
@@ -213,13 +268,27 @@ export default function HomeScreen() {
 
   const keyboardShift = useRef(new Animated.Value(0)).current;
 
+  const dimOpacity = keyboardShift.interpolate({
+    inputRange: [-150, 0],
+    outputRange: [0.1, 1],
+    extrapolate: 'clamp',
+  });
+
+  const modeRef = useRef(mode);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
+
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const showSub = Keyboard.addListener(showEvent, (e) => {
+      const currentPadding = modeRef.current === 'dashboard' 
+        ? Math.max(insets.bottom + 100, 120) 
+        : Math.max(insets.bottom + 74, 90);
+      const shift = e.endCoordinates.height - currentPadding + 56;
+      
       Animated.timing(keyboardShift, {
-        toValue: -e.endCoordinates.height,
+        toValue: shift > 0 ? -shift : 0,
         duration: e.duration || 250,
         easing: Easing.out(Easing.ease),
         useNativeDriver: true,
@@ -239,7 +308,7 @@ export default function HomeScreen() {
       showSub.remove();
       hideSub.remove();
     };
-  }, [keyboardShift]);
+  }, [keyboardShift, insets.bottom]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -268,9 +337,7 @@ export default function HomeScreen() {
       {/* ═══ Top App Bar ═══ */}
       <TopNavBar onRefreshReady={(fn) => { refreshAvatarRef.current = fn; }} />
 
-      <Animated.View
-        style={[styles.keyboardAvoidingContainer, { transform: [{ translateY: keyboardShift }] }]}
-      >
+      <View style={styles.keyboardAvoidingContainer}>
         {/* ═══ Orb Section (always visible) ═══ */}
         <View style={styles.orbSection}>
           {isOffline && (
@@ -279,14 +346,15 @@ export default function HomeScreen() {
               <Text style={styles.offlineText}>OFFLINE: LOCAL PERSISTENCE MODE</Text>
             </View>
           )}
-          <View style={styles.atmosphericGlow} />
-          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+          <Animated.View style={{ opacity: dimOpacity, alignItems: 'center', justifyContent: 'center', position: 'absolute' }} pointerEvents="none">
+            <View style={styles.atmosphericGlow} />
             <OrbEntity state={orbState} />
-          </View>
+          </Animated.View>
         </View>
 
         {/* ═══ Mode Toggle ═══ */}
-        <View style={styles.toggleBar}>
+        <Animated.View style={{ flex: 1, transform: [{ translateY: keyboardShift }], zIndex: 100 }}>
+          <View style={[styles.toggleBar, { zIndex: 100 }]}>
           <View style={styles.togglePill}>
             <TouchableOpacity
               activeOpacity={0.8}
@@ -331,15 +399,39 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Clear chat button — only visible in Chat mode */}
+          {/* 3-Dots menu for chat options */}
           {mode === 'chat' && messages.length > 0 && (
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={handleClearChat}
-              style={styles.clearChatBtn}
-            >
-              <Ionicons name="trash-outline" size={16} color={Colors.error} />
-            </TouchableOpacity>
+            <View style={{ position: 'relative', zIndex: 100 }}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setShowChatMenu(!showChatMenu)}
+                style={styles.menuBtn}
+              >
+                <Ionicons name="ellipsis-vertical" size={20} color={Colors.onSurfaceVariant} />
+              </TouchableOpacity>
+              
+              {showChatMenu && (
+                <>
+                  <TouchableOpacity 
+                    style={{ position: 'absolute', top: -2000, left: -2000, right: -2000, bottom: -2000, zIndex: 90 }} 
+                    onPress={() => setShowChatMenu(false)} 
+                    activeOpacity={1}
+                  />
+                  <View style={[styles.dropdownMenu, { top: 44, right: 0, zIndex: 100 }]}>
+                    <TouchableOpacity 
+                      style={styles.dropdownItem} 
+                      onPress={() => { 
+                        setShowChatMenu(false); 
+                        handleClearChat(); 
+                      }}
+                    >
+                      <Ionicons name="trash-outline" size={18} color={Colors.error} />
+                      <Text style={styles.dropdownText}>Clear Conversation</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </View>
           )}
         </View>
 
@@ -397,10 +489,12 @@ export default function HomeScreen() {
           ) : (
             <FlatList
               ref={flatListRef}
+              style={{ flex: 1 }}
               data={messages}
+              extraData={{ isTranscribing, isSending }}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => <ChatBubble message={item} />}
-              contentContainerStyle={[styles.chatContent, messages.length === 0 && !isSending && { flex: 1, justifyContent: 'center' }]}
+              contentContainerStyle={[styles.chatContent, messages.length === 0 && !isSending && !isTranscribing && { flex: 1, justifyContent: 'center' }]}
               showsVerticalScrollIndicator={false}
               onContentSizeChange={() =>
                 flatListRef.current?.scrollToEnd({ animated: true })
@@ -422,10 +516,13 @@ export default function HomeScreen() {
                 ) : null
               }
               ListFooterComponent={
-                isSending ? <TypingIndicator /> : null
+                <View>
+                  {isTranscribing && <TypingIndicator isUser />}
+                  {isSending && <TypingIndicator />}
+                </View>
               }
               ListEmptyComponent={
-                !isRefreshingChat && !isSending ? (
+                !isRefreshingChat && !isSending && !isTranscribing ? (
                   <View style={{ alignItems: 'center', paddingHorizontal: 32 }}>
                     <Ionicons name="chatbubble-ellipses-outline" size={48} color="rgba(116, 177, 255, 0.3)" />
                     <Text style={{ fontFamily: Typography.families.headline, fontSize: Typography.sizes.headlineSm, color: Colors.onSurfaceVariant, marginTop: 16, textAlign: 'center' }}>
@@ -442,9 +539,9 @@ export default function HomeScreen() {
 
           {/* ═══ Floating Command Input Bar ═══ */}
           <View style={{ 
-            paddingHorizontal: 24, 
-            paddingTop: 16, 
-            paddingBottom: mode === 'dashboard' ? Math.max(insets.bottom + 90, 110) : Math.max(insets.bottom + 64, 80) 
+            paddingHorizontal: 4, 
+            paddingTop: 8, 
+            paddingBottom: mode === 'dashboard' ? Math.max(insets.bottom + 100, 120) : Math.max(insets.bottom + 74, 90) 
           }}>
             <CommandBar 
               onSend={handleSendMessage} 
@@ -453,12 +550,14 @@ export default function HomeScreen() {
               onPauseRecording={handlePauseRecording}
               onResumeRecording={handleResumeRecording}
               onStopAndSendRecording={handleStopAndSendRecording}
+              onCancelRecording={handleCancelRecording}
               isRecording={isRecording}
               isRecordingPaused={isRecordingPaused}
             />
           </View>
         </View>
-      </Animated.View>
+        </Animated.View>
+      </View>
 
       {/* ═══ Clear Chat Confirmation Modal ═══ */}
       <ConfirmModal
@@ -473,6 +572,8 @@ export default function HomeScreen() {
         onConfirm={confirmClearChat}
         onCancel={() => setShowClearModal(false)}
       />
+
+      {artemisAlert.alertNode}
     </View>
   );
 }
@@ -528,7 +629,7 @@ const styles = StyleSheet.create({
   // ── Mode Toggle ──
   toggleBar: {
     paddingHorizontal: Spacing['2xl'],
-    paddingBottom: Spacing.md,
+    paddingBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -572,15 +673,47 @@ const styles = StyleSheet.create({
   toggleTextActive: {
     color: Colors.primary,
   },
-  clearChatBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: 'rgba(255, 113, 108, 0.08)',
+  menuBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 113, 108, 0.18)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    right: Spacing['2xl'],
+    backgroundColor: Colors.surfaceContainerHighest,
+    borderRadius: Radii.lg,
+    padding: Spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    minWidth: 180,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: Radii.md,
+    gap: Spacing.sm,
+  },
+  dropdownText: {
+    fontFamily: Typography.families.body,
+    fontSize: Typography.sizes.bodyMd,
+    color: Colors.error,
   },
 
   // ── Middle Content (flex: 1 fills remaining space) ──
@@ -628,8 +761,6 @@ const styles = StyleSheet.create({
 
   // ── Chat content ──
   chatContent: {
-    paddingBottom: Spacing.md,
-    paddingTop: Spacing.sm,
   },
   chatRoot: {
     flex: 1,

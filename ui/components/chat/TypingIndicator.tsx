@@ -5,7 +5,7 @@ import { Colors, Radii } from '../../constants/theme';
 const DOT_SIZE = 7;
 const DOT_SPACING = 5;
 
-function Dot({ delay }: { delay: number }) {
+function Dot({ delay, isUser }: { delay: number, isUser?: boolean }) {
   const opacity = useRef(new Animated.Value(0.25)).current;
   const scale = useRef(new Animated.Value(0.8)).current;
 
@@ -49,19 +49,20 @@ function Dot({ delay }: { delay: number }) {
     <Animated.View
       style={[
         styles.dot,
+        isUser && styles.userDot,
         { opacity, transform: [{ scale }] },
       ]}
     />
   );
 }
 
-export default function TypingIndicator() {
+export default function TypingIndicator({ isUser }: { isUser?: boolean }) {
   return (
-    <View style={styles.wrapper}>
-      <View style={styles.bubble}>
-        <Dot delay={0} />
-        <Dot delay={180} />
-        <Dot delay={360} />
+    <View style={[styles.wrapper, isUser && styles.userWrapper]}>
+      <View style={[styles.bubble, isUser && styles.userBubble]}>
+        <Dot delay={0} isUser={isUser} />
+        <Dot delay={180} isUser={isUser} />
+        <Dot delay={360} isUser={isUser} />
       </View>
     </View>
   );
@@ -73,6 +74,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 6,
   },
+  userWrapper: {
+    alignSelf: 'flex-end',
+  },
   bubble: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -82,14 +86,22 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 4,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    // Ghost border per design system
     borderWidth: 1,
     borderColor: 'rgba(116, 177, 255, 0.12)',
+  },
+  userBubble: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopLeftRadius: Radii.lg,
+    borderTopRightRadius: 4,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   dot: {
     width: DOT_SIZE,
     height: DOT_SIZE,
     borderRadius: DOT_SIZE / 2,
     backgroundColor: Colors.primary,
+  },
+  userDot: {
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
   },
 });

@@ -178,6 +178,7 @@ async def summarise_tool_result(
     tool_args: dict,
     tool_result: dict,
     succeeded: bool,
+    history: list[dict] = None,
 ) -> str:
     """
     Completes the Gemini agentic loop after a tool has been executed.
@@ -195,31 +196,50 @@ async def summarise_tool_result(
     if not client:
         return "Done!" if succeeded else "Something went wrong — please try again."
 
+    contents = []
+    
+    if history:
+        for msg in history:
+            contents.append(
+                types.Content(
+                    role=msg["role"], 
+                    parts=[types.Part.from_text(text=p["text"]) for p in msg["parts"]]
+                )
+            )
+
     # Turn 1: user
-    user_turn = types.Content(
+    contents.append(types.Content(
         role="user",
         parts=[types.Part.from_text(text=user_message)]
-    )
+    ))
 
     # Turn 2: model's original function call decision
-    model_turn = types.Content(
+    contents.append(types.Content(
         role="model",
         parts=[types.Part.from_function_call(name=tool_name, args=tool_args)]
-    )
+    ))
 
     # Turn 3: the actual tool result fed back in
-    tool_turn = types.Content(
-        role="tool",
+    contents.append(types.Content(
+        role="user", # Function responses must come from user/tool role
         parts=[
             types.Part.from_function_response(
                 name=tool_name,
                 response={"result": tool_result, "success": succeeded}
             )
         ]
-    )
+    ))
+
+    SUMMARY_SYSTEM_PROMPT = """
+You are Artemis, an AI-powered smart home virtual assistant.
+The user requested an action, you decided to use a tool, and the tool has now successfully executed (or failed).
+Your job is to provide a very short, friendly, and conversational confirmation to the user that the action was completed.
+Do not explain how you did it. Do not ask any questions. Just confirm the execution in a natural way.
+Examples: "All set! The lights are off.", "I've turned on the studio fan for you."
+"""
 
     config = types.GenerateContentConfig(
-        system_instruction=SYSTEM_PROMPT,
+        system_instruction=SUMMARY_SYSTEM_PROMPT,
         temperature=0.5
     )
 
@@ -227,7 +247,7 @@ async def summarise_tool_result(
         response = await asyncio.to_thread(
             client.models.generate_content,
             model=settings.gemini_model,
-            contents=[user_turn, model_turn, tool_turn],
+            contents=contents,
             config=config
         )
         return response.text.strip() if response.text else ("Done!" if succeeded else "That didn't work — let me know if you'd like to try again.")

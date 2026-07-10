@@ -54,6 +54,7 @@ async def run_tool(
     generate_summary: bool = False,
     original_message: str = "",
     event_reason: str = "",
+    history: list[dict] = None,
 ) -> dict:
     """
     Execute a tool call (control_device or execute_function) and persist an
@@ -66,6 +67,7 @@ async def run_tool(
     hw_response: dict = {}
     overall_status = "failed"
     log_id = str(uuid.uuid4())
+    human_label = "Pending"
 
     try:
         if action_type == "control_device":
@@ -97,6 +99,7 @@ async def run_tool(
                         tool_args=args,
                         tool_result=hw_response,
                         succeeded=(overall_status == "success"),
+                        history=history,
                     )
                     response_context["reasoning"] = gemini_summary
                     human_label = gemini_summary
@@ -174,6 +177,7 @@ async def run_tool(
         logger.exception("Executor error running %s on %s", action_type, target_name)
         hw_response = {"error": str(e)}
         overall_status = "failed"
+        human_label = _human_label(action_type, target_name, args, overall_status)
         log = ExecutionLog(
             id=log_id,
             action_type=action_type,
@@ -186,8 +190,6 @@ async def run_tool(
         )
         db.add(log)
         await db.commit()
-
-    human_label = _human_label(action_type, target_name, args, overall_status)
 
     return {
         "log_id": log_id,

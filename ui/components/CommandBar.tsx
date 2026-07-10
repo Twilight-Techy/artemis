@@ -11,6 +11,7 @@ interface CommandBarProps {
   onPauseRecording?: () => void;
   onResumeRecording?: () => void;
   onStopAndSendRecording?: () => void;
+  onCancelRecording?: () => void;
   isRecording?: boolean;
   isRecordingPaused?: boolean;
 }
@@ -22,6 +23,7 @@ export default function CommandBar({
   onPauseRecording,
   onResumeRecording,
   onStopAndSendRecording,
+  onCancelRecording,
   isRecording,
   isRecordingPaused
 }: CommandBarProps) {
@@ -31,7 +33,14 @@ export default function CommandBar({
     return (
       <View style={styles.container}>
         <View style={styles.recordingContainer}>
-          <View style={styles.recordingIndicator}>
+          <Pressable
+            style={({ pressed }) => [styles.iconButton, { marginRight: 12, backgroundColor: 'rgba(255, 113, 108, 0.1)' }, pressed && { opacity: 0.7 }]}
+            onPress={onCancelRecording}
+          >
+            <Ionicons name="trash-outline" size={20} color={Colors.error} />
+          </Pressable>
+
+          <View style={[styles.recordingIndicator, { flex: 1 }]}>
             <View style={[styles.redDot, isRecordingPaused && { backgroundColor: Colors.onSurfaceVariant }]} />
             <Text style={styles.recordingText}>
               {isRecordingPaused ? 'Paused' : 'Recording...'}
