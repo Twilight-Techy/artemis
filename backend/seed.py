@@ -157,11 +157,11 @@ async def seed_database():
             Function(
                 id="func-entertainment",
                 name="Entertainment Mode",
-                description="Turns off the Ceiling Light, activates the ambient Desk Lamp, and turns on the Smart TV Plug.",
-                function_type="hardware",
-                method="GET",
-                url=None,
-                parameters=[],
+                description="Turns off the Ceiling Light, activates the ambient Desk Lamp, turns on the Smart TV Plug, and triggers the Plex media server API to prepare for streaming.",
+                function_type="hybrid",
+                method="POST",
+                url="https://api.artemis.local/plex/movie-mode",
+                parameters=["userId"],
                 triggers=["movie time", "turn on the tv", "entertainment mode"],
                 conditions=["someone is home"],
                 owner_id="test-user-id"
