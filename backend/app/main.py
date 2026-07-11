@@ -1,3 +1,5 @@
+import httpx
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +21,19 @@ from app.routes import (
 settings = get_settings()
 
 
+async def keep_alive_ping():
+    """Ping self every 14 minutes to prevent Render from spinning down the instance."""
+    url = "https://artemis-471k.onrender.com/health"
+    while True:
+        await asyncio.sleep(14 * 60)  # 14 minutes
+        try:
+            async with httpx.AsyncClient() as client:
+                await client.get(url)
+                print(f"Keep-alive ping sent to {url}")
+        except Exception as e:
+            print(f"Keep-alive ping failed: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Create tables on startup (dev convenience). Use Alembic for production migrations."""
@@ -28,10 +43,12 @@ async def lifespan(app: FastAPI):
     import asyncio
     from app.services.time_scheduler import run_time_scheduler
     scheduler_task = asyncio.create_task(run_time_scheduler())
+    ping_task = asyncio.create_task(keep_alive_ping())
     
     yield
     
     scheduler_task.cancel()
+    ping_task.cancel()
     await engine.dispose()
 
 
