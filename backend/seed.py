@@ -44,96 +44,55 @@ async def seed_database():
             # ── Living Room ──────────────────────────────────
             Device(
                 id="dev-lr-ceiling", name="Ceiling Light",
-                device_type=DeviceType.LIGHT, room_id="room-living", owner_id="test-user-id", pin=10,
-                capabilities={"power": True, "brightness": True, "color_temp": True},
-                state={"is_on": True, "brightness": 80, "color_temp": 4000}
+                device_type=DeviceType.LIGHT, room_id="room-living", owner_id="test-user-id", pin=None, endpoint="bulb1",
+                capabilities={"power": True, "brightness": False, "color_temp": False},
+                state={"is_on": True}
             ),
             Device(
                 id="dev-lr-ledstrip", name="Ambient LED Strip",
-                device_type=DeviceType.LIGHT, room_id="room-living", owner_id="test-user-id", pin=11,
-                capabilities={"power": True, "brightness": True, "rgb_color": True},
-                state={"is_on": True, "brightness": 60, "color": "#74b1ff"}
+                device_type=DeviceType.LIGHT, room_id="room-living", owner_id="test-user-id", pin=None, endpoint="bulb2",
+                capabilities={"power": True, "brightness": False, "rgb_color": False},
+                state={"is_on": True}
             ),
             Device(
-                id="dev-lr-ac", name="AC Unit",
-                device_type=DeviceType.CLIMATE, room_id="room-living", owner_id="test-user-id", pin=12,
-                capabilities={"power": True, "temperature": True, "modes": ["cool", "heat", "auto"]},
-                state={"is_on": True, "temperature": 22, "mode": "cool"}
+                id="dev-lr-temp", name="Temperature Sensor",
+                device_type=DeviceType.SENSOR, room_id="room-living", owner_id="test-user-id", pin=None, endpoint=None,
+                capabilities={"reading_types": ["temperature"]},
+                state={"is_on": True, "reading": 25.0, "unit": "°C"}
             ),
             Device(
-                id="dev-lr-tv", name="Smart TV",
-                device_type=DeviceType.MEDIA, room_id="room-living", owner_id="test-user-id", pin=13,
-                capabilities={"power": True, "volume": True},
-                state={"is_on": False, "volume": 35}
-            ),
-            Device(
-                id="dev-lr-temp", name="Temp Sensor",
-                device_type=DeviceType.SENSOR, room_id="room-living", owner_id="test-user-id", pin=None,
-                capabilities={"reading_types": ["temperature", "humidity"]},
-                state={"is_on": True, "reading": 22.5, "unit": "°C"}
+                id="dev-lr-hum", name="Humidity Sensor",
+                device_type=DeviceType.SENSOR, room_id="room-living", owner_id="test-user-id", pin=None, endpoint=None,
+                capabilities={"reading_types": ["humidity"]},
+                state={"is_on": True, "reading": 60.0, "unit": "%"}
             ),
             Device(
                 id="dev-lr-motion", name="Motion Sensor",
-                device_type=DeviceType.SENSOR, room_id="room-living", owner_id="test-user-id", pin=None,
+                device_type=DeviceType.SENSOR, room_id="room-living", owner_id="test-user-id", pin=None, endpoint=None,
                 capabilities={"reading_types": ["motion"]},
                 state={"is_on": True, "reading": False, "unit": "boolean"}
             ),
 
             # ── Bedroom ──────────────────────────────────────
             Device(
-                id="dev-bd-lamp", name="Bedside Lamp",
-                device_type=DeviceType.LIGHT, room_id="room-bedroom", owner_id="test-user-id", pin=20,
-                capabilities={"power": True, "brightness": True, "rgb_color": True},
-                state={"is_on": False, "brightness": 40, "color": "#FF716C"}
-            ),
-            Device(
                 id="dev-bd-fan", name="Ceiling Fan",
-                device_type=DeviceType.FAN, room_id="room-bedroom", owner_id="test-user-id", pin=21,
+                device_type=DeviceType.FAN, room_id="room-bedroom", owner_id="test-user-id", pin=None, endpoint="fan_speed",
                 capabilities={"power": True, "speed_steps": 3},
-                state={"is_on": True, "speed": 2}
+                state={"is_on": True, "speed": 1}
             ),
             Device(
-                id="dev-bd-cam", name="Security Camera",
-                device_type=DeviceType.SECURITY, room_id="room-bedroom", owner_id="test-user-id", pin=22,
-                capabilities={"power": True, "motion_detection": True, "night_vision": True},
-                state={"is_on": True, "armed": True}
+                id="dev-bd-fanpwr", name="Fan Main Power",
+                device_type=DeviceType.SWITCH, room_id="room-bedroom", owner_id="test-user-id", pin=None, endpoint="socket1",
+                capabilities={"power": True},
+                state={"is_on": True}
             ),
 
             # ── Kitchen ──────────────────────────────────────
             Device(
-                id="dev-kt-light", name="Kitchen Downlights",
-                device_type=DeviceType.LIGHT, room_id="room-kitchen", owner_id="test-user-id", pin=30,
-                capabilities={
-                    "power": True,
-                    "brightness": {"mode": "steps", "count": 3, "labels": ["Low", "Med", "High"]},
-                },
-                state={"is_on": True, "brightness": 2},
-            ),
-            Device(
                 id="dev-kt-plug", name="Coffee Maker Plug",
-                device_type=DeviceType.SWITCH, room_id="room-kitchen", owner_id="test-user-id", pin=31,
+                device_type=DeviceType.SWITCH, room_id="room-kitchen", owner_id="test-user-id", pin=None, endpoint="socket2",
                 capabilities={"power": True},
                 state={"is_on": False}
-            ),
-
-            # ── Studio ───────────────────────────────────────
-            Device(
-                id="dev-st-fan", name="Studio Fan",
-                device_type=DeviceType.FAN, room_id="room-studio", owner_id="test-user-id", pin=40,
-                capabilities={"power": True, "speed": {"mode": "percentage", "min": 0, "max": 100}},
-                state={"is_on": False, "speed": 35},
-            ),
-            Device(
-                id="dev-st-led", name="Desk RGB Strip",
-                device_type=DeviceType.LIGHT, room_id="room-studio", owner_id="test-user-id", pin=41,
-                capabilities={"power": True, "brightness": True, "rgb_color": True, "color_temp": True},
-                state={"is_on": True, "brightness": 75, "color": "#b884ff"}
-            ),
-            Device(
-                id="dev-st-motion", name="Desk Motion Sensor",
-                device_type=DeviceType.SENSOR, room_id="room-studio", owner_id="test-user-id", pin=None,
-                capabilities={"reading_types": ["motion"]},
-                state={"is_on": True, "reading": True, "unit": "boolean"}
             ),
         ]
         
@@ -227,8 +186,8 @@ async def seed_database():
         # 6. Execution Logs
         execution_logs = [
             # Manual Control
-            ExecutionLog(id="log-ac-cool", action_type="device_control", target_name="AC Unit", target_id="dev-lr-ac", status="success", triggered_by="manual", user_id="test-user-id", executed_at=ts(3.7),
-                request_payload={"action": "on"}, response_payload={"description": "Set target temperature to 72F. Compressor engaged.", "device_id": "dev-lr-ac"}),
+            ExecutionLog(id="log-ac-cool", action_type="device_control", target_name="Ceiling Light", target_id="dev-lr-ceiling", status="success", triggered_by="manual", user_id="test-user-id", executed_at=ts(3.7),
+                request_payload={"action": "on"}, response_payload={"description": "Turned on the ceiling light.", "device_id": "dev-lr-ceiling"}),
             
             # MCP (AI) Control
             ExecutionLog(id="log-fan-on", action_type="device_control", target_name="Ceiling Fan", target_id="dev-bd-fan", status="success", triggered_by="mcp", user_id="test-user-id", executed_at=ts(3.9),
@@ -236,7 +195,7 @@ async def seed_database():
 
             # Automation Execution (Silent)
             ExecutionLog(id="log-auto-cool", action_type="automation_run", target_name="Auto Cooling (Silent)", target_id="auto-cool-living", status="success", triggered_by="automation", user_id="test-user-id", executed_at=ts(15),
-                request_payload={"trigger": "temperature > 28"}, response_payload={"description": "Temperature exceeded 28C threshold. AC activated automatically.", "automation_id": "auto-cool-living"}),
+                request_payload={"trigger": "temperature > 28"}, response_payload={"description": "Temperature exceeded 28C threshold. Fan activated automatically.", "automation_id": "auto-cool-living"}),
 
             # User Function Call
             ExecutionLog(id="log-goodnight", action_type="function_call", target_name="Deep Shield", target_id="func-deep-shield", status="success", triggered_by="manual", user_id="test-user-id", executed_at=ts(31),
@@ -256,22 +215,22 @@ async def seed_database():
 
             # User asks about temperature
             ChatMessage(id="msg-02", role="user", content="Hey Artemis, it's a bit warm in here. What's the temperature?", user_id="test-user-id", created_at=ts(2)),
-            ChatMessage(id="msg-03", role="assistant", content="The living room temperature sensor reads 78.2F. That's above your comfort range. Would you like me to turn on the AC and the ceiling fan?", user_id="test-user-id", created_at=ts(2.5)),
+            ChatMessage(id="msg-03", role="assistant", content="The living room temperature sensor reads 78.2F. That's above your comfort range. Would you like me to turn on the ceiling fan?", user_id="test-user-id", created_at=ts(2.5)),
 
             # User approves
             ChatMessage(id="msg-04", role="user", content="Yes, cool it down please.", user_id="test-user-id", created_at=ts(3)),
-            ChatMessage(id="msg-05", role="assistant", content="On it. I've set the AC to 72F and turned on the ceiling fan at medium speed.", user_id="test-user-id", created_at=ts(3.5)),
+            ChatMessage(id="msg-05", role="assistant", content="On it. I've turned on the ceiling fan at medium speed.", user_id="test-user-id", created_at=ts(3.5)),
             
             # System confirms execution (linked to ExecutionLog)
-            ChatMessage(id="msg-06", role="system", content="Executed: AC Unit -> turn_on", meta_info={"action_id": "log-ac-cool", "status": "success"}, user_id="test-user-id", created_at=ts(3.7)),
+            ChatMessage(id="msg-06", role="system", content="Executed: Ceiling Light -> turn_on", meta_info={"action_id": "log-ac-cool", "status": "success"}, user_id="test-user-id", created_at=ts(3.7)),
             ChatMessage(id="msg-07", role="system", content="Executed: Ceiling Fan -> set_speed (medium)", meta_info={"action_id": "log-fan-on", "status": "success"}, user_id="test-user-id", created_at=ts(3.9)),
 
             # Automation fires in background
             ChatMessage(id="msg-11", role="system", content="Auto Cooling triggered: temperature threshold exceeded.", meta_info={"action_id": "log-auto-cool", "status": "success"}, user_id="test-user-id", created_at=ts(15)),
 
             # User asks about security
-            ChatMessage(id="msg-12", role="user", content="Is the security camera armed?", user_id="test-user-id", created_at=ts(20)),
-            ChatMessage(id="msg-13", role="assistant", content="The Bedroom Security Camera is currently armed and recording. No motion events in the last 2 hours. All clear.", user_id="test-user-id", created_at=ts(20.5)),
+            ChatMessage(id="msg-12", role="user", content="Is the motion sensor active?", user_id="test-user-id", created_at=ts(20)),
+            ChatMessage(id="msg-13", role="assistant", content="The Living Room Motion Sensor is currently active. No motion events in the last 2 hours. All clear.", user_id="test-user-id", created_at=ts(20.5)),
 
             # Getting ready for bed
             ChatMessage(id="msg-14", role="user", content="It's getting late. Trigger Deep Shield.", user_id="test-user-id", created_at=ts(30)),
