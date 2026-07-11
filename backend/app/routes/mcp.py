@@ -15,6 +15,7 @@ router = APIRouter(prefix="/mcp", tags=["MCP Core"])
 
 class ChatRequest(BaseModel):
     message: str
+    current_room_id: str | None = None
 
 class ProactiveActionResponse(BaseModel):
     action_id: str
@@ -156,7 +157,7 @@ async def chat_endpoint(
     await db.commit()
 
     # 2. Gather context
-    context_str = await context_engine.gather_context(db, current_user.id)
+    context_str = await context_engine.gather_context(db, current_user.id, body.current_room_id)
     history = await context_engine.get_recent_history(db, current_user.id, limit=5)
 
     # 3. Call Gemini

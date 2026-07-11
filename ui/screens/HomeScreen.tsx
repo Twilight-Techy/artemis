@@ -38,6 +38,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { artemisApi } from '../api/artemisClient';
 import { useMCP } from '../contexts/MCPContext';
 import { useProfile } from '../contexts/ProfileContext';
+import { useLocation } from '../contexts/LocationContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -48,7 +49,9 @@ export default function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isOffline } = useNetwork();
   const { displayName } = useProfile();
+  const { currentRoomId, setCurrentRoomId, rooms } = useLocation();
   const artemisAlert = useArtemisAlert();
+  const [showRoomSelector, setShowRoomSelector] = useState(false);
   const [mode, setMode] = useState<HomeMode>('dashboard');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showClearModal, setShowClearModal] = useState(false);
@@ -236,7 +239,7 @@ export default function HomeScreen() {
     setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
-      const response = await artemisApi.chat(text);
+      const response = await artemisApi.chat(text, currentRoomId);
       const replyTimestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
       if (response.requires_approval && response.proactive_action) {
@@ -543,6 +546,34 @@ export default function HomeScreen() {
             paddingTop: 8, 
             paddingBottom: mode === 'dashboard' ? Math.max(insets.bottom + 100, 120) : Math.max(insets.bottom + 74, 90) 
           }}>
+            {/* Room Selector Chip */}
+            <View style={{ alignItems: 'center', marginBottom: 12 }}>
+              <TouchableOpacity
+                onPress={() => setShowRoomSelector(true)}
+                activeOpacity={0.7}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: 'rgba(116, 177, 255, 0.1)',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: 'rgba(116, 177, 255, 0.2)',
+                }}
+              >
+                <Ionicons name="location" size={12} color={Colors.primary} style={{ marginRight: 6 }} />
+                <Text style={{ 
+                  color: Colors.primary, 
+                  fontFamily: Typography.families.body, 
+                  fontSize: Typography.sizes.labelSm 
+                }}>
+                  {rooms.find(r => r.id === currentRoomId)?.name || 'Select Room'}
+                </Text>
+                <Ionicons name="chevron-down" size={12} color={Colors.primary} style={{ marginLeft: 4 }} />
+              </TouchableOpacity>
+            </View>
+
             <CommandBar 
               onSend={handleSendMessage} 
               isSending={isSending} 
@@ -572,6 +603,46 @@ export default function HomeScreen() {
         onConfirm={confirmClearChat}
         onCancel={() => setShowClearModal(false)}
       />
+
+      {/* ═══ Room Selector Modal ═══ */}
+      <Modal visible={showRoomSelector} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ width: '80%', backgroundColor: Colors.surfaceContainerHighest, borderRadius: 16, padding: 20 }}>
+            <Text style={{ color: Colors.onSurface, fontFamily: Typography.families.headline, fontSize: Typography.sizes.titleMd, marginBottom: 16 }}>Select Your Location</Text>
+            {rooms.length === 0 && (
+              <Text style={{ color: Colors.onSurfaceVariant, fontFamily: Typography.families.body, fontSize: Typography.sizes.bodySm, marginBottom: 16 }}>No rooms available.</Text>
+            )}
+            {rooms.map(room => (
+              <TouchableOpacity
+                key={room.id}
+                style={{
+                  paddingVertical: 12,
+                  borderBottomWidth: 1,
+                  borderBottomColor: 'rgba(255,255,255,0.05)',
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+                onPress={() => {
+                  setCurrentRoomId(room.id);
+                  setShowRoomSelector(false);
+                }}
+              >
+                <Text style={{ color: room.id === currentRoomId ? Colors.primary : Colors.onSurface, fontFamily: Typography.families.body, fontSize: Typography.sizes.bodyLg }}>
+                  {room.name}
+                </Text>
+                {room.id === currentRoomId && <Ionicons name="checkmark" size={20} color={Colors.primary} />}
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              onPress={() => setShowRoomSelector(false)}
+              style={{ marginTop: 24, alignItems: 'center' }}
+            >
+              <Text style={{ color: Colors.onSurfaceVariant, fontFamily: Typography.families.body, fontSize: Typography.sizes.bodyLg }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {artemisAlert.alertNode}
     </View>

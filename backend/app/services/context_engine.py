@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Device, SensorReading, Automation, ChatMessage
 from app.services import sensor_service
 
-async def gather_context(db: AsyncSession, user_id: str) -> str:
+async def gather_context(db: AsyncSession, user_id: str, current_room_id: str | None = None) -> str:
     """
     Gathers environment context for the AI, formatted as a readable string.
     Includes time, device states, sensor readings, and automations.
@@ -15,6 +15,14 @@ async def gather_context(db: AsyncSession, user_id: str) -> str:
         f"CURRENT TIME: {now.strftime('%Y-%m-%d %H:%M:%S UTC')}",
         f"DAY OF WEEK: {now.strftime('%A')}"
     ]
+
+    if current_room_id:
+        from app.models import Room
+        result = await db.execute(select(Room).where(Room.id == current_room_id))
+        room = result.scalar_one_or_none()
+        if room:
+            context_lines.insert(0, f"CURRENT USER LOCATION: {room.name}")
+
 
     # Gather latest sensor readings
     context_lines.append("\n--- SENSOR READINGS ---")

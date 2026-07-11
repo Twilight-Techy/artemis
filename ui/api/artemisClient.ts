@@ -67,14 +67,17 @@ export const artemisApi = {
         return await res.json();
     },
 
-    chat: async (message: string) => {
+    chat: async (message: string, current_room_id?: string | null) => {
+        const body: any = { message };
+        if (current_room_id) body.current_room_id = current_room_id;
+
         const response = await artemisApi._handleResponse(await fetch(`${BACKEND_URL}/mcp/chat`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 ...artemisApi.getAuthHeader(),
             },
-            body: JSON.stringify({ message })
+            body: JSON.stringify(body)
         }));
 
         if (!response.ok) {

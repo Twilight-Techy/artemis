@@ -26,6 +26,7 @@ import { ProfileProvider } from './contexts/ProfileContext';
 import { HistoryProvider } from './contexts/HistoryContext';
 import { MCPProvider } from './contexts/MCPContext';
 import { useMCP } from './contexts/MCPContext';
+import { LocationProvider } from './contexts/LocationContext';
 
 /**
  * Inner component that lives inside MCPProvider so it can access useMCP().
@@ -111,13 +112,15 @@ export default function App() {
         <AuthProvider>
           <ProfileProvider>
             <HistoryProvider>
-              <MCPProvider>
-                <NotificationBridge />
-                <NavigationContainer theme={MyTheme}>
-                  <AppNavigator />
-                  <StatusBar style="light" />
-                </NavigationContainer>
-              </MCPProvider>
+              <LocationProvider>
+                <MCPProvider>
+                  <NotificationBridge />
+                  <NavigationContainer theme={MyTheme}>
+                    <AppNavigator />
+                    <StatusBar style="light" />
+                  </NavigationContainer>
+                </MCPProvider>
+              </LocationProvider>
             </HistoryProvider>
           </ProfileProvider>
         </AuthProvider>
