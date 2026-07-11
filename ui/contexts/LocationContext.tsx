@@ -33,12 +33,13 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const fetchedRooms = await artemisApi.getRooms();
-      setRooms(fetchedRooms);
+      const safeRooms = Array.isArray(fetchedRooms) ? fetchedRooms : [];
+      setRooms(safeRooms);
       
       // Auto-select the first room if nothing is selected and rooms exist
-      if (fetchedRooms.length > 0 && !currentRoomId) {
-        setCurrentRoomId(fetchedRooms[0].id);
-      } else if (fetchedRooms.length === 0) {
+      if (safeRooms.length > 0 && !currentRoomId) {
+        setCurrentRoomId(safeRooms[0].id);
+      } else if (safeRooms.length === 0) {
         setCurrentRoomId(null);
       }
     } catch (error) {

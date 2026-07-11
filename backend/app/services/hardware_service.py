@@ -102,83 +102,45 @@ async def send_command(device_name: str, action: str, value: str | int | float |
             speed = 3
             if value is not None:
                 try:
-                    
-                    async with AsyncSessionLocal() as db:
-                        db_cmd = await db.get(BridgeCommand, queued.id)
-                        if db_cmd:
-                            db_cmd.status = res.get("status", "completed")
-                            db_cmd.result_payload = res
-                            await db.commit()
-                            
-                    return {
-                        "result": res.get("status", "unknown"),
-                        "command_id": cmd_id_str,
-                        "pin": pin,
-                        "target_name": device_name,
-                        "error": res.get("error")
-                    }
-                except asyncio.TimeoutError:
-                    return {
-                        "result": "queued",
-                        "queued": True,
-                        "command_id": cmd_id_str,
-                        "pin": pin,
-                        "target_name": device_name,
-                        "warning": "MQTT timeout waiting for response, command may have executed."
-                    }
-        except Exception as e:
-            return {
-                "result": "queued",
-                "queued": True,
-                "command_id": cmd_id_str,
-                "pin": pin,
-                "target_name": device_name,
-                "error": f"MQTT publish failed: {str(e)}"
-            }
+                    speed = int(value)
+                except (ValueError, TypeError):
+                    pass
+            cmd_payload["fan_speed"] = speed
+    else:
+        cmd_payload[target_key] = True if normalized_action in ("on", "true", "1", "activate") else False
 
-    if not settings.esp32_base_url:
-        async with AsyncSessionLocal() as db:
-            queued = BridgeCommand(
-                target_name=device_name,
-                pin=pin,
-                action=action,
-                value=None if isinstance(value, dict) or value is None else str(value),
-                payload=payload,
-                status="pending",
-            )
-            db.add(queued)
-            await db.commit()
-            await db.refresh(queued)
-
+    if not settings.mqtt_broker:
         return {
-            "result": "queued",
-            "queued": True,
-            "command_id": queued.id,
-            "pin": pin,
-            "target_name": device_name,
+            "result": "simulated",
+            "device": device_name,
+            "payload": cmd_payload,
+            "warning": "MQTT Broker not configured, action simulated."
         }
 
     try:
-        async with esp32_client() as client:
-            response = await client.post(
-                f"/api/relay/{pin}",
-                json=command_body,
-            )
-        response.raise_for_status()
-        return response.json()
-    except httpx.ConnectError:
-        raise HardwareError("ESP32 unreachable — cannot send command")
-    except httpx.TimeoutException:
-        raise HardwareError("ESP32 command timed out — device may not have responded")
-    except httpx.HTTPStatusError as e:
-        raise HardwareError(f"ESP32 relay error: {e.response.text}", e.response.status_code)
-
+        tls_params = aiomqtt.TLSParameters() if settings.mqtt_port in (8883, 8884) else None
+        async with aiomqtt.Client(
+            hostname=settings.mqtt_broker,
+            port=settings.mqtt_port,
+            username=settings.mqtt_user or None,
+            password=settings.mqtt_pass or None,
+            tls_params=tls_params
+        ) as client:
+            await client.publish("room/command", payload=json.dumps(cmd_payload), qos=1)
+        
+        return {
+            "result": "success",
+            "device": device_name,
+            "payload": cmd_payload,
+        }
+    except Exception as e:
+        return {
+            "result": "failed",
+            "device": device_name,
+            "payload": cmd_payload,
+            "error": f"MQTT publish failed: {str(e)}"
+        }
 
 async def is_online() -> bool:
     """Quick check if the ESP32 is reachable."""
-    try:
-        async with esp32_client() as client:
-            response = await client.get("/api/status")
-        return response.status_code == 200
-    except (HardwareError, httpx.ConnectError, httpx.TimeoutException):
-        return False
+    return bool(settings.mqtt_broker)

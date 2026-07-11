@@ -560,7 +560,7 @@ export default function HomeScreen() {
                   fontFamily: Typography.families.body, 
                   fontSize: Typography.sizes.labelSm 
                 }}>
-                  {rooms.find(r => r.id === currentRoomId)?.name || 'Select Room'}
+                  {rooms?.find(r => r.id === currentRoomId)?.name || 'Select Room'}
                 </Text>
                 <Ionicons name="chevron-down" size={12} color={Colors.primary} style={{ marginLeft: 4 }} />
               </TouchableOpacity>
@@ -601,10 +601,10 @@ export default function HomeScreen() {
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' }}>
           <View style={{ width: '80%', backgroundColor: Colors.surfaceContainerHighest, borderRadius: 16, padding: 20 }}>
             <Text style={{ color: Colors.onSurface, fontFamily: Typography.families.headline, fontSize: Typography.sizes.titleMd, marginBottom: 16 }}>Select Your Location</Text>
-            {rooms.length === 0 && (
+            {(!rooms || rooms.length === 0) && (
               <Text style={{ color: Colors.onSurfaceVariant, fontFamily: Typography.families.body, fontSize: Typography.sizes.bodySm, marginBottom: 16 }}>No rooms available.</Text>
             )}
-            {rooms.map(room => (
+            {rooms?.map(room => (
               <TouchableOpacity
                 key={room.id}
                 style={{
