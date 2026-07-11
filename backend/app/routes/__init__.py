@@ -8,6 +8,7 @@ from .sensors import router as sensors_router
 from .mcp import router as mcp_router
 from .logs import router as logs_router
 from .bridge import router as bridge_router
+from .dummy import router as dummy_router
 
 __all__ = [
     "auth_router",
@@ -20,4 +21,5 @@ __all__ = [
     "mcp_router",
     "logs_router",
     "bridge_router",
+    "dummy_router",
 ]
