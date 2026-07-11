@@ -21,50 +21,27 @@ async def discover_devices(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)):
     """
-    Scans the local network for available hardware nodes.
-    Filters out any devices that are already registered in the database.
+    Returns the fixed hardware nodes provided by the Home_Automation firmware.
+    Filters out any devices that are already registered in the database by name.
     """
-    settings = get_settings()
-    network_nodes = []
-    
-    # 1. Fetch live devices over MQTT first if configured
-    if settings.mqtt_broker:
-        try:
-            network_nodes = await hardware_service.discover_devices_mqtt(timeout=3.0)
-        except Exception as e:
-            print(f"Failed to scan devices over MQTT: {e}")
-            
-    # 2. Fallback to HTTP if nothing found and esp32_base_url is configured
-    if not network_nodes and settings.esp32_base_url:
-        try:
-            headers = {}
-            if settings.esp32_auth_token:
-                headers["Authorization"] = f"Bearer {settings.esp32_auth_token}"
-                
-            async with httpx.AsyncClient() as client:
-                # We timeout quickly so the scan doesn't hang if the device is offline
-                response = await client.get(
-                    f"{settings.esp32_base_url.rstrip('/')}/api/devices",
-                    headers=headers,
-                    timeout=3.0,
-                )
-                if response.status_code == 200:
-                    network_nodes = response.json()
-        except Exception as e:
-            print(f"Failed to scan ESP32 local endpoint: {e}")
+    network_nodes = [
+        {"name": "Ceiling Light", "device_type": "light", "protocol": "mqtt", "endpoint": "bulb1", "capabilities": {}},
+        {"name": "Ambient LED Strip", "device_type": "light", "protocol": "mqtt", "endpoint": "bulb2", "capabilities": {}},
+        {"name": "AC Unit", "device_type": "switch", "protocol": "mqtt", "endpoint": "socket1", "capabilities": {}},
+        {"name": "Smart TV", "device_type": "switch", "protocol": "mqtt", "endpoint": "socket2", "capabilities": {}},
+        {"name": "Studio Fan", "device_type": "fan", "protocol": "mqtt", "endpoint": "fan_speed", "capabilities": {"speeds": 3}},
+        {"name": "Temp Sensor", "device_type": "sensor", "protocol": "mqtt", "endpoint": None, "capabilities": {"reading_types": ["temperature"]}},
+        {"name": "Humidity Sensor", "device_type": "sensor", "protocol": "mqtt", "endpoint": None, "capabilities": {"reading_types": ["humidity"]}},
+        {"name": "Motion Sensor", "device_type": "sensor", "protocol": "mqtt", "endpoint": None, "capabilities": {"reading_types": ["motion"]}}
+    ]
 
-    # Fallback to empty if nothing was found or if ESP32 is offline
-    if not isinstance(network_nodes, list):
-        network_nodes = []
+    # Get currently registered device names to filter
+    result = await db.execute(select(Device.name).where(Device.owner_id == current_user.id))
+    registered_names = {row[0].lower() for row in result.all() if row[0]}
 
-    # 2. Get currently registered device endpoints
-    result = await db.execute(select(Device.endpoint).where(Device.owner_id == current_user.id))
-    registered_endpoints = {row[0] for row in result.all() if row[0]}
-
-    # 3. Filter out nodes we already know about
     unregistered_nodes = [
         node for node in network_nodes
-        if node.get("endpoint") not in registered_endpoints
+        if node.get("name").lower() not in registered_names
     ]
 
     return unregistered_nodes

@@ -42,13 +42,17 @@ async def lifespan(app: FastAPI):
         
     import asyncio
     from app.services.time_scheduler import run_time_scheduler
+    from app.services.mqtt_service import run_mqtt_listener
+    
     scheduler_task = asyncio.create_task(run_time_scheduler())
     ping_task = asyncio.create_task(keep_alive_ping())
+    mqtt_task = asyncio.create_task(run_mqtt_listener())
     
     yield
     
     scheduler_task.cancel()
     ping_task.cancel()
+    mqtt_task.cancel()
     await engine.dispose()
 
 
