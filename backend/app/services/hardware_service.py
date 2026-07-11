@@ -55,7 +55,7 @@ async def get_status() -> dict:
 DEVICE_KEY_MAP = {
     "ceiling light": "bulb1",
     "ambient led strip": "bulb2",
-    "fan main power": "socket1",
+    "smart tv plug": "socket1",
     "coffee maker plug": "socket2",
     "ceiling fan": "fan_speed",
     "studio fan": "fan_speed",

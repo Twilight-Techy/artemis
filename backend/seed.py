@@ -78,7 +78,7 @@ async def seed_database():
                 state={"is_on": True, "speed": 1}
             ),
             Device(
-                id="dev-bd-fanpwr", name="Fan Main Power",
+                id="dev-lr-tv", name="Smart TV Plug",
                 device_type=DeviceType.SWITCH, room_id="room-living", owner_id="test-user-id", pin=None, endpoint="socket1",
                 capabilities={"power": True},
                 state={"is_on": True}
