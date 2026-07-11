@@ -66,8 +66,8 @@ DEVICE_KEY_MAP = {
     "socket 2": "socket2",
     "fan": "fan_speed",
     "light": "bulb1",
-    "ac unit": "socket1", # Legacy alias
-    "smart tv": "socket2", # Legacy alias
+    "smart tv": "socket1",
+    "coffee maker": "socket2",
 }
 
 
