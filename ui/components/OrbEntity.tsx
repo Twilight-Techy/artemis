@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../constants/theme';
-import { useNetwork } from '../contexts/NetworkContext';
 
 const ORB_SIZE = 180;
 const INNER_RING = 150;
@@ -16,13 +15,11 @@ interface OrbEntityProps {
 }
 
 export default function OrbEntity({ state = 'idle' }: OrbEntityProps) {
-  const { isOffline } = useNetwork();
   const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     let duration = 3000;
-    if (isOffline) duration = 6000;
-    else if (state === 'listening') duration = 800; // Fast energetic pulse
+    if (state === 'listening') duration = 800; // Fast energetic pulse
     else if (state === 'processing') duration = 400; // Ultra fast processing flutter
 
     const animation = Animated.loop(
@@ -43,16 +40,16 @@ export default function OrbEntity({ state = 'idle' }: OrbEntityProps) {
     );
     animation.start();
     return () => animation.stop();
-  }, [isOffline, state]);
+  }, [state]);
 
   // Ambient glow – scale & opacity
   const glowScale = pulse.interpolate({
     inputRange: [0, 1],
-    outputRange: isOffline ? [1, 1.02] : [1, 1.12],
+    outputRange: [1, 1.12],
   });
   const glowOpacity = pulse.interpolate({
     inputRange: [0, 1],
-    outputRange: isOffline ? [0.1, 0.2] : [0.35, 0.6],
+    outputRange: [0.35, 0.6],
   });
 
   // Inner ring – subtle scale
@@ -64,18 +61,14 @@ export default function OrbEntity({ state = 'idle' }: OrbEntityProps) {
   // Core icon – breathing opacity
   const coreOpacity = pulse.interpolate({
     inputRange: [0, 1],
-    outputRange: isOffline ? [0.2, 0.4] : [0.4, 0.9],
+    outputRange: [0.4, 0.9],
   });
 
   let activeColor: string = Colors.primary;
   let gradientColors: [string, string, string] = ['rgba(116, 177, 255, 0.25)', 'rgba(116, 177, 255, 0.08)', 'transparent'];
   let innerRingColors: [string, string, string] = [Colors.primary, Colors.primaryDim, Colors.onPrimaryContainer];
   
-  if (isOffline) {
-    activeColor = 'rgba(150, 150, 160, 0.3)';
-    gradientColors = ['rgba(150, 150, 160, 0.15)', 'rgba(150, 150, 160, 0.05)', 'transparent'];
-    innerRingColors = ['#3a3a3a', '#2a2a2a', '#1a1a1a'];
-  } else if (state === 'listening') {
+  if (state === 'listening') {
     activeColor = Colors.tertiary; // Cyan
     gradientColors = ['rgba(129, 236, 255, 0.35)', 'rgba(129, 236, 255, 0.10)', 'transparent'];
     innerRingColors = [Colors.tertiary, '#4abccf', '#1c7180'];
@@ -103,7 +96,7 @@ export default function OrbEntity({ state = 'idle' }: OrbEntityProps) {
       </Animated.View>
 
       {/* Outer glass ring */}
-      <View style={[styles.outerRing, isOffline && { borderColor: 'rgba(150, 150, 160, 0.2)' }]}>
+      <View style={[styles.outerRing]}>
         {/* Middle gradient ring */}
         <Animated.View
           style={[
@@ -121,8 +114,8 @@ export default function OrbEntity({ state = 'idle' }: OrbEntityProps) {
             <View style={styles.core}>
               {/* Core icon dot */}
               <Animated.View style={[styles.coreIconOuter, { opacity: coreOpacity }]}>
-                <View style={[styles.coreIconRing, { borderColor: activeColor }, isOffline && { shadowOpacity: 0 }]}>
-                  <View style={[styles.coreIconCenter, { backgroundColor: activeColor }, isOffline && { shadowOpacity: 0 }]} />
+                <View style={[styles.coreIconRing, { borderColor: activeColor }]}>
+                  <View style={[styles.coreIconCenter, { backgroundColor: activeColor }]} />
                 </View>
               </Animated.View>
             </View>

@@ -24,7 +24,9 @@ import SecuritySettingsScreen from '../screens/SecuritySettingsScreen';
 import PersonaSettingsScreen from '../screens/PersonaSettingsScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import OfflineScreen from '../screens/OfflineScreen';
 import { useAuth } from '../contexts/AuthContext';
+import { useNetwork } from '../contexts/NetworkContext';
 import { ActivityIndicator } from 'react-native';
 
 export type RootStackParamList = {
@@ -148,6 +150,7 @@ function MainTabs() {
 
 export default function AppNavigator() {
   const { token, loading } = useAuth();
+  const { isOffline } = useNetwork();
   
   if (loading) {
     return (
@@ -155,6 +158,10 @@ export default function AppNavigator() {
         <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
+  }
+
+  if (isOffline) {
+    return <OfflineScreen />;
   }
 
   return (

@@ -33,7 +33,6 @@ import TypingIndicator from '../components/chat/TypingIndicator';
 import { ArtemisPullLoader } from '../components/ArtemisPullLoader';
 import ConfirmModal from '../components/ConfirmModal';
 import { useArtemisAlert } from '../components/ArtemisAlert';
-import { useNetwork } from '../contexts/NetworkContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { artemisApi } from '../api/artemisClient';
 import { useMCP } from '../contexts/MCPContext';
@@ -47,7 +46,6 @@ type HomeMode = 'dashboard' | 'chat';
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { isOffline } = useNetwork();
   const { displayName } = useProfile();
   const { currentRoomId, setCurrentRoomId, rooms } = useLocation();
   const artemisAlert = useArtemisAlert();
@@ -343,12 +341,6 @@ export default function HomeScreen() {
       <View style={styles.keyboardAvoidingContainer}>
         {/* ═══ Orb Section (always visible) ═══ */}
         <View style={styles.orbSection}>
-          {isOffline && (
-            <View style={styles.offlineBanner}>
-              <Ionicons name="cloud-offline-outline" size={12} color={Colors.error} />
-              <Text style={styles.offlineText}>OFFLINE: LOCAL PERSISTENCE MODE</Text>
-            </View>
-          )}
           <Animated.View style={{ opacity: dimOpacity, alignItems: 'center', justifyContent: 'center', position: 'absolute' }} pointerEvents="none">
             <View style={styles.atmosphericGlow} />
             <OrbEntity state={orbState} />
@@ -665,28 +657,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
     height: 220,
-  },
-  offlineBanner: {
-    position: 'absolute',
-    top: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255, 113, 108, 0.1)',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: Radii.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 113, 108, 0.3)',
-    zIndex: 20,
-  },
-  offlineText: {
-    fontFamily: Typography.families.headline,
-    fontSize: 9,
-    fontWeight: Typography.weights.bold,
-    color: Colors.error,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
   },
   atmosphericGlow: {
     position: 'absolute',
