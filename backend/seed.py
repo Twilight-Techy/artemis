@@ -106,11 +106,11 @@ async def seed_database():
             Automation(
                 id="auto-cool-living",
                 name="Auto Cooling (Silent)",
-                description="Automatically activates the Living Room AC when the temperature gets too high and someone is present.",
+                description="Automatically activates the Ceiling Fan when the temperature gets too high and someone is present.",
                 automation_type="aal",
                 trigger="temperature > 28 in Living Room",
                 condition="someone is in the Living Room",
-                action="turn on Living Room AC",
+                action="turn on Ceiling Fan",
                 requires_approval=False,  # Silent automation!
                 is_enabled=True,
                 owner_id="test-user-id"

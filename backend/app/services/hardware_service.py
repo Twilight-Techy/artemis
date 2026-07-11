@@ -55,10 +55,10 @@ async def get_status() -> dict:
 DEVICE_KEY_MAP = {
     "ceiling light": "bulb1",
     "ambient led strip": "bulb2",
-    "ac unit": "socket1",
-    "smart tv": "socket2",
-    "studio fan": "fan_speed",
+    "fan main power": "socket1",
+    "coffee maker plug": "socket2",
     "ceiling fan": "fan_speed",
+    "studio fan": "fan_speed",
     
     # Aliases
     "bulb 1": "bulb1",
@@ -67,6 +67,8 @@ DEVICE_KEY_MAP = {
     "socket 2": "socket2",
     "fan": "fan_speed",
     "light": "bulb1",
+    "ac unit": "socket1", # Legacy alias
+    "smart tv": "socket2", # Legacy alias
 }
 
 
