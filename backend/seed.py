@@ -187,16 +187,16 @@ async def seed_database():
                 request_payload={"action": "on"}, response_payload={"description": "Turned on the ceiling light.", "device_id": "dev-lr-ceiling"}),
             
             # MCP (AI) Control
-            ExecutionLog(id="log-fan-on", action_type="device_control", target_name="Ceiling Fan", target_id="dev-bd-fan", status="success", triggered_by="mcp", user_id="test-user-id", executed_at=ts(3.9),
-                request_payload={"action": "on", "speed": 2}, response_payload={"description": "Fan speed set to medium (level 2/3).", "device_id": "dev-bd-fan"}),
+            ExecutionLog(id="log-fan-on", action_type="device_control", target_name="Standing Fan", target_id="dev-lr-fan", status="success", triggered_by="mcp", user_id="test-user-id", executed_at=ts(3.9),
+                request_payload={"action": "on", "speed": 2}, response_payload={"description": "Fan speed set to medium (level 2/3).", "device_id": "dev-lr-fan"}),
 
             # Automation Execution (Silent)
             ExecutionLog(id="log-auto-cool", action_type="automation_run", target_name="Auto Cooling (Silent)", target_id="auto-cool-living", status="success", triggered_by="automation", user_id="test-user-id", executed_at=ts(15),
                 request_payload={"trigger": "temperature > 28"}, response_payload={"description": "Temperature exceeded 28C threshold. Fan activated automatically.", "automation_id": "auto-cool-living"}),
 
             # User Function Call
-            ExecutionLog(id="log-goodnight", action_type="function_call", target_name="Deep Shield", target_id="func-deep-shield", status="success", triggered_by="manual", user_id="test-user-id", executed_at=ts(31),
-                request_payload={"authorizationCode": "1234"}, response_payload={"description": "Perimeter secured. Notified external service.", "status": "success"}),
+            ExecutionLog(id="log-goodnight", action_type="function_call", target_name="Entertainment Mode", target_id="func-entertainment", status="success", triggered_by="manual", user_id="test-user-id", executed_at=ts(31),
+                request_payload={"userId": "alex"}, response_payload={"description": "Lights dimmed, TV on, Plex ready.", "status": "success"}),
         ]
 
         for l in execution_logs:
@@ -212,15 +212,15 @@ async def seed_database():
 
             # User asks about temperature
             ChatMessage(id="msg-02", role="user", content="Hey Artemis, it's a bit warm in here. What's the temperature?", user_id="test-user-id", created_at=ts(2)),
-            ChatMessage(id="msg-03", role="assistant", content="The living room temperature sensor reads 78.2F. That's above your comfort range. Would you like me to turn on the ceiling fan?", user_id="test-user-id", created_at=ts(2.5)),
+            ChatMessage(id="msg-03", role="assistant", content="The living room temperature sensor reads 78.2F. That's above your comfort range. Would you like me to turn on the standing fan?", user_id="test-user-id", created_at=ts(2.5)),
 
             # User approves
             ChatMessage(id="msg-04", role="user", content="Yes, cool it down please.", user_id="test-user-id", created_at=ts(3)),
-            ChatMessage(id="msg-05", role="assistant", content="On it. I've turned on the ceiling fan at medium speed.", user_id="test-user-id", created_at=ts(3.5)),
+            ChatMessage(id="msg-05", role="assistant", content="On it. I've turned on the standing fan at medium speed.", user_id="test-user-id", created_at=ts(3.5)),
             
             # System confirms execution (linked to ExecutionLog)
             ChatMessage(id="msg-06", role="system", content="Executed: Ceiling Light -> turn_on", meta_info={"action_id": "log-ac-cool", "status": "success"}, user_id="test-user-id", created_at=ts(3.7)),
-            ChatMessage(id="msg-07", role="system", content="Executed: Ceiling Fan -> set_speed (medium)", meta_info={"action_id": "log-fan-on", "status": "success"}, user_id="test-user-id", created_at=ts(3.9)),
+            ChatMessage(id="msg-07", role="system", content="Executed: Standing Fan -> set_speed (medium)", meta_info={"action_id": "log-fan-on", "status": "success"}, user_id="test-user-id", created_at=ts(3.9)),
 
             # Automation fires in background
             ChatMessage(id="msg-11", role="system", content="Auto Cooling triggered: temperature threshold exceeded.", meta_info={"action_id": "log-auto-cool", "status": "success"}, user_id="test-user-id", created_at=ts(15)),
@@ -230,9 +230,9 @@ async def seed_database():
             ChatMessage(id="msg-13", role="assistant", content="The Living Room Motion Sensor is currently active. No motion events in the last 2 hours. All clear.", user_id="test-user-id", created_at=ts(20.5)),
 
             # Getting ready for bed
-            ChatMessage(id="msg-14", role="user", content="It's getting late. Trigger Deep Shield.", user_id="test-user-id", created_at=ts(30)),
-            ChatMessage(id="msg-15", role="assistant", content="Understood. Initiating Deep Shield. Have a good night, Alex.", user_id="test-user-id", created_at=ts(30.5)),
-            ChatMessage(id="msg-16", role="system", content="Executed: Function -> Deep Shield", meta_info={"action_id": "log-goodnight", "status": "success"}, user_id="test-user-id", created_at=ts(31)),
+            ChatMessage(id="msg-14", role="user", content="Let's watch a movie. Trigger Entertainment Mode.", user_id="test-user-id", created_at=ts(30)),
+            ChatMessage(id="msg-15", role="assistant", content="Understood. Initiating Entertainment Mode. Enjoy your movie, Alex.", user_id="test-user-id", created_at=ts(30.5)),
+            ChatMessage(id="msg-16", role="system", content="Executed: Function -> Entertainment Mode", meta_info={"action_id": "log-goodnight", "status": "success"}, user_id="test-user-id", created_at=ts(31)),
         ]
 
         for m in chat_messages:
