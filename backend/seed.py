@@ -134,7 +134,7 @@ async def seed_database():
             Function(
                 id="func-wakeup",
                 name="Wake Up Living Room",
-                description="Gradual light increase, temperature adjustment, and coffee initiation sequence.",
+                description="Gradually turns on the Desk Lamp, switches on the Coffee Maker Plug, and gently activates the Standing Fan.",
                 function_type="hardware",
                 method="GET",
                 url=None,
@@ -155,15 +155,15 @@ async def seed_database():
                 owner_id="test-user-id"
             ),
             Function(
-                id="func-deep-shield",
-                name="Deep Shield",
-                description="Lock all entry points, arm perimeter sensors, and notify external security service API.",
-                function_type="hybrid",
-                method="POST",
-                url="https://api.artemis.local/lockdown",
-                parameters=["authorizationCode"],
-                triggers=["activate deep shield", "lock down the house", "intruder alert"],
-                conditions=["system is armed"],
+                id="func-entertainment",
+                name="Entertainment Mode",
+                description="Turns off the Ceiling Light, activates the ambient Desk Lamp, and turns on the Smart TV Plug.",
+                function_type="hardware",
+                method="GET",
+                url=None,
+                parameters=[],
+                triggers=["movie time", "turn on the tv", "entertainment mode"],
+                conditions=["someone is home"],
                 owner_id="test-user-id"
             )
         ]
