@@ -30,9 +30,6 @@ async def seed_database():
         # 2. Create Rooms
         rooms = [
             Room(id="room-living",  name="Living Room",  icon="sofa-outline",   color="#74b1ff", owner_id="test-user-id"),
-            Room(id="room-bedroom", name="Bedroom",      icon="bed-outline",    color="#b884ff", owner_id="test-user-id"),
-            Room(id="room-kitchen", name="Kitchen",       icon="cafe-outline",   color="#81ecff", owner_id="test-user-id"),
-            Room(id="room-studio",  name="Studio",        icon="desktop-outline",color="#00e3fd", owner_id="test-user-id"),
         ]
         for r in rooms:
             db.add(r)
@@ -73,24 +70,24 @@ async def seed_database():
                 state={"is_on": True, "reading": False, "unit": "boolean"}
             ),
 
-            # ── Bedroom ──────────────────────────────────────
+            # ── Ceiling Fan ──────────────────────────────────────
             Device(
                 id="dev-bd-fan", name="Ceiling Fan",
-                device_type=DeviceType.FAN, room_id="room-bedroom", owner_id="test-user-id", pin=None, endpoint="fan_speed",
+                device_type=DeviceType.FAN, room_id="room-living", owner_id="test-user-id", pin=None, endpoint="fan_speed",
                 capabilities={"power": True, "speed_steps": 3},
                 state={"is_on": True, "speed": 1}
             ),
             Device(
                 id="dev-bd-fanpwr", name="Fan Main Power",
-                device_type=DeviceType.SWITCH, room_id="room-bedroom", owner_id="test-user-id", pin=None, endpoint="socket1",
+                device_type=DeviceType.SWITCH, room_id="room-living", owner_id="test-user-id", pin=None, endpoint="socket1",
                 capabilities={"power": True},
                 state={"is_on": True}
             ),
 
-            # ── Kitchen ──────────────────────────────────────
+            # ── Smart Plug ──────────────────────────────────────
             Device(
                 id="dev-kt-plug", name="Coffee Maker Plug",
-                device_type=DeviceType.SWITCH, room_id="room-kitchen", owner_id="test-user-id", pin=None, endpoint="socket2",
+                device_type=DeviceType.SWITCH, room_id="room-living", owner_id="test-user-id", pin=None, endpoint="socket2",
                 capabilities={"power": True},
                 state={"is_on": False}
             ),
