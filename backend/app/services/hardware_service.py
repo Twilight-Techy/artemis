@@ -54,11 +54,10 @@ async def get_status() -> dict:
 # Map device names / types to ESP32 payload keys
 DEVICE_KEY_MAP = {
     "ceiling light": "bulb1",
-    "ambient led strip": "bulb2",
+    "desk lamp": "bulb2",
     "smart tv plug": "socket1",
     "coffee maker plug": "socket2",
-    "ceiling fan": "fan_speed",
-    "studio fan": "fan_speed",
+    "standing fan": "fan_speed",
     
     # Aliases
     "bulb 1": "bulb1",

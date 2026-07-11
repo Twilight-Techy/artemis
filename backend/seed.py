@@ -46,7 +46,7 @@ async def seed_database():
                 state={"is_on": True}
             ),
             Device(
-                id="dev-lr-ledstrip", name="Ambient LED Strip",
+                id="dev-lr-lamp", name="Desk Lamp",
                 device_type=DeviceType.LIGHT, room_id="room-living", owner_id="test-user-id", pin=None, endpoint="bulb2",
                 capabilities={"power": True, "brightness": False, "rgb_color": False},
                 state={"is_on": True}
@@ -70,9 +70,9 @@ async def seed_database():
                 state={"is_on": True, "reading": False, "unit": "boolean"}
             ),
 
-            # ── Ceiling Fan ──────────────────────────────────────
+            # ── Standing Fan ──────────────────────────────────────
             Device(
-                id="dev-bd-fan", name="Ceiling Fan",
+                id="dev-lr-fan", name="Standing Fan",
                 device_type=DeviceType.FAN, room_id="room-living", owner_id="test-user-id", pin=None, endpoint="fan_speed",
                 capabilities={"power": True, "speed_steps": 3},
                 state={"is_on": True, "speed": 1}
@@ -107,7 +107,7 @@ async def seed_database():
                 automation_type="aal",
                 trigger="temperature > 28 in Living Room",
                 condition="someone is in the Living Room",
-                action="turn on Ceiling Fan",
+                action="turn on Standing Fan",
                 requires_approval=False,  # Silent automation!
                 is_enabled=True,
                 owner_id="test-user-id"
