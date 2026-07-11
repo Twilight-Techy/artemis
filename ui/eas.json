@@ -11,6 +11,13 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "cache": {
+        "key": "v1",
+        "paths": [
+          "node_modules",
+          "android/.gradle/caches"
+        ]
       }
     },
     "production": {}
