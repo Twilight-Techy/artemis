@@ -140,6 +140,11 @@ async def seed_database():
                 url=None,
                 triggers=["wake up", "good morning", "start my day"],
                 conditions=["time is between 05:00 and 09:00", "someone is home"],
+                device_actions=[
+                    {"device_id": "dev-lr-lamp", "action": "turn_on", "value": None},
+                    {"device_id": "dev-kt-plug", "action": "turn_on", "value": None},
+                    {"device_id": "dev-lr-fan", "action": "set_speed", "value": "1"},
+                ],
                 owner_id="test-user-id"
             ),
             Function(
@@ -164,6 +169,11 @@ async def seed_database():
                 parameters=["userId"],
                 triggers=["movie time", "turn on the tv", "entertainment mode"],
                 conditions=["someone is home"],
+                device_actions=[
+                    {"device_id": "dev-lr-ceiling", "action": "turn_off", "value": None},
+                    {"device_id": "dev-lr-lamp", "action": "turn_on", "value": None},
+                    {"device_id": "dev-lr-tv", "action": "turn_on", "value": None},
+                ],
                 owner_id="test-user-id"
             )
         ]

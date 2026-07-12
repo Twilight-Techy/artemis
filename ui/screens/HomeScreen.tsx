@@ -47,7 +47,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { displayName } = useProfile();
-  const { currentRoomId, setCurrentRoomId, rooms } = useLocation();
+  const { currentRoomId, setCurrentRoomId, rooms, refreshRooms } = useLocation();
   const artemisAlert = useArtemisAlert();
   const [showRoomSelector, setShowRoomSelector] = useState(false);
   const [mode, setMode] = useState<HomeMode>('dashboard');
@@ -108,15 +108,17 @@ export default function HomeScreen() {
 
   const handleChatRefresh = useCallback(async () => {
     setIsRefreshingChat(true);
-    await loadChatHistory();
+    const avatarPromise = refreshAvatarRef.current ? refreshAvatarRef.current() : Promise.resolve();
+    await Promise.all([loadChatHistory(), refreshRooms(), avatarPromise]);
     setIsRefreshingChat(false);
-  }, [loadChatHistory]);
+  }, [loadChatHistory, refreshRooms]);
 
   const handleDashboardRefresh = useCallback(async () => {
     setIsRefreshingDashboard(true);
-    await refreshAvatarRef.current?.();
+    const avatarPromise = refreshAvatarRef.current ? refreshAvatarRef.current() : Promise.resolve();
+    await Promise.all([avatarPromise, refreshRooms(), loadChatHistory()]);
     setIsRefreshingDashboard(false);
-  }, []);
+  }, [refreshRooms, loadChatHistory]);
 
   const handleStartRecording = async () => {
     try {

@@ -396,7 +396,23 @@ export function applyStateToDeviceFields(
 
   if (deviceType === 'sensor') {
     if (state.reading !== undefined && state.unit) {
-      target.statusText = `${state.reading}${state.unit}`;
+      if (state.unit === 'BOOLEAN' || typeof state.reading === 'boolean') {
+        const nameLower = typeof target.name === 'string' ? target.name.toLowerCase() : '';
+        let truthyLabel = 'Active';
+        let falsyLabel = 'Inactive';
+        
+        if (nameLower.includes('motion') || nameLower.includes('presence')) {
+          truthyLabel = 'Detected';
+          falsyLabel = 'Clear';
+        } else if (nameLower.includes('contact') || nameLower.includes('door') || nameLower.includes('window')) {
+          truthyLabel = 'Open';
+          falsyLabel = 'Closed';
+        }
+
+        target.statusText = state.reading ? truthyLabel : falsyLabel;
+      } else {
+        target.statusText = `${state.reading}${state.unit}`;
+      }
     } else {
       target.statusText = typeof state.status === 'string' ? state.status : 'Active';
     }
@@ -408,6 +424,14 @@ export function applyStateToDeviceFields(
 
   if (deviceType === 'switch' || deviceType === 'other') {
     target.statusText = state.is_on ? 'On' : 'Off';
+  }
+
+  if (deviceType === 'fan') {
+    if (target.speed !== undefined) {
+      target.statusText = `Speed ${target.speed}`;
+    } else {
+      target.statusText = state.is_on ? 'On' : 'Off';
+    }
   }
 }
 

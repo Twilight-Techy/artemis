@@ -77,8 +77,9 @@ export default function EditDeviceScreen() {
       setDeviceType(t);
       setSavedType(t);
       setSelectedRoom(raw.room_id);
-      setProtocol(raw.protocol === 'mqtt' ? 'mqtt' : 'http');
-      setBrokerAddress(raw.endpoint || '');
+      setProtocol('mqtt');
+      setBrokerAddress('Artemis Hardware Bridge (MQTT)');
+      setTopic('room/command');
       setLoadedCaps(raw.capabilities ?? null);
       setLoadedState(raw.state ?? null);
       setCapOverrides(raw.capabilities ?? null);
@@ -623,13 +624,14 @@ export default function EditDeviceScreen() {
               <Text style={styles.sectionHeading}>Configuration</Text>
             </View>
 
-            <View style={styles.techCard}>
-              <Text style={styles.fieldLabel}>PROTOCOL</Text>
+            <View style={[styles.techCard, { opacity: 0.6 }]} pointerEvents="none">
+              <Text style={styles.fieldLabel}>PROTOCOL (Managed via Hardware Bridge)</Text>
               <View style={styles.protocolRow}>
                 <TouchableOpacity
                   style={[styles.protocolPill, protocol === 'mqtt' && styles.protocolPillActive]}
                   onPress={() => setProtocol('mqtt')}
                   activeOpacity={0.7}
+                  disabled={true}
                 >
                   {protocol === 'mqtt' && <View style={styles.protocolDot} />}
                   <Text style={[styles.protocolText, protocol === 'mqtt' && styles.protocolTextActive]}>MQTT</Text>
@@ -639,6 +641,7 @@ export default function EditDeviceScreen() {
                   style={[styles.protocolPill, protocol === 'http' && styles.protocolPillActive]}
                   onPress={() => setProtocol('http')}
                   activeOpacity={0.7}
+                  disabled={true}
                 >
                   {protocol === 'http' && <View style={styles.protocolDot} />}
                   <Text style={[styles.protocolText, protocol === 'http' && styles.protocolTextActive]}>HTTP REST</Text>
@@ -654,6 +657,7 @@ export default function EditDeviceScreen() {
                 onChangeText={setBrokerAddress}
                 placeholderTextColor="rgba(173,170,173,0.5)"
                 placeholder="http://..."
+                editable={false}
               />
 
               <Text style={styles.fieldLabel}>TOPIC (Optional)</Text>
@@ -661,6 +665,7 @@ export default function EditDeviceScreen() {
                 style={[styles.monoInput, { color: Colors.secondaryFixed }]}
                 value={topic}
                 onChangeText={setTopic}
+                editable={false}
               />
             </View>
           </View>

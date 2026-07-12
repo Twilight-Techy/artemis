@@ -61,6 +61,13 @@ const getCapabilities = (deviceType: string): { label: string; value: string; ha
         { label: 'Lock', value: 'lock' },
         { label: 'Unlock', value: 'unlock' },
       ];
+    case 'fan':
+      return [
+        { label: 'Turn On', value: 'turn_on' },
+        { label: 'Turn Off', value: 'turn_off' },
+        { label: 'Toggle', value: 'toggle' },
+        { label: 'Set Speed', value: 'set_speed', hasValue: true, placeholder: '1-3' },
+      ];
     default:
       return [
         { label: 'Turn On', value: 'turn_on' },
@@ -206,7 +213,17 @@ export default function AddEditFunctionScreen() {
             setEndpoint(target.url || '');
             setMethod(target.method || 'POST');
             if (target.parameters) setParameters(target.parameters);
-            if (target.device_actions) setDeviceActions(target.device_actions);
+            if (target.device_actions) {
+              setDeviceActions(
+                target.device_actions.map((da: any) => ({
+                  deviceId: da.device_id || da.deviceId,
+                  deviceName: da.deviceName || '',
+                  deviceType: da.deviceType || '',
+                  action: da.action,
+                  value: da.value,
+                }))
+              );
+            }
             if (target.triggers) setTriggers(target.triggers);
             if (target.conditions) setConditions(target.conditions);
           }
