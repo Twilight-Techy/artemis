@@ -152,12 +152,16 @@ export default function AppNavigator() {
   const { token, loading } = useAuth();
   const { isOffline } = useNetwork();
   
+  React.useEffect(() => {
+    if (!loading) {
+      import('expo-splash-screen').then(SplashScreen => {
+        SplashScreen.hideAsync().catch(() => {});
+      });
+    }
+  }, [loading]);
+
   if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
+    return null;
   }
 
   if (isOffline) {

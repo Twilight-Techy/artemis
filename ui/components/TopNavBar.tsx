@@ -60,7 +60,7 @@ export default function TopNavBar({ onRefreshReady }: TopNavBarProps) {
               <Ionicons name="refresh-outline" size={18} color={Colors.error} />
             </View>
           ) : (
-            <Image source={require('../assets/avatar.png')} style={styles.avatar} />
+            <Image source={require('../assets/avatar.jpg')} style={styles.avatar} />
           )}
         </TouchableOpacity>
       </View>

@@ -2,11 +2,7 @@ import { Platform } from 'react-native';
 
 const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
 
-if (!backendUrl) {
-    throw new Error('EXPO_PUBLIC_BACKEND_URL is required. Add it to ui/.env.');
-}
-
-export const BACKEND_URL = backendUrl;
+export const BACKEND_URL = backendUrl || 'https://artemis-471k.onrender.com/api/v1'; // Fallback if env variable fails to inject
 
 export const artemisApi = {
     _token: null as string | null,

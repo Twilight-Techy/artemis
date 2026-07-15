@@ -87,10 +87,8 @@ def relay_device(
     }
 
 
-# Mock State for Devices. Pins mirror backend/seed.py and hardware_service.DEVICE_PIN_MAP.
 devices: dict[str, dict[str, Any]] = {
-    # Living Room (10-19)
-    "10": relay_device(
+    "bulb1": relay_device(
         name="Ceiling Light",
         room="Living Room",
         icon="fa-lightbulb",
@@ -98,91 +96,32 @@ devices: dict[str, dict[str, Any]] = {
         capabilities={"brightness": True, "color_temp": True},
         state={"is_on": True, "brightness": 80, "color_temp": 4000},
     ),
-    "11": relay_device(
-        name="Ambient LED Strip",
+    "bulb2": relay_device(
+        name="Desk Lamp",
         room="Living Room",
-        icon="fa-wand-magic-sparkles",
-        device_type="light",
-        capabilities={"brightness": True, "rgb_color": True},
-        state={"is_on": True, "brightness": 60, "color": "#74b1ff"},
-    ),
-    "12": relay_device(
-        name="AC Unit",
-        room="Living Room",
-        icon="fa-snowflake",
-        device_type="climate",
-        capabilities={"temperature": True, "modes": ["cool", "heat", "auto"]},
-        state={"is_on": True, "temperature": 22, "mode": "cool"},
-    ),
-    "13": relay_device(
-        name="Smart TV",
-        room="Living Room",
-        icon="fa-tv",
-        device_type="media",
-        capabilities={"volume": True},
-        state={"is_on": False, "volume": 35},
-    ),
-    # Bedroom (20-29)
-    "20": relay_device(
-        name="Bedside Lamp",
-        room="Bedroom",
         icon="fa-lightbulb",
         device_type="light",
         capabilities={"brightness": True, "rgb_color": True},
         state={"is_on": False, "brightness": 40, "color": "#FF716C"},
     ),
-    "21": relay_device(
-        name="Ceiling Fan",
-        room="Bedroom",
+    "fan_speed": relay_device(
+        name="Standing Fan",
+        room="Living Room",
         icon="fa-fan",
         device_type="fan",
         capabilities={"speed_steps": 3},
-        state={"is_on": True, "speed": 2},
+        state={"is_on": True, "speed": 1},
     ),
-    "22": relay_device(
-        name="Security Camera",
-        room="Bedroom",
-        icon="fa-video",
-        device_type="security",
-        capabilities={"motion_detection": True, "night_vision": True},
-        state={"is_on": True, "armed": True},
-    ),
-    # Kitchen (30-39)
-    "30": relay_device(
-        name="Kitchen Downlights",
-        room="Kitchen",
-        icon="fa-lightbulb",
-        device_type="light",
-        capabilities={"brightness": {"mode": "steps", "count": 3, "labels": ["Low", "Med", "High"]}},
-        state={"is_on": True, "brightness": 2},
-    ),
-    "31": relay_device(
-        name="Coffee Maker Plug",
-        room="Kitchen",
-        icon="fa-plug",
+    "socket1": relay_device(
+        name="Smart TV Plug",
+        room="Living Room",
+        icon="fa-tv",
         device_type="switch",
         state={"is_on": False},
     ),
-    # Studio (40-49)
-    "40": relay_device(
-        name="Studio Fan",
-        room="Studio",
-        icon="fa-fan",
-        device_type="fan",
-        capabilities={"speed": {"mode": "percentage", "min": 0, "max": 100}},
-        state={"is_on": False, "speed": 35},
-    ),
-    "41": relay_device(
-        name="Desk RGB Strip",
-        room="Studio",
-        icon="fa-wand-magic-sparkles",
-        device_type="light",
-        capabilities={"brightness": True, "rgb_color": True, "color_temp": True},
-        state={"is_on": True, "brightness": 75, "color": "#b884ff", "color_temp": 4000},
-    ),
-    "42": relay_device(
-        name="Spare Relay",
-        room="Studio",
+    "socket2": relay_device(
+        name="Coffee Maker Plug",
+        room="Living Room",
         icon="fa-plug",
         device_type="switch",
         state={"is_on": False},
@@ -190,27 +129,37 @@ devices: dict[str, dict[str, Any]] = {
 }
 
 sensor_devices: dict[str, dict[str, Any]] = {
-    "temp-sensor": {
-        "name": "Temp Sensor",
+    "dev-lr-temp": {
+        "name": "Temperature Sensor",
         "room": "Living Room",
         "icon": "fa-temperature-half",
         "type": "sensor",
         "device_type": "sensor",
-        "capabilities": {"reading_types": ["temperature", "humidity"]},
-        "device_state": {"is_on": True, "reading": 24.5, "unit": "deg C"},
+        "capabilities": {"reading_types": ["temperature"]},
+        "device_state": {"is_on": True, "reading": 24.5, "unit": "°C"},
     },
-    "smoke-detector": {
-        "name": "Smoke Detector",
-        "room": "Kitchen",
-        "icon": "fa-smog",
+    "dev-lr-hum": {
+        "name": "Humidity Sensor",
+        "room": "Living Room",
+        "icon": "fa-droplet",
         "type": "sensor",
         "device_type": "sensor",
-        "capabilities": {"reading_types": ["smoke"]},
-        "device_state": {"is_on": True, "reading": 0, "unit": "ppm", "status": "Clear"},
+        "capabilities": {"reading_types": ["humidity"]},
+        "device_state": {"is_on": True, "reading": 45.0, "unit": "%"},
+    },
+    "dev-lr-motion": {
+        "name": "Motion Sensor",
+        "room": "Living Room",
+        "icon": "fa-person-running",
+        "type": "sensor",
+        "device_type": "sensor",
+        "capabilities": {"reading_types": ["motion"]},
+        "device_state": {"is_on": True, "reading": False, "unit": "boolean"},
     },
 }
 
 start_time = time.time()
+simulator_mode = "manual"
 
 
 @app.on_event("startup")
@@ -225,6 +174,7 @@ async def startup_event():
             await asyncio.sleep(2)
 
     async def mqtt_listener():
+        global simulator_mode
         try:
             import aiomqtt
         except ImportError:
@@ -253,44 +203,64 @@ async def startup_event():
                     identifier=f"artemis-sim-{int(time.time())}"
                 ) as client:
                     print("Simulator MQTT connected!")
-                    await client.subscribe("artemis/esp32/commands")
                     await client.subscribe("artemis/esp32/discovery/request")
-                    async for message in client.messages:
-                        if message.topic.matches("artemis/esp32/discovery/request"):
-                            response = get_devices()
-                            await client.publish("artemis/esp32/discovery/response", payload=json.dumps(response))
-                        
-                        elif message.topic.matches("artemis/esp32/commands"):
+                    await client.subscribe("room/command")
+                    await client.subscribe("room/config")
+
+                    async def telemetry_publisher():
+                        while True:
+                            telemetry = {
+                                "temperature": current_sensors["temperature"],
+                                "humidity": current_sensors["humidity"],
+                                "presence": current_sensors.get("motion", False)
+                            }
                             try:
-                                payload = message.payload.decode()
+                                await client.publish("room/telemetry", payload=json.dumps(telemetry))
+                            except Exception:
+                                pass
+                            await asyncio.sleep(2)
+                            
+                    pub_task = asyncio.create_task(telemetry_publisher())
+
+                    try:
+                        async for message in client.messages:
+                            try:
+                                payload = message.payload.decode() if message.payload else "{}"
                                 data = json.loads(payload)
-                                pin = str(data.get("pin"))
-                                cmd_id = data.get("command_id", "")
+                            except Exception:
+                                data = {}
+
+                            if message.topic.matches("artemis/esp32/discovery/request"):
+                                response = get_devices()
+                                await client.publish("artemis/esp32/discovery/response", payload=json.dumps(response))
+                            
+                            elif message.topic.matches("room/config"):
+                                if "mode" in data:
+                                    simulator_mode = data["mode"]
+                                    print(f"Simulator mode changed to: {simulator_mode}")
+                            
+                            elif message.topic.matches("room/command"):
+                                if "bulb1" in data:
+                                    cmd = RelayCommand(state="on" if data["bulb1"] else "off")
+                                    apply_command(devices["bulb1"], cmd)
+                                if "bulb2" in data:
+                                    cmd = RelayCommand(state="on" if data["bulb2"] else "off")
+                                    apply_command(devices["bulb2"], cmd)
                                 
-                                if pin in devices:
-                                    cmd = RelayCommand(
-                                        action=data.get("action"),
-                                        value=data.get("value"),
-                                        payload=data.get("payload")
-                                    )
-                                    apply_command(devices[pin], cmd)
-                                    
-                                    if cmd_id:
-                                        res_payload = {
-                                            "command_id": cmd_id,
-                                            "status": "success"
-                                        }
-                                        await client.publish("artemis/esp32/results", payload=json.dumps(res_payload))
-                                else:
-                                    if cmd_id:
-                                        res_payload = {
-                                            "command_id": cmd_id,
-                                            "status": "failed",
-                                            "error": "Invalid pin"
-                                        }
-                                        await client.publish("artemis/esp32/results", payload=json.dumps(res_payload))
-                            except Exception as e:
-                                print(f"MQTT message processing error: {e}")
+                                if simulator_mode == "manual":
+                                    if "fan_speed" in data:
+                                        speed = int(data["fan_speed"])
+                                        cmd = RelayCommand(state="on" if speed > 0 else "off", action="set_speed", value=speed if speed > 0 else 1)
+                                        apply_command(devices["fan_speed"], cmd)
+                                    if "socket1" in data:
+                                        cmd = RelayCommand(state="on" if data["socket1"] else "off")
+                                        apply_command(devices["socket1"], cmd)
+                                    if "socket2" in data:
+                                        cmd = RelayCommand(state="on" if data["socket2"] else "off")
+                                        apply_command(devices["socket2"], cmd)
+                    finally:
+                        pub_task.cancel()
+
             except Exception as e:
                 print(f"Simulator MQTT connection failed: {e}. Retrying in 5 seconds...")
                 await asyncio.sleep(5)
@@ -319,24 +289,27 @@ def power_state(state: dict[str, Any]) -> str:
 
 
 def sync_sensor_devices() -> None:
-    sensor_devices["temp-sensor"]["device_state"] = {
+    sensor_devices["dev-lr-temp"]["device_state"] = {
         "is_on": True,
         "reading": current_sensors["temperature"],
-        "unit": "deg C",
-        "humidity": current_sensors["humidity"],
+        "unit": "°C",
     }
-    sensor_devices["smoke-detector"]["device_state"] = {
+    sensor_devices["dev-lr-hum"]["device_state"] = {
         "is_on": True,
-        "reading": current_sensors["smoke"],
-        "unit": "ppm",
-        "status": "Clear" if current_sensors["smoke"] < 10 else "Smoke detected",
+        "reading": current_sensors["humidity"],
+        "unit": "%",
+    }
+    sensor_devices["dev-lr-motion"]["device_state"] = {
+        "is_on": True,
+        "reading": current_sensors.get("motion", False),
+        "unit": "boolean",
     }
 
 
 def serialize_relay(pin: str, device: dict[str, Any]) -> dict[str, Any]:
     device_state = dict(device["device_state"])
     return {
-        "pin": int(pin),
+        "pin": pin,
         "name": device["name"],
         "room": device["room"],
         "state": power_state(device_state),
@@ -350,7 +323,7 @@ def serialize_relay(pin: str, device: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def serialize_backend_device(device_id: str, device: dict[str, Any], pin: int | None = None) -> dict[str, Any]:
+def serialize_backend_device(device_id: str, device: dict[str, Any], pin: str | None = None) -> dict[str, Any]:
     return {
         "id": device_id,
         "name": device["name"],
@@ -529,7 +502,7 @@ def get_relays():
 @app.get("/api/devices")
 def get_devices():
     relay_devices = [
-        serialize_backend_device(f"sim-relay-{pin}", device, int(pin))
+        serialize_backend_device(f"sim-relay-{pin}", device, pin)
         for pin, device in devices.items()
     ]
     sensor_payloads = [

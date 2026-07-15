@@ -49,3 +49,4 @@ firmware/**/config.local.h
 # generated native folders
 ios/
 android/
+builds/

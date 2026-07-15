@@ -17,6 +17,7 @@ import {
   Manrope_700Bold,
   Manrope_800ExtraBold,
 } from '@expo-google-fonts/manrope';
+import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import AppNavigator from './navigation/AppNavigator';
 import { Colors } from './constants/theme';
@@ -75,8 +76,12 @@ function NotificationBridge() {
   return null;
 }
 
+import * as SplashScreen from 'expo-splash-screen';
+
+SplashScreen.preventAutoHideAsync();
+
 export default function App() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     SpaceGrotesk: SpaceGrotesk_400Regular,
     'SpaceGrotesk-Medium': SpaceGrotesk_500Medium,
     'SpaceGrotesk-SemiBold': SpaceGrotesk_600SemiBold,
@@ -86,15 +91,19 @@ export default function App() {
     'Manrope-SemiBold': Manrope_600SemiBold,
     'Manrope-Bold': Manrope_700Bold,
     'Manrope-ExtraBold': Manrope_800ExtraBold,
+    ...Ionicons.font,
+    ...MaterialIcons.font,
+    ...MaterialCommunityIcons.font,
   });
 
-  if (!fontsLoaded) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <StatusBar style="light" />
-      </View>
-    );
+  useEffect(() => {
+    if (fontError) {
+      console.warn('Failed to load fonts:', fontError);
+    }
+  }, [fontError]);
+
+  if (!fontsLoaded && !fontError) {
+    return null;
   }
 
   const MyTheme = {
